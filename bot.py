@@ -14,17 +14,25 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 # Initialisation du bot avec un préfixe (ex: !)
 intents = discord.Intents.default()
 intents.message_content = True  # Nécessaire pour lire le contenu des messages
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 # Événement déclenché lorsque le bot est prêt
 @bot.event
 async def on_ready():
     print(f'Connecté en tant que {bot.user}')
 
-# Commande simple
+# Commande d'aide
 @bot.command()
-async def hello(ctx):
-    await ctx.send(f'Bonjour {ctx.author.mention} !')
+async def help(ctx):
+    message = (
+        "```"  # Bloc de code Markdown
+        "Commandes disponibles:\n"
+        "!ranks: Récupérer les scores des rangs\n"
+        "!trackSwarena id <id>: Récupérer les saisons d'un joueur via son id\n"
+        "!trackSwarena pseudo <pseudo>: Récupérer les saisons d'un joueur via son pseudo\n"
+        "```"
+    )
+    await ctx.send(f"{ctx.author.mention}\n{message}")
 
 # Commande pour récupérer les scores des rangs
 @bot.command()
@@ -53,7 +61,7 @@ async def ranks(ctx):
 
 # Commandes pour récupérer les saisons d'un joueur (id)
 @bot.command()
-async def infosSwarena(ctx, type: str, player):
+async def trackSwarena(ctx, type: str, player):
     if type == "id":
         player_data = infoPlayerSwarena(player)
     elif type == "pseudo":
@@ -73,4 +81,4 @@ async def infosSwarena(ctx, type: str, player):
         await ctx.send("Aucune saison disponible pour ce joueur.")
 
 # Lancer le bot (insérer le token ici)
-bot.run('TOKEN')
+bot.run(TOKEN)
