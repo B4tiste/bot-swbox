@@ -76,7 +76,7 @@ async def trackSwarena(ctx, type: str, player):
 
     if player_data:
         for season in player_data:
-            await ctx.send(f"Saison {season['season']}:\nNom: {season['name']}\nPays: {season['country']}\nPhoto URL: {season['picture']}")
+            await ctx.send(f"__Saison__ {season['season']}:\nNom: {season['name']}\nRank: {season['rank']}\nPays: {season['country']}\nPhoto URL: {season['picture']}")
     else:
         await ctx.send("Aucune saison disponible pour ce joueur.")
 

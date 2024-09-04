@@ -45,11 +45,20 @@ def infoPlayerSwarena(id: int):
                 wizard_country = wizard_data.get("wizard_country", "N/A")
                 wizard_picture = wizard_data.get("wizard_picture", "N/A")
 
+                # Rank
+                rank_com2us = wizard_data.get("last_rating_id")
+
+                letters = "FCPG"
+                numbers = "123"
+
+                rank = f"{letters[rank_com2us // 1000 - 1]}{numbers[rank_com2us % 100 - 1]}"
+
                 player_data.append({
                     "season": season,
                     "name": wizard_name,
                     "country": wizard_country,
-                    "picture": wizard_picture
+                    "picture": wizard_picture,
+                    "rank": rank
                 })
 
         return player_data
