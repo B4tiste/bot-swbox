@@ -1,6 +1,7 @@
 import discord
 import requests
 import os
+import sys
 from lib import infoRankSW, infoPlayerSwarena
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -21,6 +22,13 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 async def on_ready():
     print(f'Connecté en tant que {bot.user}')
 
+# Enregistrer chaque commande exécutée par les utilisateurs
+@bot.event
+async def on_command(ctx):
+    user = ctx.author
+    command = ctx.command
+    print(f"[LOG] Commande exécutée par {user}: !{command}")
+
 # Commande d'aide
 @bot.command()
 async def help(ctx):
@@ -32,7 +40,7 @@ async def help(ctx):
         "!trackSwarena pseudo <pseudo>: Récupérer les saisons d'un joueur via son pseudo\n"
         "```"
     )
-    await ctx.send(f"{ctx.author.mention}\n{message}")
+    await ctx.send(f"{ctx.author.mention}\n{message}\n Bot créé par <@191619427584835585>")
 
 # Commande pour récupérer les scores des rangs
 @bot.command()
@@ -67,7 +75,7 @@ async def trackSwarena(ctx, type: str, player):
     elif type == "pseudo":
         url = "https://api.swarena.gg/player/search/" + player
         response = requests.get(url)
-        data = response.json() # {"data":[{"wizard_name":"Falthazard","id":11934958}]}
+        data = response.json()
         if "data" in data and data["data"]:
             player_id = data["data"][0]["id"]
             player_data = infoPlayerSwarena(player_id)
