@@ -64,3 +64,16 @@ def infoPlayerSwarena(id: int):
         return player_data
     else:
         return None
+
+def infoMobSwarena(mob_id):
+    data = {"no g3": {}, "g3": {}}
+
+    url = f"https://api.swarena.gg/monster/{mob_id}/summary?season=30&isG3=false"
+    response = requests.get(url)
+    data["no g3"] = response.json()
+
+    url = f"https://api.swarena.gg/monster/{mob_id}/summary?season=30&isG3=true"
+    response = requests.get(url)
+    data["g3"] = response.json()
+
+    return data

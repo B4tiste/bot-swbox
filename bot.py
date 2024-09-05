@@ -24,9 +24,14 @@ async def on_ready():
 # Enregistrer chaque commande exécutée par les utilisateurs
 @bot.event
 async def on_command(ctx):
-    user = ctx.author
-    command = ctx.command
-    print(f"[LOG] Commande exécutée par {user}: !{command}")
+    # Récupérer le nom de la commande et les arguments
+    command = ctx.message.content
+    
+    # Récupérer le nom de l'utilisateur
+    user = ctx.message.author.name
+
+    # Afficher la commande exécutée
+    print(f"{user} a exécuté la commande: {command}")
 
 # Charger tous les cogs au démarrage dans une fonction asynchrone
 async def load_extensions():
@@ -40,7 +45,7 @@ async def load_extensions():
 
 # Commande pour recharger un cog dynamiquement
 @bot.command()
-@commands.is_owner()
+@commands.is_owner() # Vérifier si l'utilisateur est le propriétaire du bot
 async def reload(ctx, cog):
     try:
         await bot.reload_extension(f'cogs.{cog}')
