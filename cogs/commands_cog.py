@@ -2,10 +2,12 @@ from discord.ext import commands
 from lib import infoRankSW, infoPlayerSwarena, infoMobSwarena
 import requests
 
+
+# Création d'un cog pour les commandes
 class CommandsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
+
     # Commande d'aide
     @commands.command()
     async def help(self, ctx):
@@ -66,7 +68,7 @@ class CommandsCog(commands.Cog):
                 await ctx.send(f"__Saison__ {season['season']}:\nNom: {season['name']}\nRank: {season['rank']}\nPays: {season['country']}\nPhoto URL: {season['picture']}")
         else:
             await ctx.send("Aucune saison disponible pour ce joueur.")
-    
+
     # Commande pour obtenir les infos d'un monstre
     @commands.command()
     async def mobstats(self, ctx, *, mob: str):  # Utiliser * pour capturer l'argument entier, même avec des espaces
@@ -82,7 +84,7 @@ class CommandsCog(commands.Cog):
         else:
             await ctx.send("Apprends à écrire, ce monstre n'existe pas.")
             return
-        
+
         # Récupération de l'id du monstre
         url = f"https://api.swarena.gg/monster/{mob_formatted}/details"
         response = requests.get(url)
@@ -93,7 +95,7 @@ class CommandsCog(commands.Cog):
         else:
             await ctx.send("Erreur lors de la récupération des données.")
             return
-        
+
         # Récupération des stats du monstre
         mob_data = infoMobSwarena(mob_id)
 
@@ -114,7 +116,7 @@ class CommandsCog(commands.Cog):
         )
 
         await ctx.send(f"{ctx.author.mention}\n{message}")
-        
+
 
 # Fonction nécessaire pour charger le cog
 async def setup(bot):

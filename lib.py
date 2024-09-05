@@ -1,5 +1,6 @@
 import requests
 
+
 # Fonction ranksw pour récupérer les données de l'API swrt
 def infoRankSW():
     url = "https://m.swranking.com/api/player/nowline"
@@ -23,6 +24,7 @@ def infoRankSW():
         return scores
     else:
         return None
+
 
 # Fonction permettant de récupérer les infos via l'api swarena
 def infoPlayerSwarena(id: int):
@@ -64,6 +66,7 @@ def infoPlayerSwarena(id: int):
         return player_data
     else:
         return None
+
 
 def infoMobSwarena(mob_id):
     data = {"no g3": {}, "g3": {}}
