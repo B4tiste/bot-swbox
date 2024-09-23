@@ -19,7 +19,7 @@ class CommandsCog(commands.Cog):
             "!trackSwarena pseudo <pseudo>: Récupérer les saisons d'un joueur via son pseudo\n"
             "!mobstats <monstre>: Récupérer les stats d'un monstre\n"
             "-------Admin-------\n"
-            "!reload <cog>: Recharger un cog dynamiquement\n"
+            "!reload <cog>: Recharger un cog dynamiquement (commands_cog)\n"
             "```"
         )
         await ctx.send(f"{ctx.author.mention}\n{message}\n Bot créé par <@191619427584835585>")
