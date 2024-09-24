@@ -2,6 +2,7 @@ from discord.ext import commands
 from lib import infoRankSW, infoPlayerSwarena, infoMobSwarena
 import requests
 
+url_reddit_ranks = "https://old.reddit.com/r/summonerswar/comments/1fjf8zj/rta_season_30_cutoff_megathread/"
 
 # Création d'un cog pour les commandes
 class CommandsCog(commands.Cog):
@@ -14,10 +15,11 @@ class CommandsCog(commands.Cog):
         message = (
             "```"  # Bloc de code Markdown
             "Commandes disponibles:\n"
-            "!ranks: Récupérer les scores des rangs\n"
-            "!trackSwarena id <id>: Récupérer les saisons d'un joueur via son id\n"
-            "!trackSwarena pseudo <pseudo>: Récupérer les saisons d'un joueur via son pseudo\n"
+            "!ranks: Récupérer les scores des rangs actuels\n"
             "!mobstats <monstre>: Récupérer les stats d'un monstre\n"
+            "WIP !histopseudo <pseudo>: Récupérer les saisons d'un joueur via son id\n"
+            "WIP !histoid <id>: Récupérer les saisons d'un joueur via son pseudo\n"
+            "WIP !playerStat <pseudo>: Récupérer les stats récentes d'un joueur\n"
             "-------Admin-------\n"
             "!reload <cog>: Recharger un cog dynamiquement (commands_cog)\n"
             "```"
@@ -30,8 +32,8 @@ class CommandsCog(commands.Cog):
         scores = infoRankSW()
         if scores:
             message = (
-                "```"  # Bloc de code Markdown
-                f"Rank    | Score\n"
+                "```"
+                f"Ranks   | Scores actuels\n"
                 f"--------|-------\n"
                 f"C1      | {scores['c1']}\n"
                 f"C2      | {scores['c2']}\n"
@@ -43,6 +45,7 @@ class CommandsCog(commands.Cog):
                 f"G2      | {scores['g2']}\n"
                 f"G3      | {scores['g3']}\n"
                 "```"
+                f"Prediction Cutoff Reddit : {url_reddit_ranks}\n"
             )
             await ctx.send(f"{ctx.author.mention}\n{message}")
         else:
@@ -50,7 +53,7 @@ class CommandsCog(commands.Cog):
 
     # Commande pour récupérer les saisons d'un joueur via son id ou son pseudo
     @commands.command()
-    async def trackSwarena(self, ctx, type: str, player):
+    async def PtrackSwarena(self, ctx, type: str, player):
         if type == "id":
             player_data = infoPlayerSwarena(player)
         elif type == "pseudo":
