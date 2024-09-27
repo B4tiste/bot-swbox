@@ -2,7 +2,7 @@ from discord.ext import commands
 from lib import infoRankSW, infoPlayerSwarena, infoMobSwarena
 import requests
 
-url_reddit_ranks = "https://old.reddit.com/r/summonerswar/comments/1fjf8zj/rta_season_30_cutoff_megathread/"
+url_reddit_ranks = "https://www.reddit.com/r/summonerswar/comments/1fjf8zj/rta_season_30_cutoff_megathread/"
 
 # Création d'un cog pour les commandes
 class CommandsCog(commands.Cog):
