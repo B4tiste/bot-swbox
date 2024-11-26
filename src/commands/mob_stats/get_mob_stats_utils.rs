@@ -3,31 +3,21 @@ use serde::Deserialize;
 
 use log::info;
 use poise::{serenity_prelude::{self as serenity}, CreateReply};
-use crate::commands::{mob_stats::lib::get_monster_slug, ranks::lib::{Context, Error}};
+use crate::commands::{mob_stats::lib::{get_latest_season, get_monster_id, get_monster_slug}, ranks::lib::{Context, Error}};
 
-// Struct for the API response (slug)
-#[derive(Deserialize)]
-pub struct SlugApiResponse {
-    pub data: Vec<SlugData>,
-}
-
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct SlugData {
     pub name: String,
     pub slug: String,
 }
 
-// Struct for the API response (id)
-#[derive(Deserialize)]
-struct MonsterInfoApiResponse {
-    data: MonsterInfoData,
+#[derive(Deserialize, Debug)]
+pub struct MonsterGeneralInfoData {
+    pub id: i32,
+    pub image_filename: String,
 }
 
-#[derive(Deserialize)]
-pub struct MonsterInfoData {
-    id: i32,
-    image_filename: String,
-}
+
 
 /// 📂 Affiche les stats du monstre donné.
 ///
@@ -38,8 +28,11 @@ pub struct MonsterInfoData {
 pub async fn get_mob_stats(ctx: Context<'_>,#[description="Nom du monstre"] mob_name: String) -> Result<(), Error>{
 
     let monster_slug = get_monster_slug(mob_name).await?;
+    let monster_slug_clone = monster_slug.clone();
+    let monster_general_info = get_monster_id(monster_slug.slug).await?;
+    let latest_season = get_latest_season().await?;
 
-    println!("Monster slug: {}", monster_slug.slug);
+    println!("{:?} {:?} {}", monster_slug_clone, monster_general_info, latest_season);
 
     // Get the monster ID
     // let mut mob_id: i32;
@@ -102,6 +95,5 @@ pub async fn get_mob_stats(ctx: Context<'_>,#[description="Nom du monstre"] mob_
     //     ctx.send(reply).await?;
     // };
 
-    ctx.say(monster_slug.slug).await?;
     Ok(())
 }
