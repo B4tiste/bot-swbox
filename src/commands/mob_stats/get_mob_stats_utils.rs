@@ -1,23 +1,32 @@
 use std::vec;
 use serde::Deserialize;
 
-use log::info;
 use poise::{serenity_prelude::{self as serenity}, CreateReply};
-use crate::commands::{mob_stats::lib::{get_latest_season, get_monster_id, get_monster_slug}, ranks::lib::{Context, Error}};
+use crate::commands::{mob_stats::lib::{get_latest_season, get_monster_general_info, get_monster_rta_info, get_monster_slug}, ranks::lib::{Context, Error}};
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct SlugData {
     pub name: String,
     pub slug: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct MonsterGeneralInfoData {
     pub id: i32,
     pub image_filename: String,
 }
 
-
+#[derive(Deserialize)]
+pub struct MonsterRtaInfoData {
+    pub played: i32,
+    pub winner: i32,
+    pub banned: i32,
+    pub leader: i32,
+    pub play_rate: f32,
+    pub win_rate: f32,
+    pub ban_rate: f32,
+    pub lead_rate: f32
+}
 
 /// 📂 Affiche les stats du monstre donné.
 ///
@@ -28,72 +37,36 @@ pub struct MonsterGeneralInfoData {
 pub async fn get_mob_stats(ctx: Context<'_>,#[description="Nom du monstre"] mob_name: String) -> Result<(), Error>{
 
     let monster_slug = get_monster_slug(mob_name).await?;
-    let monster_slug_clone = monster_slug.clone();
-    let monster_general_info = get_monster_id(monster_slug.slug).await?;
+    let monster_general_info = get_monster_general_info(monster_slug.slug).await?;
     let latest_season = get_latest_season().await?;
+    let monster_rta_info_no_g3 = get_monster_rta_info(monster_general_info.id.to_string(), latest_season, false).await?;
+    let monster_rta_info_g3 = get_monster_rta_info(monster_general_info.id.to_string(), latest_season, true).await?;
 
-    println!("{:?} {:?} {}", monster_slug_clone, monster_general_info, latest_season);
+    let thumbnail = format!("https://swarfarm.com/static/herders/images/monsters/{}", monster_general_info.image_filename);
 
-    // Get the monster ID
-    // let mut mob_id: i32;
-    // let monster_id_url = format!("https://api.swarena.gg/monster/{}/details", mob_formatted);
-    // let response = reqwest::get(monster_id_url).await?;
+    // Création de l'embed avec les données "no G3" et "G3"
+    let embed = serenity::CreateEmbed::default()
+        .title(format!("Stats du monstre {}", monster_slug.name))
+        .color(serenity::Colour::from_rgb(255, 0, 255))
+        .thumbnail(thumbnail)
+        .field("**Stats (No G3) :**", "", false)
+        .field("Play rate", format!("{:.2}% ({})", monster_rta_info_no_g3.play_rate, monster_rta_info_no_g3.played), true)
+        .field("Win rate", format!("{:.2}% ({})", monster_rta_info_no_g3.win_rate, monster_rta_info_no_g3.winner), true)
+        .field("Ban rate", format!("{:.2}% ({})", monster_rta_info_no_g3.ban_rate, monster_rta_info_no_g3.banned), true)
+        .field("Lead rate", format!("{:.2}% ({})", monster_rta_info_no_g3.lead_rate, monster_rta_info_no_g3.leader), true)
+        .field("", "", false)
+        .field("**Stats (G3) :**", "", false)
+        .field("Play rate", format!("{:.2}% ({})", monster_rta_info_g3.play_rate, monster_rta_info_g3.played), true)
+        .field("Win rate", format!("{:.2}% ({})", monster_rta_info_g3.win_rate, monster_rta_info_g3.winner), true)
+        .field("Ban rate", format!("{:.2}% ({})", monster_rta_info_g3.ban_rate, monster_rta_info_g3.banned), true)
+        .field("Lead rate", format!("{:.2}% ({})", monster_rta_info_g3.lead_rate, monster_rta_info_g3.leader), true);
 
-    // if response.status().is_success() {
-    //     let api_response: MonsterInfoApiResponse = response.json().await?;
+        let reply = CreateReply{
+            embeds: vec![embed],
+            ..Default::default()
+        };
 
-    //     // Check if their is data in the response["data"]
-    //     if api_response.data.id > 0 {
-    //         mob_id = api_response.data.id;
-
-    //         info!("Monster id: {}", mob_id);
-    //     }
-    //     else {
-    //         monster_has_stats = false;
-    //     }
-    // }
-
-    // if !monster_exists {
-
-    //     let mut embed = serenity::CreateEmbed::default().title("Stats du monstre").color(serenity::Colour::from_rgb(255, 0, 0));
-
-    //     embed.description("Le monstre n'existe pas.");
-
-    //     let reply = CreateReply{
-    //         embeds: vec![embed],
-    //         ..Default::default()
-    //     };
-
-    //     ctx.send(reply).await?;
-    // }
-    // else if !monster_has_stats {
-
-    //     let mut embed = serenity::CreateEmbed::default().title("Stats du monstre").color(serenity::Colour::from_rgb(255, 0, 0));
-
-    //     embed.description("Le monstre n'a pas de stats.");
-
-    //     let reply = CreateReply{
-    //         embeds: vec![embed],
-    //         ..Default::default()
-    //     };
-
-    //     ctx.send(reply).await?;
-        
-    // }
-    // else {
-
-    //     // Recovery of the thumbnail of the monster
-    //     let monster_thumbnail = "aze";
-
-    //     let mut embed = serenity::CreateEmbed::default().title("Stats du monstre").color(serenity::Colour::from_rgb(0, 255, 0)).thumbnail(monster_thumbnail);
-
-    //     let reply = CreateReply{
-    //         embeds: vec![embed],
-    //         ..Default::default()
-    //     };
-
-    //     ctx.send(reply).await?;
-    // };
+        ctx.send(reply).await?;
 
     Ok(())
 }
