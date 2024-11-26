@@ -195,22 +195,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bot-swbox-rust"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "log",
- "poise",
- "reqwest 0.12.9",
- "serde",
- "serde_json",
- "shuttle-runtime",
- "shuttle-serenity",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2117,6 +2101,22 @@ dependencies = [
  "tokio-tungstenite 0.20.1",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "shuttle-bot-swbox-rust"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "log",
+ "poise",
+ "reqwest 0.12.9",
+ "serde",
+ "serde_json",
+ "shuttle-runtime",
+ "shuttle-serenity",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
