@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use crate::{GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID, CONQUEROR_EMOJI_ID};
 pub type Context<'a> = poise::Context<'a, (), Error>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -33,9 +34,9 @@ pub async fn info_rank_sw() -> Result<Vec<(String, i32)>, Error> {
         let api_response: ApiResponse = response.json().await?;
 
         // All ranks emotes
-        let conqueror_emote_str = "<:conqueror:1310904791114842134>";
-        let punisher_emote_str = "<:punisher:1310904805576937472>";
-        let guardian_emote_str = "<:guardian:1310904819200032801>";
+        let conqueror_emote_str = format!("<:conqueror:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
+        let punisher_emote_str = format!("<:punisher:{}>", PUNISHER_EMOJI_ID.lock().unwrap());
+        let guardian_emote_str = format!("<:guardian:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());
 
         let scores = vec![
             (conqueror_emote_str.repeat(1), api_response.data.c1.score),
