@@ -1,2 +1,2 @@
-pub mod get_ranks_utils;
+pub mod get_ranks;
 pub mod lib;

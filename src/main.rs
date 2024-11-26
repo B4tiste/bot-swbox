@@ -6,8 +6,8 @@ use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 
 // Personnal code add
-use crate::commands::ranks::get_ranks_utils::get_ranks;
-use crate::commands::mob_stats::get_mob_stats_utils::get_mob_stats;
+use crate::commands::ranks::get_ranks::get_ranks;
+use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
 
 #[shuttle_runtime::main]
 async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
