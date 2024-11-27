@@ -8,7 +8,33 @@ pub async fn get_monster_slug(mob_name: String) -> Result<SlugData, String> {
         let api_response: serde_json::Value = response.json().await.map_err(|_| "Failed to parse JSON".to_string())?;
 
         if let Some(array) = api_response["data"].as_array() {
-            // Chercher un élément contenant "2A" ou "2a" uniquement dans le champ `name`
+            // Chercher un match exact sur `name`
+            let exact_match = array.iter().find(|&element| {
+                element["name"].as_str().unwrap_or_default().eq_ignore_ascii_case(&mob_name)
+            });
+
+            // Chercher un match exact + "2A"
+            let exact_match_2a = array.iter().find(|&element| {
+                element["name"].as_str().unwrap_or_default().eq_ignore_ascii_case(&format!("{} (2A)", mob_name))
+            });
+
+            // Prioriser "exact match + 2A" si disponible
+            if let Some(matching_element) = exact_match_2a {
+                return Ok(SlugData {
+                    name: matching_element["name"].as_str().unwrap_or_default().to_string(),
+                    slug: matching_element["slug"].as_str().unwrap_or_default().to_string(),
+                });
+            }
+
+            // Sinon, prendre le "exact match" si disponible
+            if let Some(matching_element) = exact_match {
+                return Ok(SlugData {
+                    name: matching_element["name"].as_str().unwrap_or_default().to_string(),
+                    slug: matching_element["slug"].as_str().unwrap_or_default().to_string(),
+                });
+            }
+
+            // Chercher un élément contenant "2A" ou "2a" dans `name`
             if let Some(matching_element) = array.iter().find(|&element| {
                 element["name"].as_str().unwrap_or_default().to_lowercase().contains("2a")
             }) {
@@ -29,6 +55,8 @@ pub async fn get_monster_slug(mob_name: String) -> Result<SlugData, String> {
     }
     Err("Monster not found".to_string())
 }
+
+
 
 async fn get_latest_season() -> Result<i64, String> {
     let season_url = "https://api.swarena.gg/general/seasons";
