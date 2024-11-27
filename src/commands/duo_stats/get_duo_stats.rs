@@ -91,13 +91,19 @@ pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
 
     let thumbnail = format!("https://swarfarm.com/static/herders/images/monsters/{}", monster_1_general_info.image_filename);
 
+    let with_rate_str = monster_duo_stats.win_together_rate.trim_matches('"');
+    let with_winrate: f32 = with_rate_str.parse::<f32>().unwrap();
+
+    let against_rate_str = monster_duo_stats.win_against_rate.trim_matches('"');
+    let against_winrate: f32 = against_rate_str.parse::<f32>().unwrap();
+
     let embed = CreateEmbed::default()
         .title(format!("{} & {}", monster_1_slug.name, monster_2_slug.name))
         .color(serenity::Colour::from_rgb(30, 144, 255))
         .thumbnail(thumbnail)
-        .field(format!("WR {} avec {}", monster_1_slug.name, monster_2_slug.name), format!("**{}%**", monster_duo_stats.win_together_rate), false)
-        .field(format!("WR {} contre {}", monster_1_slug.name, monster_2_slug.name), format!("**{}%**", monster_duo_stats.win_against_rate), false)
-        .field(format!("WR {} contre {}", monster_2_slug.name, monster_1_slug.name), format!("**{}%**", 100.0 - monster_duo_stats.win_against_rate.parse::<f32>().unwrap()), false);
+        .field(format!("WR {} avec {}", monster_1_slug.name, monster_2_slug.name), format!("{}%", with_winrate), false)
+        .field(format!("WR {} contre {}", monster_1_slug.name, monster_2_slug.name), format!("{}%", against_winrate), false)
+        .field("WR 🔄", format!("{}%", 100.0 - against_winrate), false);
 
         let reply = CreateReply {
             embeds: vec![embed],

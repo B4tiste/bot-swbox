@@ -7,6 +7,6 @@ pub struct DuoStatsInfosModal {
     #[placeholder = "Entrez le nom du premier monstre (ex: Bella)"]
     pub name1: String,
     #[name = "Nom du deuxième monstre"]
-    #[placeholder = "Entrez le nom du deuxième monstre (ex: Bella)"]
+    #[placeholder = "Entrez le nom du deuxième monstre (ex: Giana)"]
     pub name2: String
 }
