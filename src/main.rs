@@ -45,7 +45,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![get_ranks(), get_mob_stats(), help()], // Add the command to the framework
+            commands: vec![get_ranks(), get_mob_stats(), help()],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {

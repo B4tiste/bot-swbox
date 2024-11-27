@@ -1,8 +1,10 @@
-use poise::serenity_prelude::CreateEmbed;
-use crate::GUARDIAN_EMOJI_ID;
+use poise::{serenity_prelude::CreateEmbed, Modal};
+use crate::{commands::mob_stats::lib::get_season, GUARDIAN_EMOJI_ID};
 
 use poise::{serenity_prelude::{self as serenity}, CreateReply};
-use crate::commands::{embed_error_handling::{create_embed_error, schedule_message_deletion}, mob_stats::lib::{get_latest_season, get_monster_general_info, get_monster_rta_info, get_monster_slug}, ranks::lib::{Context, Error}};
+use crate::commands::{embed_error_handling::{create_embed_error, schedule_message_deletion}, mob_stats::lib::{get_monster_general_info, get_monster_rta_info, get_monster_slug}, ranks::lib::Error};
+
+use super::modal::ChampionsInfosModal;
 
 
 
@@ -11,10 +13,21 @@ use crate::commands::{embed_error_handling::{create_embed_error, schedule_messag
 /// Displays the stats of a given mob.
 ///
 /// Usage: `/mob_stats <mob_name>`
-#[poise::command(slash_command, prefix_command)]
-pub async fn get_mob_stats(ctx: Context<'_>, #[description = "Nom du monstre"] mob_name: String) -> Result<(), Error> {
-    // Récupération des informations du monstre avec gestion des erreurs
-    let monster_slug = match get_monster_slug(mob_name).await {
+#[poise::command(slash_command)]
+pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
+    let modal_data: ChampionsInfosModal = match ChampionsInfosModal::execute(ctx).await {
+        Ok(Some(data)) => data,
+        Ok(None) => return Ok(()),
+        Err(_) => {
+            let error_message = "Erreur lors de l'exécution du modal.";
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            return Ok(());
+        }
+    };
+
+    //Récupération des informations du monstre avec gestion des erreurs
+    let monster_slug = match get_monster_slug(modal_data.name).await {
         Ok(slug) => slug,
         Err(_) => {
             let error_message = "Monstre introuvable.";
@@ -34,17 +47,17 @@ pub async fn get_mob_stats(ctx: Context<'_>, #[description = "Nom du monstre"] m
         }
     };
 
-    let latest_season = match get_latest_season().await {
+    let season = match get_season(modal_data.season).await {
         Ok(season) => season,
         Err(_) => {
-            let error_message = "Impossible de récupérer la dernière saison.";
+            let error_message = "Impossible de récupérer la saison.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
         }
     };
 
-    let monster_rta_info_no_g3 = match get_monster_rta_info(monster_general_info.id.to_string(), latest_season, false).await {
+    let monster_rta_info_no_g3 = match get_monster_rta_info(monster_general_info.id.to_string(), season, false).await {
         Ok(info) => info,
         Err(_) => {
             let error_message = "Impossible de récupérer les informations RTA (No G3).";
@@ -54,7 +67,7 @@ pub async fn get_mob_stats(ctx: Context<'_>, #[description = "Nom du monstre"] m
         }
     };
 
-    let monster_rta_info_g3 = match get_monster_rta_info(monster_general_info.id.to_string(), latest_season, true).await {
+    let monster_rta_info_g3 = match get_monster_rta_info(monster_general_info.id.to_string(), season, true).await {
         Ok(info) => info,
         Err(_) => {
             let error_message = "Impossible de récupérer les informations RTA (G3).";
@@ -64,12 +77,11 @@ pub async fn get_mob_stats(ctx: Context<'_>, #[description = "Nom du monstre"] m
         }
     };
 
-    // Construction de l'embed
     let thumbnail = format!("https://swarfarm.com/static/herders/images/monsters/{}", monster_general_info.image_filename);
     let guardian_emote_str = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
 
     let embed = CreateEmbed::default()
-        .title(format!("Stats du monstre {}", monster_slug.name))
+        .title(format!("Stats du monstre {} - Saison {}", monster_slug.name, season))
         .color(serenity::Colour::from_rgb(255, 0, 255))
         .thumbnail(thumbnail)
         .field("**Stats (All ranks) :**", "", false)

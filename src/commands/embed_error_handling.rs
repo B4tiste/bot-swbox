@@ -3,7 +3,7 @@ use tokio::time::{sleep, Duration};
 use poise::ReplyHandle;
 
 use poise::CreateReply;
-use crate::commands::ranks::lib::{Context, Error};
+use crate::commands::ranks::lib::Error;
 
 
 pub fn create_embed_error(error_message: &str) -> CreateReply {
@@ -21,7 +21,7 @@ pub fn create_embed_error(error_message: &str) -> CreateReply {
 
 pub async fn schedule_message_deletion(
     sent_message: ReplyHandle<'_>,
-    ctx: Context<'_>,
+    ctx: poise::ApplicationContext<'_, (), Error>,
 ) -> Result<(), Error> {
     sleep(Duration::from_secs(60)).await;
     if let Ok(sent_msg) = sent_message.message().await {

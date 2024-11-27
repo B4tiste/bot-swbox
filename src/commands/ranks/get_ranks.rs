@@ -1,7 +1,7 @@
 use std::vec;
 
 use poise::{serenity_prelude::{self as serenity}, CreateReply};
-use crate::commands::{embed_error_handling::{create_embed_error, schedule_message_deletion}, ranks::lib::{info_rank_sw, Context, Error}};
+use crate::commands::{embed_error_handling::{create_embed_error, schedule_message_deletion}, ranks::lib::{info_rank_sw, Error}};
 
 
 /// 📂 Affiche les montants de points des rangs (C1 -> G3)
@@ -9,8 +9,8 @@ use crate::commands::{embed_error_handling::{create_embed_error, schedule_messag
 /// Displays the current scores for ranks.
 ///
 /// Usage: `/ranks`
-#[poise::command(slash_command, prefix_command)]
-pub async fn get_ranks(ctx: Context<'_>) -> Result<(), Error> {
+#[poise::command(slash_command)]
+pub async fn get_ranks(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
     // Retrieve the scores
     let scores = match info_rank_sw().await {
         Ok(scores) => scores,
