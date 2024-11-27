@@ -1,7 +1,11 @@
 use std::vec;
+use poise::{
+    serenity_prelude::{self as serenity, Error},
+    CreateReply,
+};
 
-use poise::{serenity_prelude::{self as serenity}, CreateReply};
-use crate::commands::{embed_error_handling::{create_embed_error, schedule_message_deletion}, ranks::lib::{info_rank_sw, Error}};
+use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
+use crate::commands::ranks::lib::info_rank_sw;
 
 
 /// 📂 Affiche les montants de points des rangs (C1 -> G3)

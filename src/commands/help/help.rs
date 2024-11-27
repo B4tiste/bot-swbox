@@ -1,14 +1,12 @@
-use poise::{serenity_prelude::{self as serenity}, CreateReply};
-
-use crate::commands::help::lib::{Context, Error};
+use poise::{serenity_prelude::{self as serenity, Error}, CreateReply};
 
 /// 📂 Affiche les commandes disponibles
 ///
 /// Displays the available commands
 ///
 /// Usage: `/help`
-#[poise::command(slash_command, prefix_command)]
-pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
+#[poise::command(slash_command)]
+pub async fn help(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
     let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
 
     let mut embed = serenity::CreateEmbed::default()

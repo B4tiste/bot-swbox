@@ -21,12 +21,10 @@ lazy_static! {
 
 #[shuttle_runtime::main]
 async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
-    // Get the discord token set in `Secrets.toml`
     let discord_token = secret_store
         .get("DISCORD_TOKEN")
         .context("'DISCORD_TOKEN' was not found")?;
 
-    // Get the IDs of the emojis used in the bot
     let guardian_emoji_id = secret_store
         .get("GUARDIAN_EMOJI_ID")
         .context("'GUARDIAN_EMOJI_ID' was not found")?;
