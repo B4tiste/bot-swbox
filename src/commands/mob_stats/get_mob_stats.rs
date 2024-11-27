@@ -1,4 +1,5 @@
 use poise::serenity_prelude::CreateEmbed;
+use crate::GUARDIAN_EMOJI_ID;
 
 use poise::{serenity_prelude::{self as serenity}, CreateReply};
 use crate::commands::{embed_error_handling::{create_embed_error, schedule_message_deletion}, mob_stats::lib::{get_latest_season, get_monster_general_info, get_monster_rta_info, get_monster_slug}, ranks::lib::{Context, Error}};
@@ -65,18 +66,19 @@ pub async fn get_mob_stats(ctx: Context<'_>, #[description = "Nom du monstre"] m
 
     // Construction de l'embed
     let thumbnail = format!("https://swarfarm.com/static/herders/images/monsters/{}", monster_general_info.image_filename);
+    let guardian_emote_str = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
 
     let embed = CreateEmbed::default()
         .title(format!("Stats du monstre {}", monster_slug.name))
         .color(serenity::Colour::from_rgb(255, 0, 255))
         .thumbnail(thumbnail)
-        .field("**Stats (No G3) :**", "", false)
+        .field("**Stats (All ranks) :**", "", false)
         .field("Play rate", format!("{:.2}% ({})", monster_rta_info_no_g3.play_rate, monster_rta_info_no_g3.played), true)
         .field("Win rate", format!("{:.2}% ({})", monster_rta_info_no_g3.win_rate, monster_rta_info_no_g3.winner), true)
         .field("Ban rate", format!("{:.2}% ({})", monster_rta_info_no_g3.ban_rate, monster_rta_info_no_g3.banned), true)
         .field("Lead rate", format!("{:.2}% ({})", monster_rta_info_no_g3.lead_rate, monster_rta_info_no_g3.leader), true)
         .field("", "", false)
-        .field("**Stats (G3) :**", "", false)
+        .field(format!("**Stats {}**", guardian_emote_str.repeat(3)), "", false)
         .field("Play rate", format!("{:.2}% ({})", monster_rta_info_g3.play_rate, monster_rta_info_g3.played), true)
         .field("Win rate", format!("{:.2}% ({})", monster_rta_info_g3.win_rate, monster_rta_info_g3.winner), true)
         .field("Ban rate", format!("{:.2}% ({})", monster_rta_info_g3.ban_rate, monster_rta_info_g3.banned), true)
