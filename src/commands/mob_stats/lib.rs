@@ -8,11 +8,25 @@ pub async fn get_monster_slug(mob_name: String) -> Result<SlugData, String> {
 
     if response.status().is_success() {
         let api_response: serde_json::Value = response.json().await.map_err(|_| "Failed to parse JSON".to_string())?;
-        if let Some(first_element) = api_response["data"].as_array().and_then(|arr| arr.get(0)) {
-            return Ok(SlugData {
-                name: first_element["name"].as_str().unwrap_or_default().to_string(),
-                slug: first_element["slug"].as_str().unwrap_or_default().to_string(),
-            });
+
+        if let Some(array) = api_response["data"].as_array() {
+            // Chercher un élément contenant "2A" ou "2a" uniquement dans le champ `name`
+            if let Some(matching_element) = array.iter().find(|&element| {
+                element["name"].as_str().unwrap_or_default().to_lowercase().contains("2a")
+            }) {
+                return Ok(SlugData {
+                    name: matching_element["name"].as_str().unwrap_or_default().to_string(),
+                    slug: matching_element["slug"].as_str().unwrap_or_default().to_string(),
+                });
+            }
+
+            // Sinon, prendre le premier élément
+            if let Some(first_element) = array.get(0) {
+                return Ok(SlugData {
+                    name: first_element["name"].as_str().unwrap_or_default().to_string(),
+                    slug: first_element["slug"].as_str().unwrap_or_default().to_string(),
+                });
+            }
         }
     }
     Err("Monster not found".to_string())
