@@ -34,9 +34,9 @@ pub async fn info_rank_sw() -> Result<Vec<(String, i32)>, Error> {
         let api_response: ApiResponse = response.json().await?;
 
         // All ranks emotes
-        let conqueror_emote_str = format!("<:conqueror:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
+        let conqueror_emote_str = format!("<:conqueror:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());
         let punisher_emote_str = format!("<:punisher:{}>", PUNISHER_EMOJI_ID.lock().unwrap());
-        let guardian_emote_str = format!("<:guardian:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());
+        let guardian_emote_str = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
 
         let scores = vec![
             (conqueror_emote_str.repeat(1), api_response.data.c1.score),
