@@ -58,7 +58,7 @@ pub async fn get_monster_rta_info(mob_id: String, season: i64, is_g3: bool) -> R
     Err("Monster not found".to_string())
 }
 
-pub async fn get_latest_season() -> Result<i64, String> {
+async fn get_latest_season() -> Result<i64, String> {
     let season_url = "https://api.swarena.gg/general/seasons";
     let response = reqwest::get(season_url).await.map_err(|_| "Failed to send request".to_string())?;
 
@@ -70,4 +70,33 @@ pub async fn get_latest_season() -> Result<i64, String> {
     }
 
     Err("Failed to get latest season".to_string())
+}
+
+async fn verify_season(season: i64) -> Result<i64, String> {
+    let season_url = "https://api.swarena.gg/general/seasons";
+    let response = reqwest::get(season_url).await.map_err(|_| "Failed to send request".to_string())?;
+
+    if response.status().is_success() {
+        let season_data: serde_json::Value = response.json().await.map_err(|_| "Failed to parse JSON".to_string())?;
+        if let Some(_) = season_data["data"].as_array().and_then(|arr| arr.iter().find(|s| s["season"].as_i64() == Some(season))) {
+            return Ok(season);
+        } else {
+            return Err("Pas de données trouvées pour cette saison".to_string());
+        }
+    }
+    Err("Nous n'avons pas pu verifier si cette saison existait.".to_string())
+}
+pub async fn get_season(season: Option<String>) -> Result<i64, String> {
+    if let Some(season) = season {
+        if let Ok(season) = season.parse::<i64>() {
+            match verify_season(season).await {
+                Ok(valid_season) => return Ok(valid_season),
+                Err(e) => return Err(e),
+            }
+        }
+        else {
+            return Err("La saison doit être un nombre".to_string());
+        }
+    }
+    get_latest_season().await
 }
