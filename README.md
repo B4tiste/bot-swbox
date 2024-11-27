@@ -17,7 +17,6 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 ### ToDo :
 
-- [ ] Ajouter une commande pour afficher les taux de victoire communs de deux monstres joués ensemble. Affiche aussi le taux de victoire de l'un contre l'autre.
 - [ ] Refaire les commandes de suivi de compte pour plus de clarté et de performance.
 - [ ] Introduire une commande pour les statistiques des joueurs sur les trois dernières saisons.
 - [ ] Étendre les commandes de statistiques des monstres pour inclure les données des saisons précédentes.
@@ -27,6 +26,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 - [x] Ajouter la commande /help
 - [x] Check si il y a un 2A dans la liste des monstres recherchés, si oui, le bot doit le choisir en priorité
 - [x] Ajouter le choix de choisir le numéro de saison pour les stats de monstre
+- [x] Ajouter une commande pour afficher les taux de victoire communs de deux monstres joués ensemble. Affiche aussi le taux de victoire de l'un contre l'autre.
 
 ---
 
