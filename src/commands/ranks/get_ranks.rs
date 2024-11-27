@@ -5,7 +5,7 @@ use poise::{
 };
 
 use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
-use crate::commands::ranks::lib::info_rank_sw;
+use crate::commands::ranks::utils::info_rank_sw;
 
 
 /// 📂 Affiche les montants de points des rangs (C1 -> G3)
