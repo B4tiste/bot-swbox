@@ -19,6 +19,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 ### ToDo :
 
 - [ ] Refaire les commandes de suivi de compte pour plus de clarté et de performance.
+- [ ] Ajouter les GIFs pour la commande `get_duo_stats`
 - [ ] Introduire une commande pour les statistiques des joueurs sur les trois dernières saisons.
 - [ ] Étendre les commandes de statistiques des monstres pour inclure les données des saisons précédentes.
 
