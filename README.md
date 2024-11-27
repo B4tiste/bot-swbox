@@ -89,3 +89,8 @@ Ce projet est maintenu et développé par :
 Si vous souhaitez contribuer à ce projet, veuillez contacter B4tiste sur Discord (tag : b4tiste)
 
 ---
+
+## Images du bot
+
+![alt text](Images/image.png)
+![alt text](Images/image-1.png)
