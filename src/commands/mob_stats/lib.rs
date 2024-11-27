@@ -10,7 +10,17 @@ pub async fn get_monster_slug(mob_name: String) -> Result<SlugData, String> {
         let api_response: serde_json::Value = response.json().await.map_err(|_| "Failed to parse JSON".to_string())?;
 
         if let Some(array) = api_response["data"].as_array() {
-            // Chercher un élément contenant "2A" ou "2a" uniquement dans le champ `name`
+            // Étape 1: Chercher un élément correspondant exactement à `mob_name`
+            if let Some(exact_match) = array.iter().find(|&element| {
+                element["name"].as_str().unwrap_or_default().eq_ignore_ascii_case(&mob_name)
+            }) {
+                return Ok(SlugData {
+                    name: exact_match["name"].as_str().unwrap_or_default().to_string(),
+                    slug: exact_match["slug"].as_str().unwrap_or_default().to_string(),
+                });
+            }
+
+            // Étape 2: Chercher un élément contenant "2A" ou "2a" dans `name`
             if let Some(matching_element) = array.iter().find(|&element| {
                 element["name"].as_str().unwrap_or_default().to_lowercase().contains("2a")
             }) {
@@ -20,7 +30,7 @@ pub async fn get_monster_slug(mob_name: String) -> Result<SlugData, String> {
                 });
             }
 
-            // Sinon, prendre le premier élément
+            // Étape 3: Prendre le premier élément
             if let Some(first_element) = array.get(0) {
                 return Ok(SlugData {
                     name: first_element["name"].as_str().unwrap_or_default().to_string(),
@@ -31,6 +41,7 @@ pub async fn get_monster_slug(mob_name: String) -> Result<SlugData, String> {
     }
     Err("Monster not found".to_string())
 }
+
 
 pub async fn get_monster_general_info(mob_formatted: String) -> Result<MonsterGeneralInfoData, String> {
     let monster_id_url = format!("https://api.swarena.gg/monster/{}/details", mob_formatted);
