@@ -1,15 +1,13 @@
 use serde::Deserialize;
 use crate::{GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID, CONQUEROR_EMOJI_ID};
-pub type Context<'a> = poise::Context<'a, (), Error>;
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
 #[derive(Deserialize)]
 struct ApiResponse {
-    data: Data,
+    data: RankData,
 }
 
 #[derive(Deserialize)]
-pub struct Data {
+pub struct RankData {
     c1: RankInfo,
     c2: RankInfo,
     c3: RankInfo,
@@ -26,12 +24,18 @@ struct RankInfo {
     score: i32,
 }
 
-pub async fn info_rank_sw() -> Result<Vec<(String, i32)>, Error> {
+pub async fn info_rank_sw() -> Result<Vec<(String, i32)>, String> {
     let url = "https://m.swranking.com/api/player/nowline";
-    let response = reqwest::get(url).await?;
+    let response = match reqwest::get(url).await {
+        Ok(response) => response,
+        Err(_) => return Err("Erreur lors de l'envoie de la requête.".into()),
+    };
 
     if response.status().is_success() {
-        let api_response: ApiResponse = response.json().await?;
+        let api_response: ApiResponse = match response.json().await {
+            Ok(api_response) => api_response,
+            Err(_) => return Err("Erreur lors de la conversion en json".into()),
+        };
 
         // All ranks emotes
         let conqueror_emote_str = format!("<:conqueror:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());

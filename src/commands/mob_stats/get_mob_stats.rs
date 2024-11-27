@@ -1,12 +1,14 @@
-use poise::{serenity_prelude::CreateEmbed, Modal};
-use crate::{commands::mob_stats::lib::get_season, GUARDIAN_EMOJI_ID};
+use poise::{
+    serenity_prelude::{self as serenity, CreateEmbed, Error},
+    Modal,
+    CreateReply,
+};
 
-use poise::{serenity_prelude::{self as serenity}, CreateReply};
-use crate::commands::{embed_error_handling::{create_embed_error, schedule_message_deletion}, mob_stats::lib::{get_monster_general_info, get_monster_rta_info, get_monster_slug}, ranks::lib::Error};
-
-use super::modal::ChampionsInfosModal;
-
-
+use crate::GUARDIAN_EMOJI_ID;
+use crate::commands::shared::utils::{get_season, get_monster_general_info, get_monster_slug};
+use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
+use crate::commands::mob_stats::lib::get_monster_rta_info;
+use crate::commands::mob_stats::modal::ChampionsInfosModal;
 
 /// 📂 Affiche les stats du monstre donné.
 ///

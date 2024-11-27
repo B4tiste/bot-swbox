@@ -1,10 +1,8 @@
-use poise::serenity_prelude::{CreateEmbed, CreateEmbedFooter};
+use poise::{
+    serenity_prelude::{CreateEmbed, CreateEmbedFooter, Error},
+    ReplyHandle, CreateReply,
+};
 use tokio::time::{sleep, Duration};
-use poise::ReplyHandle;
-
-use poise::CreateReply;
-use crate::commands::ranks::lib::Error;
-
 
 pub fn create_embed_error(error_message: &str) -> CreateReply {
     let embed: CreateEmbed = CreateEmbed::default()
