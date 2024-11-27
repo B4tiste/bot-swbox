@@ -8,6 +8,7 @@
 
 ## TODO :
 
+- [x] Ajouter la commande /help
 - [ ] Check si il y a un 2A dans la liste des monstres recherchés, si oui, le bot doit le choisir en priorité
 - [ ] Ajouter le choix de choisir le numéro de saison pour les stats de monstre
 - [ ] Ajouter une commande pour montrer les WR communs de 2 monstres jouées ensembles

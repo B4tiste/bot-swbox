@@ -3,6 +3,9 @@ use std::vec;
 use poise::{serenity_prelude::{self as serenity}, CreateReply};
 use crate::commands::{embed_error_handling::{create_embed_error, schedule_message_deletion}, ranks::lib::{info_rank_sw, Context, Error}};
 
+
+/// 📂 Affiche les montants de points des rangs (C1 -> G3)
+///
 /// Displays the current scores for ranks.
 ///
 /// Usage: `/ranks`

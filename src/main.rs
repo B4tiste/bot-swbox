@@ -11,6 +11,7 @@ use std::sync::Mutex;
 // Personnal code add
 use crate::commands::ranks::get_ranks::get_ranks;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
+use crate::commands::help::help::help;
 
 lazy_static! {
     static ref GUARDIAN_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
@@ -44,7 +45,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![get_ranks(), get_mob_stats()], // Add the command to the framework
+            commands: vec![get_ranks(), get_mob_stats(), help()], // Add the command to the framework
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
