@@ -103,7 +103,8 @@ pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
         .thumbnail(thumbnail)
         .field(format!("WR {} avec {}", monster_1_slug.name, monster_2_slug.name), format!("{}%", with_winrate), false)
         .field(format!("WR {} contre {}", monster_1_slug.name, monster_2_slug.name), format!("{}%", against_winrate), false)
-        .field("WR 🔄", format!("{}%", 100.0 - against_winrate), false);
+        .field("WR 🔄", format!("{}%", 100.0 - against_winrate), false)
+        .image(format!("https://swarfarm.com/static/herders/images/monsters/{}", monster_duo_stats.b_monster_image_filename));
 
         let reply = CreateReply {
             embeds: vec![embed],
