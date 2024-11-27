@@ -1,5 +1,6 @@
 use crate::commands::shared::models::MonsterRtaInfoData;
 
+
 pub async fn get_monster_rta_info(mob_id: String, season: i64, is_g3: bool) -> Result<MonsterRtaInfoData, String> {
     let monster_rta_info_url_g3 = format!("https://api.swarena.gg/monster/{}/summary?season={}&isG3={}", mob_id, season, is_g3);
     let response = reqwest::get(monster_rta_info_url_g3).await.map_err(|_| "Failed to send request".to_string())?;

@@ -24,7 +24,7 @@ pub async fn help(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), E
     embed = embed.field("Créé par", "<@!191619427584835585> & <@!366631137562329091>", true);
 
     // Add a field for the github link
-    embed = embed.field("Github (Open Source)", "[bot-swbox](https://github.com/B4tiste/bot-swbox)", true);
+    embed = embed.field("Code source & Road Map du projet", "[bot-swbox](https://github.com/B4tiste/bot-swbox)", true);
 
     let reply = CreateReply {
         embeds: vec![embed],

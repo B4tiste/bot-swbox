@@ -14,7 +14,7 @@ use crate::commands::mob_stats::modal::ChampionsInfosModal;
 ///
 /// Displays the stats of a given mob.
 ///
-/// Usage: `/mob_stats <mob_name>`
+/// Usage: `/get_mob_stats`
 #[poise::command(slash_command)]
 pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
     let modal_data: ChampionsInfosModal = match ChampionsInfosModal::execute(ctx).await {
