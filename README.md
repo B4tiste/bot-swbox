@@ -7,8 +7,9 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 ## Fonctionnalités
 - **Commandes interactives** : Utilisez une série de commandes slash pour accéder aux fonctionnalités du bot.
-- **Statistiques de jeu** : Récupérez et affichez les statistiques des monstres pour différentes saisons.
 - **Informations sur les classements** : Consultez les classements et leurs détails.
+- **Statistiques de jeu** : Récupérez et affichez les statistiques des monstres pour différentes saisons.
+- **Statistiques de duo** : Affichez les taux de victoire communs de deux monstres joués ensemble.
 - **Menu d’aide** : Accédez facilement à la liste des commandes disponibles et leurs descriptions.
 
 ---
@@ -46,6 +47,17 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 ---
 
+### `/get_ranks`
+**Description** : Affiche les informations détaillées des classements actuels de RTA.
+
+**Utilisation** :
+- `/get_ranks`
+
+**Résultat** :
+- Présente les données des classements dans un format facile à lire.
+
+---
+
 ### `/get_mob_stats`
 **Description** : Récupère les statistiques des monstres, avec une option pour spécifier la saison.
 
@@ -58,14 +70,14 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 ---
 
-### `/get_ranks`
-**Description** : Affiche les informations détaillées des classements actuels de RTA.
+### `/get_duo_stats`
+**Description** : Affiche le winrate d'affrontement ou de coopération de deux monstres donnés.
 
 **Utilisation** :
-- `/get_ranks`
+- `/get_duo_stats` => Ouverture d'un formulaire pour saisir les noms des deux monstres.
 
-**Résultat** :
-- Présente les données des classements dans un format facile à lire.
+**Fonctionnalités** :
+- Priorise automatiquement les monstres 2A dans les recherches lorsque cela est applicable.
 
 ---
 
