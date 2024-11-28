@@ -27,21 +27,31 @@ pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
         }
     };
 
+    // Vérifier que les deux champs ne sont pas les mêmes
+    if modal_data.name1.to_lowercase() == modal_data.name2.to_lowercase() {
+        let error_message = "Les deux monstres ne peuvent pas être les mêmes.";
+        let reply = ctx.send(create_embed_error(&error_message)).await?;
+        schedule_message_deletion(reply, ctx).await?;
+        return Ok(());
+    }
+
+    let mob_name_1 = modal_data.name1.as_str();
     // Récupération des 2 slugs
-    let monster_1_slug = match get_monster_slug(modal_data.name1).await {
+    let monster_1_slug = match get_monster_slug(mob_name_1.to_string()).await {
         Ok(slug) => slug,
         Err(_) => {
-            let error_message = "Monstre 1 introuvable.";
+            let error_message = format!("Monstre 1 '**{}**' introuvable.", mob_name_1);
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
         }
     };
 
-    let monster_2_slug = match get_monster_slug(modal_data.name2).await {
+    let mob_name_2 = modal_data.name2.as_str();
+    let monster_2_slug = match get_monster_slug(mob_name_2.to_string()).await {
         Ok(slug) => slug,
         Err(_) => {
-            let error_message = "Monstre 2 introuvable.";
+            let error_message = format!("Monstre 2 '**{}**' introuvable.", mob_name_2);
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
