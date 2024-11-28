@@ -1,0 +1,25 @@
+name: Deploy Shuttle
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v3
+
+      - name: Deploy Shuttle
+        uses: shuttle-hq/deploy-action@v2
+        with:
+          shuttle-api-key: ${{ secrets.SHUTTLE_API_KEY }}
+          project-id: proj_01JDMDBQN0GT6R3KDCJJWQ5MAV
+          secrets: |
+            DISCORD_TOKEN = '${{ secrets.DISCORD_TOKEN }}'
+            GUARDIAN_EMOJI_ID = '${{ secrets.GUARDIAN_EMOJI_ID }}'
+            PUNISHER_EMOJI_ID = '${{ secrets.PUNISHER_EMOJI_ID }}'
+            CONQUEROR_EMOJI_ID = '${{ secrets.CONQUEROR_EMOJI_ID }}'
