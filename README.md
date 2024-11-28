@@ -89,6 +89,11 @@ Ce projet est maintenu et développé par :
 - [B4tiste](https://github.com/B4tiste)
 - [shvvkz](https://github.com/shvvkz)
 
+Les données proviennent de :
+- [SWARENA](https://swarena.gg/) développé par [Relisora](https://github.com/relisora)
+- [SWARFARM](https://swarfarm.com/)
+- [SWRT](https://m.swranking.com/)
+
 Si vous souhaitez contribuer à ce projet, veuillez contacter B4tiste sur Discord (tag : b4tiste)
 
 ---
