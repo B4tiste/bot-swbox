@@ -18,12 +18,9 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 ### ToDo :
 
-- [ ] Refaire les commandes de suivi de compte pour plus de clarté et de performance.
-  - Affiche tous les pseudos liés à un compte
-  - Affiche les rangs de chaque saison pour un compte
+- [ ] Refaire les commandes de suivi de compte pour afficher tous les pseudos liés à un compte
 - [ ] Ajouter le collage d'image pour la commande `get_duo_stats`
-- [ ] Introduire une commande pour les statistiques des joueurs sur les trois dernières saisons.
-
+- [ ] Ajouter une commande de proposition de fonctionnalité
 
 ### Terminé :
 
