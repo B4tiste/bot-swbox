@@ -37,8 +37,11 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, (), Error>) -> R
     // Send the suggestion to the suggestion channel
     let builder = serenity::CreateMessage::new().embed(embed);
 
-    if let Err(why) = suggestion_channel_id.send_message(&ctx.serenity_context().http, builder).await {
-        println!("Error sending message: {:?}", why);
+    if let Err(_) = suggestion_channel_id.send_message(&ctx.serenity_context().http, builder).await {
+        let error_message = format!("Erreur lors de l'envoi de la suggestion.");
+        let reply = ctx.send(create_embed_error(&error_message)).await?;
+        schedule_message_deletion(reply, ctx).await?;
+        return Ok(());
     }
 
     // Reply to the user
