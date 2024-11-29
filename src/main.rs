@@ -7,16 +7,15 @@ use shuttle_serenity::ShuttleSerenity;
 use lazy_static::lazy_static;
 use std::sync::Arc;
 use std::sync::Mutex;
+use poise::serenity_prelude as serenity;
+use serenity::model::id::ChannelId;
 
-// Personnal code add
 use crate::commands::ranks::get_ranks::get_ranks;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
 use crate::commands::help::help::help;
 use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
+use crate::commands::player_names::track_player_names::track_player_names;
 use crate::commands::suggestion::send_suggestion::send_suggestion;
-
-use poise::serenity_prelude as serenity;
-use serenity::model::id::ChannelId;
 
 lazy_static! {
     static ref GUARDIAN_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
@@ -48,7 +47,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![get_ranks(), get_mob_stats(), help(), get_duo_stats(), send_suggestion()],
+            commands: vec![get_ranks(), get_mob_stats(), help(), get_duo_stats(), send_suggestion(), track_player_names()],
             pre_command: |ctx| {
                 Box::pin(async move {
                     let channel_id = ChannelId::new(1311708133621633044);
