@@ -13,6 +13,7 @@ use crate::commands::ranks::get_ranks::get_ranks;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
 use crate::commands::help::help::help;
 use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
+use crate::commands::suggestion::send_suggestion::send_suggestion;
 
 use poise::serenity_prelude as serenity;
 use serenity::model::id::ChannelId;
@@ -47,7 +48,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![get_ranks(), get_mob_stats(), help(), get_duo_stats()],
+            commands: vec![get_ranks(), get_mob_stats(), help(), get_duo_stats(), send_suggestion()],
             pre_command: |ctx| {
                 Box::pin(async move {
                     let channel_id = ChannelId::new(1311708133621633044);
