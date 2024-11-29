@@ -2108,6 +2108,7 @@ name = "shuttle-bot-swbox-rust"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "lazy_static",
  "log",
  "poise",
@@ -2117,7 +2118,6 @@ dependencies = [
  "shuttle-runtime",
  "shuttle-serenity",
  "tokio",
- "tracing",
 ]
 
 [[package]]

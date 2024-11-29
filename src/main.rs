@@ -13,6 +13,7 @@ use crate::commands::ranks::get_ranks::get_ranks;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
 use crate::commands::help::help::help;
 use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
+use crate::commands::player_names::track_player_names::track_player_names;
 
 lazy_static! {
     static ref GUARDIAN_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
@@ -44,7 +45,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![get_ranks(), get_mob_stats(), help(), get_duo_stats()],
+            commands: vec![get_ranks(), get_mob_stats(), help(), get_duo_stats(), track_player_names()],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
