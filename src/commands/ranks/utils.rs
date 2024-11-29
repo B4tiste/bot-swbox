@@ -37,7 +37,6 @@ pub async fn info_rank_sw() -> Result<Vec<(String, i32)>, String> {
             Err(_) => return Err("Erreur lors de la conversion en json".into()),
         };
 
-        // All ranks emotes
         let conqueror_emote_str = format!("<:conqueror:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());
         let punisher_emote_str = format!("<:punisher:{}>", PUNISHER_EMOJI_ID.lock().unwrap());
         let guardian_emote_str = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());

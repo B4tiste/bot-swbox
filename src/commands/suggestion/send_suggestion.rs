@@ -1,7 +1,11 @@
-use poise::{serenity_prelude::{self as serenity, Error}, Modal, CreateReply};
+use poise::{
+    serenity_prelude::{self as serenity, Error},
+    Modal, CreateReply,
+};
 
 use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
 use crate::commands::suggestion::modal::SuggestionModal;
+use crate::commands::shared::logs::send_log;
 
 /// 📂 Permet d'envoyer une suggestion de fonctionnalité ou de déclarer un BUG
 ///
@@ -16,6 +20,7 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, (), Error>) -> R
         Err(_) => {
             let error_message = "Erreur lors de l'exécution du modal.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
+            send_log(&ctx, "Commande : /send_suggestion".to_string(), false, error_message).await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
         }
@@ -28,37 +33,56 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, (), Error>) -> R
         .title("Nouvelle suggestion")
         .color(serenity::Colour::from_rgb(70, 200, 120))
         .field("Utilisateur", user_name, false)
-        .field("Suggestion", modal_data.description, false);
+        .field("Suggestion", modal_data.description.clone(), false);
 
-    if let Some(image) = modal_data.image {
+    if let Some(image) = modal_data.image.clone() {
         embed = embed.image(image);
     }
 
-    // Send the suggestion to the suggestion channel
-    let builder = serenity::CreateMessage::new().embed(embed);
+    let builder = serenity::CreateMessage::new().embed(embed.clone());
+    let suggestion_result = suggestion_channel_id
+        .send_message(&ctx.serenity_context().http, builder)
+        .await;
 
-    if let Err(_) = suggestion_channel_id.send_message(&ctx.serenity_context().http, builder).await {
-        let error_message = format!("Erreur lors de l'envoi de la suggestion.");
-        let reply = ctx.send(create_embed_error(&error_message)).await?;
-        schedule_message_deletion(reply, ctx).await?;
-        return Ok(());
+    match suggestion_result {
+        Ok(_) => {
+            send_log(
+                &ctx,
+                format!("Input: {:?}", modal_data),
+                true,
+                format!("Suggestion envoyée : {:?}", embed),
+            )
+            .await?;
+        }
+        Err(_) => {
+            let error_message = "Erreur lors de l'envoi de la suggestion.";
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            send_log(&ctx, format!("Input: {:?}", modal_data), false, error_message).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            return Ok(());
+        }
     }
 
-    // Reply to the user
     let reply_embed = serenity::CreateEmbed::default()
         .title("Suggestion envoyée")
         .description("Votre suggestion a bien été envoyée. Merci !")
         .color(serenity::Colour::from_rgb(70, 200, 120));
 
-    let reply = CreateReply{
-        embeds: vec![reply_embed],
+    let reply = CreateReply {
+        embeds: vec![reply_embed.clone()],
         ..Default::default()
     };
 
     let reply_handle = ctx.send(reply).await?;
-
-    // Delete the response after 60 seconds
     schedule_message_deletion(reply_handle, ctx).await?;
+
+    send_log(
+        &ctx,
+        format!("Input: {:?}", modal_data),
+        true,
+        "Confirmation envoyée à l'utilisateur".to_string(),
+    )
+    .await?;
 
     Ok(())
 }
