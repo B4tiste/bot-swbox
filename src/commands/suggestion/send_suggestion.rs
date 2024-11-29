@@ -55,7 +55,10 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, (), Error>) -> R
         ..Default::default()
     };
 
-    ctx.send(reply).await?;
+    let reply_handle = ctx.send(reply).await?;
+
+    // Delete the response after 60 seconds
+    schedule_message_deletion(reply_handle, ctx).await?;
 
     Ok(())
 }
