@@ -1,4 +1,8 @@
-use poise::{serenity_prelude::{self as serenity, Error}, CreateReply};
+use poise::{
+    serenity_prelude::{self as serenity, Error},
+    CreateReply,
+};
+use crate::commands::shared::logs::send_log;
 
 /// 📂 Affiche les commandes disponibles
 ///
@@ -14,27 +18,49 @@ pub async fn help(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), E
         .color(serenity::Colour::from_rgb(0, 255, 255))
         .thumbnail(thumbnail);
 
-    // Add a field for each command
     for command in &ctx.framework().options().commands {
-        let description = command.description.clone().unwrap_or("No description available".to_string());
+        let description = command
+            .description
+            .clone()
+            .unwrap_or("No description available".to_string());
         embed = embed.field(command.name.clone(), description, true);
     }
 
-    // Add a field that show the @ of the creators
     embed = embed.field("Créé par", "<@!191619427584835585> & <@!366631137562329091>", true);
 
-    // Add a field for the github link
-    embed = embed.field("Code source & Road Map du projet", "[bot-swbox](https://github.com/B4tiste/bot-swbox)", true);
+    embed = embed.field(
+        "Code source & Road Map du projet",
+        "[bot-swbox](https://github.com/B4tiste/bot-swbox)",
+        true,
+    );
 
     let reply = CreateReply {
-        embeds: vec![embed],
+        embeds: vec![embed.clone()],
         ..Default::default()
     };
 
-    // Attempt to send the reply, but handle errors gracefully
-    if ctx.send(reply).await.is_err() {
-        eprintln!("Failed to send help message");
+    let send_result = ctx.send(reply).await;
+
+    match send_result {
+        Ok(_) => {
+            send_log(
+                &ctx,
+                "Command: /help".to_string(),
+                true,
+                format!("Embed envoyé"),
+            )
+            .await?;
+        }
+        Err(err) => {
+            send_log(
+                &ctx,
+                "Command: /help".to_string(),
+                false,
+                format!("Erreur lors de l'envoi : {:?}", err),
+            )
+            .await?;
+        }
     }
 
-    Ok(()) // Return success
+    Ok(())
 }
