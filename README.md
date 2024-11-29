@@ -21,7 +21,6 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 - [ ] Refaire les commandes de suivi de compte pour afficher tous les pseudos liés à un compte
 - [ ] Ajouter le collage d'image pour la commande `get_duo_stats`
-- [ ] Ajouter une commande de proposition de fonctionnalité
 
 ### Terminé :
 
@@ -29,6 +28,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 - [x] Check si il y a un 2A dans la liste des monstres recherchés, si oui, le bot doit le choisir en priorité
 - [x] Ajouter le choix de choisir le numéro de saison pour les stats de monstre
 - [x] Ajouter une commande pour afficher les taux de victoire communs de deux monstres joués ensemble. Affiche aussi le taux de victoire de l'un contre l'autre.
+- [x] Ajouter une commande de proposition de fonctionnalité
 
 ---
 
