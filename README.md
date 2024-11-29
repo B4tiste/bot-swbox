@@ -10,6 +10,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 - **Informations sur les classements** : Consultez les classements et leurs détails.
 - **Statistiques de jeu** : Récupérez et affichez les statistiques des monstres pour différentes saisons.
 - **Statistiques de duo** : Affichez les taux de victoire communs de deux monstres joués ensemble.
+- **Proposition de fonctionnalité & BUG Report** : Proposez des fonctionnalités ou signalez des bugs directement au développeur.
 - **Menu d’aide** : Accédez facilement à la liste des commandes disponibles et leurs descriptions.
 
 ---
@@ -20,7 +21,6 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 - [ ] Refaire les commandes de suivi de compte pour afficher tous les pseudos liés à un compte
 - [ ] Ajouter le collage d'image pour la commande `get_duo_stats`
-- [ ] Ajouter une commande de proposition de fonctionnalité
 
 ### Terminé :
 
@@ -28,6 +28,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 - [x] Check si il y a un 2A dans la liste des monstres recherchés, si oui, le bot doit le choisir en priorité
 - [x] Ajouter le choix de choisir le numéro de saison pour les stats de monstre
 - [x] Ajouter une commande pour afficher les taux de victoire communs de deux monstres joués ensemble. Affiche aussi le taux de victoire de l'un contre l'autre.
+- [x] Ajouter une commande de proposition de fonctionnalité
 
 ---
 
@@ -78,6 +79,17 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 **Fonctionnalités** :
 - Priorise automatiquement les monstres 2A dans les recherches lorsque cela est applicable.
+
+---
+
+### `/send_suggestion`
+**Description** : Permet d'envoyer une suggestion de fonctionnalité ou de déclarer un BUG
+
+**Utilisation** :
+- `/send_suggestion` => Ouverture d'un formulaire pour saisir une suggestion.
+
+**Fonctionnalités** :
+- L'utilisateur peut fournir une image pour illustrer sa suggestion.
 
 ---
 
