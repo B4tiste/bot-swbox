@@ -20,6 +20,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 ### ToDo :
 
 - [ ] Ajouter le collage d'image pour la commande `get_duo_stats`
+- [ ] Passer sur la BDD de GodsArmy pour le /track des pseudos
 
 ### Terminé :
 
