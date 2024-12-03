@@ -6,6 +6,7 @@ use crate::commands::player_names::utils::{get_player_all_names, handle_modal, r
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
+use crate::commands::shared::logs::send_log;
 use poise::serenity_prelude::{CreateEmbed, Error};
 use poise::CreateReply;
 
@@ -34,10 +35,22 @@ pub async fn track_player_names(
         }
     };
 
+    let (input_data, _input_status) = match &modal_result {
+        Ok(Some(data)) => (format!("{:?}", data), true),
+        Ok(None) => ("Aucun input fourni".to_string(), false),
+        Err(_) => ("Erreur dans l'obtention du modal".to_string(), false),
+    };
+
     let player_id = match resolve_player_id(ctx, modal_result).await {
         Ok(Some(id)) => id,
-        Ok(None) => return Ok(()),
-        Err(_) => return Ok(()),
+        Ok(None) => {
+            send_log(&ctx, input_data, false, "Aucun ID trouvé").await?;
+            return Ok(());
+        }
+        Err(_) => {
+            send_log(&ctx, input_data, false, "Erreur lors de la résolution").await?;
+            return Ok(());
+        }
     };
 
     let player_all_names = get_player_all_names(player_id.clone()).await;
@@ -58,6 +71,8 @@ pub async fn track_player_names(
                 ..Default::default()
             };
             ctx.send(create_reply).await?;
+
+            send_log(&ctx, input_data, false, "Aucun nom trouvé").await?;
         }
         Ok(names) if names.len() == 1 => {
             let embed = CreateEmbed::default()
@@ -78,6 +93,8 @@ pub async fn track_player_names(
                 ..Default::default()
             };
             ctx.send(create_reply).await?;
+
+            send_log(&ctx, input_data, true, format!("Nom trouvé: {}", names[0].clone())).await?;
         }
         Ok(names) => {
             let formatted_names = names
@@ -104,6 +121,14 @@ pub async fn track_player_names(
                 ..Default::default()
             };
             ctx.send(create_reply).await?;
+
+            send_log(
+                &ctx,
+                input_data,
+                true,
+                format!("Noms trouvés : {}", names.join(", ")),
+            )
+            .await?;
         }
 
         Err(_) => {
@@ -111,6 +136,13 @@ pub async fn track_player_names(
                 create_embed_error("Erreur lors de la récupération des noms d'utilisateur.");
             let reply = ctx.send(embed).await?;
             schedule_message_deletion(reply, ctx).await?;
+
+            send_log(
+                &ctx,
+                input_data,
+                false,
+                "Erreur lors de la récupération des noms d'utilisateur.",
+            ).await?;
         }
     }
 

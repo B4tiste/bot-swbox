@@ -4,6 +4,7 @@ pub enum PlayerNamesModalData {
     Id,
 }
 
+#[derive(Debug, Clone)]
 pub struct PlayerSearchInput {
     pub id: Option<String>,
     pub name: Option<String>,
