@@ -10,7 +10,7 @@ use crate::commands::shared::logs::send_log;
 use poise::serenity_prelude::{CreateEmbed, Error};
 use poise::CreateReply;
 
-/// 📂 Affiche les différents noms d'utilisateurs que ce joueur a pu avoir.
+/// 📂 Affiche les différents noms d'utilisateurs que ce joueur a pu avoir (Profil SWARENA requis).
 ///
 /// Usage: /track_player_names
 #[poise::command(slash_command)]

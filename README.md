@@ -19,8 +19,9 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 ### ToDo :
 
-- [ ] Refaire les commandes de suivi de compte pour afficher tous les pseudos liés à un compte
-- [ ] Ajouter le collage d'image pour la commande `get_duo_stats`
+- [ ] Passer sur la BDD de GodsArmy pour le /track des pseudos
+- [ ] Ajouter la photo actuelle du joueur dans le thumbnail du /track
+- [ ] Passer le bot en anglais
 
 ### Terminé :
 
@@ -29,6 +30,8 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 - [x] Ajouter le choix de choisir le numéro de saison pour les stats de monstre
 - [x] Ajouter une commande pour afficher les taux de victoire communs de deux monstres joués ensemble. Affiche aussi le taux de victoire de l'un contre l'autre.
 - [x] Ajouter une commande de proposition de fonctionnalité
+- [x] Refaire les commandes de suivi de compte pour afficher tous les pseudos liés à un compte
+- [x] Ajouter le collage d'image pour la commande `get_duo_stats`
 
 ---
 
@@ -79,6 +82,14 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 **Fonctionnalités** :
 - Priorise automatiquement les monstres 2A dans les recherches lorsque cela est applicable.
+
+---
+
+### `/track_player_names`
+**Description** : Affiche les différents noms d'utilisateurs que ce joueur a pu avoir. Recherche possible avec l'ID ou le pseudo d'un compte (Le joueur doit exister sur SWARENA)
+
+**Utilisation** :
+- `/track_player_names` => Ouverture d'un formulaire pour saisir le nom ou l'ID du joueur.
 
 ---
 
