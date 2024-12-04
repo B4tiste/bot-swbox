@@ -2575,8 +2575,8 @@ name = "shuttle-bot-swbox-rust"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "image",
  "futures",
+ "image",
  "lazy_static",
  "log",
  "poise",

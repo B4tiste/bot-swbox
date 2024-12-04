@@ -19,7 +19,6 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 ### ToDo :
 
-- [ ] Ajouter le collage d'image pour la commande `get_duo_stats`
 - [ ] Passer sur la BDD de GodsArmy pour le /track des pseudos
 - [ ] Passer le bot en anglais
 
@@ -31,6 +30,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 - [x] Ajouter une commande pour afficher les taux de victoire communs de deux monstres joués ensemble. Affiche aussi le taux de victoire de l'un contre l'autre.
 - [x] Ajouter une commande de proposition de fonctionnalité
 - [x] Refaire les commandes de suivi de compte pour afficher tous les pseudos liés à un compte
+- [x] Ajouter le collage d'image pour la commande `get_duo_stats`
 
 ---
 
