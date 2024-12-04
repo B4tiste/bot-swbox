@@ -714,6 +714,7 @@ checksum = "65bc07b1a8bc7c85c5f2e110c476c7389b4554ba72af57d8445ea63a576b0876"
 dependencies = [
  "futures-channel",
  "futures-core",
+ "futures-executor",
  "futures-io",
  "futures-sink",
  "futures-task",
@@ -2575,6 +2576,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "image",
+ "futures",
  "lazy_static",
  "log",
  "poise",
@@ -2584,7 +2586,6 @@ dependencies = [
  "shuttle-runtime",
  "shuttle-serenity",
  "tokio",
- "tracing",
 ]
 
 [[package]]
