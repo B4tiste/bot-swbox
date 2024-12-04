@@ -4,7 +4,7 @@ use poise::{
     CreateReply,
 };
 
-use crate::GUARDIAN_EMOJI_ID;
+use crate::{commands::shared::logs::send_log, GUARDIAN_EMOJI_ID};
 use crate::commands::shared::utils::{get_season, get_monster_general_info, get_monster_slug};
 use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
 use crate::commands::mob_stats::utils::get_monster_rta_info;
@@ -17,24 +17,36 @@ use crate::commands::mob_stats::modal::MobStatsInfosModal;
 /// Usage: `/get_mob_stats`
 #[poise::command(slash_command)]
 pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
-    let modal_data: MobStatsInfosModal = match MobStatsInfosModal::execute(ctx).await {
+    let modal_result = MobStatsInfosModal::execute(ctx).await;
+    
+    let (input_data, _input_status) = match &modal_result {
+        Ok(Some(data)) => (format!("{:?}", data), true),
+        Ok(None) => ("Aucun input fourni".to_string(), false),
+        Err(_) => ("Erreur dans l'exécution du modal".to_string(), false),
+    };
+
+    let modal_data = match modal_result {
         Ok(Some(data)) => data,
-        Ok(None) => return Ok(()),
+        Ok(None) => {
+            send_log(&ctx, input_data, false, "Modal annulé").await?;
+            return Ok(());
+        }
         Err(_) => {
             let error_message = "Erreur lors de l'exécution du modal.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
+            send_log(&ctx, input_data, false, "Erreur dans le modal").await?;
             return Ok(());
         }
     };
 
-    //Récupération des informations du monstre avec gestion des erreurs
-    let monster_slug = match get_monster_slug(modal_data.name).await {
+    let monster_slug = match get_monster_slug(modal_data.name.clone()).await {
         Ok(slug) => slug,
         Err(_) => {
             let error_message = "Monstre introuvable.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
+            send_log(&ctx, input_data, false, "Monstre introuvable").await?;
             return Ok(());
         }
     };
@@ -45,6 +57,13 @@ pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
             let error_message = "Impossible de récupérer les informations générales du monstre.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
+            send_log(
+                &ctx,
+                input_data,
+                false,
+                "Informations générales introuvables",
+            )
+            .await?;
             return Ok(());
         }
     };
@@ -55,6 +74,7 @@ pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
             let error_message = "Impossible de récupérer la saison.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
+            send_log(&ctx, input_data, false, "Saison introuvable").await?;
             return Ok(());
         }
     };
@@ -65,6 +85,13 @@ pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
             let error_message = "Impossible de récupérer les informations RTA (No G3).";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
+            send_log(
+                &ctx,
+                input_data,
+                false,
+                "Stats RTA (No G3) introuvables",
+            )
+            .await?;
             return Ok(());
         }
     };
@@ -75,6 +102,13 @@ pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
             let error_message = "Impossible de récupérer les informations RTA (G3).";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
+            send_log(
+                &ctx,
+                input_data,
+                false,
+                "Stats RTA (G3) introuvables",
+            )
+            .await?;
             return Ok(());
         }
     };
@@ -99,11 +133,18 @@ pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
         .field("Lead rate", format!("{:.2}% ({})", monster_rta_info_g3.lead_rate, monster_rta_info_g3.leader), true);
 
     let reply = CreateReply {
-        embeds: vec![embed],
+        embeds: vec![embed.clone()],
         ..Default::default()
     };
-
     ctx.send(reply).await?;
+
+    send_log(
+        &ctx,
+        input_data,
+        true,
+        format!("Stats envoyées avec succès pour le monstre {}", monster_slug.name),
+    )
+    .await?;
 
     Ok(())
 }

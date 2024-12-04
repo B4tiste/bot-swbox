@@ -7,8 +7,6 @@ use shuttle_serenity::ShuttleSerenity;
 use lazy_static::lazy_static;
 use std::sync::Arc;
 use std::sync::Mutex;
-use poise::serenity_prelude as serenity;
-use serenity::model::id::ChannelId;
 
 use crate::commands::ranks::get_ranks::get_ranks;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
@@ -18,6 +16,7 @@ use crate::commands::player_names::track_player_names::track_player_names;
 use crate::commands::suggestion::send_suggestion::send_suggestion;
 
 lazy_static! {
+    static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
     static ref GUARDIAN_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     static ref PUNISHER_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     static ref CONQUEROR_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
@@ -41,24 +40,27 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         .get("CONQUEROR_EMOJI_ID")
         .context("'CONQUEROR_EMOJI_ID' was not found")?;
 
+    let log_channel_id = secret_store
+        .get("LOG_CHANNEL_ID")
+        .context("'LOG_CHANNEL_ID' was not found")?
+        .parse::<u64>()
+        .context("'LOG_CHANNEL_ID' is not a valid number")?;
+
     *GUARDIAN_EMOJI_ID.lock().unwrap() = guardian_emoji_id;
     *PUNISHER_EMOJI_ID.lock().unwrap() = punisher_emoji_id;
     *CONQUEROR_EMOJI_ID.lock().unwrap() = conqueror_emoji_id;
+    *LOG_CHANNEL_ID.lock().unwrap() = log_channel_id;
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![get_ranks(), get_mob_stats(), help(), get_duo_stats(), send_suggestion(), track_player_names()],
-            pre_command: |ctx| {
-                Box::pin(async move {
-                    let channel_id = ChannelId::new(1311708133621633044);
-                    let user_name = &ctx.author().name;
-                    let command_name = &ctx.command().name;
-                    let message = format!("User **{}** executed command `{}`", user_name, command_name);
-                    if let Err(why) = channel_id.say(&ctx.serenity_context().http, message).await {
-                        println!("Error sending message: {:?}", why);
-                    }
-                })
-            },
+            commands: vec![
+                get_ranks(),
+                get_mob_stats(),
+                help(),
+                get_duo_stats(),
+                send_suggestion(),
+                track_player_names(),
+            ],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
