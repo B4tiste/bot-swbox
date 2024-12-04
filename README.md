@@ -20,6 +20,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 ### ToDo :
 
 - [ ] Passer sur la BDD de GodsArmy pour le /track des pseudos
+- [ ] Ajouter la photo actuelle du joueur dans le thumbnail du /track
 - [ ] Passer le bot en anglais
 
 ### Terminé :
