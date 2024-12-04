@@ -86,7 +86,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 ---
 
 ### `/track_player_names`
-**Description** : Affiche les différents noms d'utilisateurs que ce joueur a pu avoir. Recherche possible avec l'ID ou le pseudo d'un compte (Données : SWARENA)
+**Description** : Affiche les différents noms d'utilisateurs que ce joueur a pu avoir. Recherche possible avec l'ID ou le pseudo d'un compte (Le joueur doit exister sur SWARENA)
 
 **Utilisation** :
 - `/track_player_names` => Ouverture d'un formulaire pour saisir le nom ou l'ID du joueur.
