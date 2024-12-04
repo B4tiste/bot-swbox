@@ -6,7 +6,7 @@ use poise::{
 
 use crate::commands::shared::utils::{get_season, get_monster_general_info, get_monster_slug};
 use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
-use crate::commands::duo_stats::utils::get_monsters_duo_stats;
+use crate::commands::duo_stats::utils::{get_monsters_duo_stats, create_collage_from_urls};
 use crate::commands::duo_stats::modal::DuoStatsInfosModal;
 
 /// 📂 Affiche le winrate d'affrontement ou de coopération de deux monstres donnés
@@ -99,8 +99,31 @@ pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
         }
     };
 
-    let thumbnail = format!("https://swarfarm.com/static/herders/images/monsters/{}", monster_1_general_info.image_filename);
+    let bdd_channel_id = serenity::ChannelId::new(1312040599263907840);
 
+    // Créer un collage avec les images des deux monstres
+    let image_urls: Vec<String> = vec![
+        format!("https://swarfarm.com/static/herders/images/monsters/{}", monster_1_general_info.image_filename),
+        format!("https://swarfarm.com/static/herders/images/monsters/{}", monster_duo_stats.b_monster_image_filename),
+    ];
+    let image_urls: Vec<&str> = image_urls.iter().map(|s| s.as_str()).collect();
+
+    if let Err(_) = create_collage_from_urls(image_urls, "collage.png").await {
+        let error_message = "Impossible de créer le collage.";
+        let reply = ctx.send(create_embed_error(&error_message)).await?;
+        schedule_message_deletion(reply, ctx).await?;
+        return Ok(());
+    }
+
+    // Envoie du collage dans le channel BDD
+    let attachment = serenity::CreateAttachment::path("collage.png").await?;
+    let reply_handle = bdd_channel_id
+        .send_message(&ctx.http(), serenity::CreateMessage::new().add_file(attachment))
+        .await?;
+    // Récupérer l'URL de l'attachement dans le message envoyé
+    let attachment_url = reply_handle.attachments[0].url.clone();
+
+    // Calcul des winrates en f32
     let with_rate_str = monster_duo_stats.win_together_rate.trim_matches('"');
     let with_winrate: f32 = with_rate_str.parse::<f32>().unwrap();
 
@@ -109,12 +132,10 @@ pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
 
     let embed = CreateEmbed::default()
         .title(format!("{} & {}", monster_1_slug.name, monster_2_slug.name))
-        .color(serenity::Colour::from_rgb(30, 144, 255))
-        .thumbnail(thumbnail)
+        .thumbnail(attachment_url)
         .field(format!("WR {} avec {}", monster_1_slug.name, monster_2_slug.name), format!("{}%", with_winrate), false)
         .field(format!("WR {} contre {}", monster_1_slug.name, monster_2_slug.name), format!("{}%", against_winrate), false)
-        .field("WR 🔄", format!("{}%", 100.0 - against_winrate), false)
-        .image(format!("https://swarfarm.com/static/herders/images/monsters/{}", monster_duo_stats.b_monster_image_filename));
+        .field("WR 🔄", format!("{}%", 100.0 - against_winrate), false);
 
         let reply = CreateReply {
             embeds: vec![embed],
@@ -122,6 +143,9 @@ pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
         };
 
         ctx.send(reply).await?;
+
+    // Suppression du collage
+    let _ = std::fs::remove_file("collage.png");
 
     Ok(())
 }
