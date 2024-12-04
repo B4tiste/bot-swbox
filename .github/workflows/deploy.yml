@@ -23,3 +23,4 @@ jobs:
             GUARDIAN_EMOJI_ID = '${{ secrets.GUARDIAN_EMOJI_ID }}'
             PUNISHER_EMOJI_ID = '${{ secrets.PUNISHER_EMOJI_ID }}'
             CONQUEROR_EMOJI_ID = '${{ secrets.CONQUEROR_EMOJI_ID }}'
+            LOG_CHANNEL_ID = '${{ secrets.LOG_CHANNEL_ID }}'
