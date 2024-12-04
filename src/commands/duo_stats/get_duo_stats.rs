@@ -144,5 +144,8 @@ pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Res
 
         ctx.send(reply).await?;
 
+    // Suppression du collage
+    let _ = std::fs::remove_file("collage.png");
+
     Ok(())
 }
