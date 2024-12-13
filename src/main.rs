@@ -6,10 +6,8 @@ use mongodb::{bson::doc, options::{ClientOptions, ServerApi, ServerApiVersion}, 
 use poise::serenity_prelude::{ClientBuilder, GatewayIntents};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
-use tokio::time::sleep;
-use std::sync::Arc;
-use std::sync::Mutex;
-use tokio::time::Duration;
+use std::sync::{Arc, Mutex};
+use tokio::time::{sleep, Duration};
 
 use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
 use crate::commands::help::help::help;
