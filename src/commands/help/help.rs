@@ -2,7 +2,7 @@ use poise::{
     serenity_prelude::{self as serenity, Error},
     CreateReply,
 };
-use crate::commands::shared::logs::send_log;
+use crate::{commands::shared::logs::send_log, Data};
 
 /// 📂 Affiche les commandes disponibles
 ///
@@ -10,7 +10,7 @@ use crate::commands::shared::logs::send_log;
 ///
 /// Usage: `/help`
 #[poise::command(slash_command)]
-pub async fn help(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
+pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
     let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
 
     let mut embed = serenity::CreateEmbed::default()

@@ -1,10 +1,10 @@
 use poise::serenity_prelude::{ChannelId, CreateEmbed, CreateMessage, Error};
 use std::fmt::Debug;
 
-use crate::LOG_CHANNEL_ID;
+use crate::{Data, LOG_CHANNEL_ID};
 
 pub async fn send_log<T: Debug, G: Debug>(
-    ctx: &poise::ApplicationContext<'_, (), Error>,
+    ctx: &poise::ApplicationContext<'_, Data, Error>,
     user_input: T,
     response_state: bool,
     response_output: G,

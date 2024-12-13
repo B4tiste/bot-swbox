@@ -2,14 +2,14 @@ use poise::serenity_prelude::Error;
 use poise::Modal;
 use futures::future;
 
-use crate::commands::shared::embed_error_handling::{
+use crate::{commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
-};
+}, Data};
 
 use super::models::PlayerSearchInput;
 
 pub async fn handle_modal<M, F>(
-    ctx: poise::ApplicationContext<'_, (), Error>,
+    ctx: poise::ApplicationContext<'_, Data, Error>,
     transform: F,
 ) -> Result<Option<PlayerSearchInput>, Error>
 where
@@ -39,7 +39,7 @@ async fn get_player_id_by_name(name: String) -> Result<String, String> {
 }
 
 pub async fn resolve_player_id(
-    ctx: poise::ApplicationContext<'_, (), Error>,
+    ctx: poise::ApplicationContext<'_, Data, Error>,
     modal_result: Result<Option<PlayerSearchInput>, Error>,
 ) -> Result<Option<String>, Error> {
     match modal_result {

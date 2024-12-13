@@ -4,7 +4,7 @@ use poise::{
     CreateReply,
 };
 
-use crate::{commands::shared::logs::send_log, GUARDIAN_EMOJI_ID};
+use crate::{commands::shared::logs::send_log, Data, GUARDIAN_EMOJI_ID};
 use crate::commands::shared::utils::{get_season, get_monster_general_info, get_monster_slug};
 use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
 use crate::commands::mob_stats::utils::get_monster_rta_info;
@@ -16,7 +16,7 @@ use crate::commands::mob_stats::modal::MobStatsInfosModal;
 ///
 /// Usage: `/get_mob_stats`
 #[poise::command(slash_command)]
-pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
+pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
     let modal_result = MobStatsInfosModal::execute(ctx).await;
     
     let (input_data, _input_status) = match &modal_result {
