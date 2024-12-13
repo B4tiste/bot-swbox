@@ -3,7 +3,7 @@ use poise::{
     Modal, CreateReply,
 };
 
-use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
+use crate::{commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion}, Data};
 use crate::commands::suggestion::modal::SuggestionModal;
 use crate::commands::shared::logs::send_log;
 
@@ -13,7 +13,7 @@ use crate::commands::shared::logs::send_log;
 ///
 /// Usage: `/send_suggestion`
 #[poise::command(slash_command)]
-pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
+pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
     let modal_data: SuggestionModal = match SuggestionModal::execute(ctx).await {
         Ok(Some(data)) => data,
         Ok(None) => return Ok(()),

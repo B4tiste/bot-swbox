@@ -4,7 +4,7 @@ use poise::{
     CreateReply,
 };
 
-use crate::commands::shared::utils::{get_season, get_monster_general_info, get_monster_slug};
+use crate::{commands::shared::utils::{get_monster_general_info, get_monster_slug, get_season}, Data};
 use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
 use crate::commands::duo_stats::utils::{get_monsters_duo_stats, create_collage_from_urls};
 use crate::commands::duo_stats::modal::DuoStatsInfosModal;
@@ -16,7 +16,7 @@ use crate::commands::shared::logs::send_log;
 ///
 /// Usage: `/get_duo_stats`
 #[poise::command(slash_command)]
-pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
+pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
     let modal_data: DuoStatsInfosModal = match DuoStatsInfosModal::execute(ctx).await {
         Ok(Some(data)) => data,
         Ok(None) => return Ok(()),

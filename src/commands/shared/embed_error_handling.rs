@@ -4,6 +4,8 @@ use poise::{
 };
 use tokio::time::{sleep, Duration};
 
+use crate::Data;
+
 pub fn create_embed_error(error_message: &str) -> CreateReply {
     let embed: CreateEmbed = CreateEmbed::default()
         .title("Erreur")
@@ -19,7 +21,7 @@ pub fn create_embed_error(error_message: &str) -> CreateReply {
 
 pub async fn schedule_message_deletion(
     sent_message: ReplyHandle<'_>,
-    ctx: poise::ApplicationContext<'_, (), Error>,
+    ctx: poise::ApplicationContext<'_, Data, Error>,
 ) -> Result<(), Error> {
     sleep(Duration::from_secs(60)).await;
     if let Ok(sent_msg) = sent_message.message().await {

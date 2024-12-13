@@ -3,7 +3,7 @@ use poise::{
     serenity_prelude::{self as serenity, Error},
     CreateReply,
 };
-use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
+use crate::{commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion}, Data};
 use crate::commands::ranks::utils::info_rank_sw;
 use crate::commands::shared::logs::send_log;
 /// 📂 Affiche les montants de points des rangs (C1 -> G3)
@@ -12,7 +12,7 @@ use crate::commands::shared::logs::send_log;
 ///
 /// Usage: `/ranks`
 #[poise::command(slash_command)]
-pub async fn get_ranks(ctx: poise::ApplicationContext<'_, (), Error>) -> Result<(), Error> {
+pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
     let scores = match info_rank_sw().await {
         Ok(scores) => scores,
         Err(_) => {

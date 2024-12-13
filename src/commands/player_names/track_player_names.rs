@@ -7,6 +7,7 @@ use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
 use crate::commands::shared::logs::send_log;
+use crate::Data;
 use poise::serenity_prelude::{CreateEmbed, Error};
 use poise::CreateReply;
 
@@ -15,7 +16,7 @@ use poise::CreateReply;
 /// Usage: /track_player_names
 #[poise::command(slash_command)]
 pub async fn track_player_names(
-    ctx: poise::ApplicationContext<'_, (), Error>,
+    ctx: poise::ApplicationContext<'_, Data, Error>,
     #[description = "Sélectionnez le moyen de recherche"] mode: PlayerNamesModalData,
 ) -> Result<(), Error> {
     let modal_result = match mode {
