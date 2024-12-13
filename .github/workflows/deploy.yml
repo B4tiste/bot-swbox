@@ -24,3 +24,4 @@ jobs:
             PUNISHER_EMOJI_ID = '${{ secrets.PUNISHER_EMOJI_ID }}'
             CONQUEROR_EMOJI_ID = '${{ secrets.CONQUEROR_EMOJI_ID }}'
             LOG_CHANNEL_ID = '${{ secrets.LOG_CHANNEL_ID }}'
+            MONGODB_URI = '${{ secrets.MONGODB_URI }}'
