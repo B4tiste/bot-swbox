@@ -6,8 +6,10 @@ use mongodb::{bson::doc, options::{ClientOptions, ServerApi, ServerApiVersion}, 
 use poise::serenity_prelude::{ClientBuilder, GatewayIntents};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
+use tokio::time::sleep;
 use std::sync::Arc;
 use std::sync::Mutex;
+use tokio::time::Duration;
 
 use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
 use crate::commands::help::help::help;
@@ -26,7 +28,6 @@ lazy_static! {
 pub struct Data {
     pub mongo_client: Client,
 }
-
 
 #[shuttle_runtime::main]
 async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
@@ -88,10 +89,26 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         })
         .build();
 
+        
     let client = ClientBuilder::new(discord_token, GatewayIntents::non_privileged())
         .framework(framework)
         .await
         .map_err(shuttle_runtime::CustomError::new)?;
 
+    tokio::spawn(async move {
+        loop {
+            todo!();
+            // exemple avec une fonction :
+            // match check_and_update_db(&mongo_client_clone, &riot_api_key_clone, http.clone()).await
+            // {
+            //     Ok(_) => (),
+            //     Err(e) => log::error!(
+            //         "Erreur lors de la vérification de la base de données : {:?}",
+            //         e
+            //     ),
+            // }
+            sleep(Duration::from_secs(120)).await;
+        }
+    });
     Ok(client.into())
 }
