@@ -20,9 +20,11 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 ### ToDo :
 
 - [ ] Ajouter l'id du message de réponse dans le log
+- [ ] Refaire la commande RANKS pour intégrer un système de prédiction des cutoff
 - [ ] Passer sur la BDD de GodsArmy pour le /track des pseudos
 - [ ] Ajouter la photo actuelle du joueur dans le thumbnail du /track
 - [ ] Passer le bot en anglais
+- [ ] Ajouter une commande pour le nombre de games sur les dernières saisons
 
 ### Terminé :
 
