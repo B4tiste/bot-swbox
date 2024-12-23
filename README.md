@@ -19,6 +19,7 @@ Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste 
 
 ### ToDo :
 
+- [ ] Dans la commande `/get_ranks`, ajouter les montants des jours précédents, (ex: +10 places depuis hier, +20 depuis une semaine), et le temps restants avant la fin de la saison. Possibilité de faire un graphique pour montrer l'évolution du classement, avec une prédiction en fonction de la tendance.
 - [ ] Ajouter l'id du message de réponse dans le log
 - [ ] Passer sur la BDD de GodsArmy pour le /track des pseudos
 - [ ] Ajouter la photo actuelle du joueur dans le thumbnail du /track
