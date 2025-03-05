@@ -7,7 +7,7 @@ use poise::serenity_prelude::{ClientBuilder, GatewayIntents};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use std::sync::{Arc, Mutex};
-use tokio::time::{sleep, Duration};
+// use tokio::time::{sleep, Duration};
 
 use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
 use crate::commands::help::help::help;
@@ -87,7 +87,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         })
         .build();
 
-        
+
     let client = ClientBuilder::new(discord_token, GatewayIntents::non_privileged())
         .framework(framework)
         .await
@@ -105,7 +105,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
             //         e
             //     ),
             // }
-            sleep(Duration::from_secs(120)).await;
+            // sleep(Duration::from_secs(120)).await;
         }
     });
     Ok(client.into())
