@@ -56,7 +56,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     *CONQUEROR_EMOJI_ID.lock().unwrap() = conqueror_emoji_id;
     *LOG_CHANNEL_ID.lock().unwrap() = log_channel_id;
 
-    let mongodb_uri = secret_store
+    /*let mongodb_uri = secret_store
         .get("MONGODB_URI")
         .ok_or_else(|| anyhow::anyhow!("'MONGODB_URI' was not found"))?;
     let mut client_options = ClientOptions::parse(&mongodb_uri)
@@ -64,7 +64,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         .expect("Failed to parse MongoDB URI");
     let server_api = ServerApi::builder().version(ServerApiVersion::V1).build();
     client_options.server_api = Some(server_api);
-    let mongo_client = Client::with_options(client_options).expect("Failed to create MongoDB client");
+    let mongo_client = Client::with_options(client_options).expect("Failed to create MongoDB client");*/
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -93,7 +93,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         .await
         .map_err(shuttle_runtime::CustomError::new)?;
 
-    tokio::spawn(async move {
+    /*tokio::spawn(async move {
         loop {
             todo!();
             // exemple avec une fonction :
@@ -107,6 +107,6 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
             // }
             // sleep(Duration::from_secs(120)).await;
         }
-    });
+    });*/
     Ok(client.into())
 }
