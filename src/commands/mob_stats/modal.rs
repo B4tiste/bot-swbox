@@ -7,6 +7,6 @@ pub struct MobStatsInfosModal {
     #[placeholder = "Entrez le nom du monstre (ex: Bella)"]
     pub name: String,
     #[name = "Saison (Optionnel)"]
-    #[placeholder = "Entrez la saison (ex: 31)"]
+    #[placeholder = "Entrez la saison (ex: 32)"]
     pub season: Option<String>,
 }
