@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
 use crate::commands::help::help::help;
+use crate::commands::json::upload_json::upload_json;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
 use crate::commands::player_names::track_player_names::track_player_names;
 use crate::commands::ranks::get_ranks::get_ranks;
@@ -62,6 +63,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 get_duo_stats(),
                 send_suggestion(),
                 track_player_names(),
+                upload_json(), // Add the new command here
             ],
             ..Default::default()
         })
