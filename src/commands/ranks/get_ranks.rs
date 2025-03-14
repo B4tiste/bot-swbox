@@ -36,7 +36,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
     let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
 
     // Construction de la description avec les en-têtes de groupe
-    let groups = ["Conquerant", "Punisher", "Guardien"];
+    let groups = ["Conquerant", "Punisher", "Gardien"];
     let mut description = String::new();
 
     for (i, group) in groups.iter().enumerate() {
