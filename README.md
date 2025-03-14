@@ -145,4 +145,4 @@ If you wish to contribute to this project, please contact B4tiste on Discord (ta
 
 ## Bot Images
 
-![alt text](Images/Image1.png)
+![alt text](Images/image.png)
