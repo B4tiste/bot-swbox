@@ -1,127 +1,149 @@
 # bot-swbox
 
-## Aperçu
-`bot-swbox` est un bot Discord développé en Rust conçu pour améliorer l’expérience des utilisateurs en fournissant diverses commandes permettant d’afficher des statistiques de jeu et des données de classement. Le bot est conçu pour les joueurs de Summoners War.
+## Overview
 
-Pour utiliser le bot, ajoutez-le à votre serveur Discord en contactant B4tiste sur Discord (tag : b4tiste).
+`bot-swbox` is a Discord bot developed in Rust designed to enhance user experience by providing various commands to display game statistics and ranking data. The bot is designed for Summoners War players.
 
-## Fonctionnalités
-- **Commandes interactives** : Utilisez une série de commandes slash pour accéder aux fonctionnalités du bot.
-- **Informations sur les classements** : Consultez les classements et leurs détails.
-- **Statistiques de jeu** : Récupérez et affichez les statistiques des monstres pour différentes saisons.
-- **Statistiques de duo** : Affichez les taux de victoire communs de deux monstres joués ensemble.
-- **Proposition de fonctionnalité & BUG Report** : Proposez des fonctionnalités ou signalez des bugs directement au développeur.
-- **Menu d’aide** : Accédez facilement à la liste des commandes disponibles et leurs descriptions.
+To use the bot, add it to your Discord server by contacting B4tiste on Discord (tag: b4tiste).
 
----
+## Features
 
-## Roadmap des fonctionnalités
-
-### ToDo :
-
-- [ ] Dans la commande `/get_ranks`, ajouter les montants des jours précédents, (ex: +10 places depuis hier, +20 depuis une semaine), et le temps restants avant la fin de la saison. Possibilité de faire un graphique pour montrer l'évolution du classement, avec une prédiction en fonction de la tendance.
-- [ ] Ajouter l'id du message de réponse dans le log
-- [ ] Passer sur la BDD de GodsArmy pour le /track des pseudos
-- [ ] Ajouter la photo actuelle du joueur dans le thumbnail du /track
-- [ ] Passer le bot en anglais
-- [ ] Ajouter une commande pour le nombre de games sur les dernières saisons
-
-### Terminé :
-
-- [x] Ajouter la commande /help
-- [x] Check si il y a un 2A dans la liste des monstres recherchés, si oui, le bot doit le choisir en priorité
-- [x] Ajouter le choix de choisir le numéro de saison pour les stats de monstre
-- [x] Ajouter une commande pour afficher les taux de victoire communs de deux monstres joués ensemble. Affiche aussi le taux de victoire de l'un contre l'autre.
-- [x] Ajouter une commande de proposition de fonctionnalité
-- [x] Refaire les commandes de suivi de compte pour afficher tous les pseudos liés à un compte
-- [x] Ajouter le collage d'image pour la commande `get_duo_stats`
+-   **Interactive Commands**: Use a series of slash commands to access the bot's features.
+-   **Ranking Information**: View rankings and their details.
+-   **Game Statistics**: Retrieve and display monster statistics for different seasons.
+-   **Duo Statistics**: Display common win rates of two monsters played together.
+-   **Feature Suggestion & BUG Report**: Suggest features or report bugs directly to the developer.
+-   **Help Menu**: Easily access the list of available commands and their descriptions.
 
 ---
 
-## Guide utilisateur
+## Feature Roadmap
+
+### ToDo:
+
+-   [ ] In the `/get_ranks` command, add the amounts from previous days (e.g., +10 places since yesterday, +20 since a week ago), and the remaining time before the end of the season. Possibility to create a graph to show ranking evolution, with a prediction based on the trend.
+-   [ ] Add the response message ID in the log.
+-   [ ] Switch to the GodsArmy database for the /track of usernames.
+-   [ ] Add the current player's photo in the thumbnail of the /track.
+-   [ ] Translate the bot to English.
+-   [ ] Add a command for the number of games in the last seasons.
+
+### Completed:
+
+-   [x] Add the /help command.
+-   [x] Check if there is a 2A in the list of searched monsters, if so, the bot should prioritize it.
+-   [x] Add the option to choose the season number for monster stats.
+-   [x] Add a command to display the common win rates of two monsters played together. Also displays the win rate of one against the other.
+-   [x] Add a feature suggestion command.
+-   [x] Redo the account tracking commands to display all usernames linked to an account.
+-   [x] Add image embedding for the `get_duo_stats` command.
+
+---
+
+## User Guide
 
 ### `/help`
-**Description** : Affiche les commandes disponibles et leurs descriptions.
 
-**Utilisation** :
-- Tapez `/help` dans le chat Discord pour afficher la liste de toutes les commandes supportées.
+**Description**: Displays the available commands and their descriptions.
 
-**Résultat** :
-- Un message intégré (embed) bien formaté avec :
-  - Une liste des commandes avec leurs descriptions.
-  - Les détails des créateurs.
-  - Un lien vers le code source et la roadmap du projet.
+**Usage**:
+
+-   Type `/help` in the Discord chat to display the list of all supported commands.
+
+**Result**:
+
+-   A well-formatted embedded message with:
+    -   A list of commands with their descriptions.
+    -   Creator details.
+    -   A link to the source code and project roadmap.
 
 ---
 
 ### `/get_ranks`
-**Description** : Affiche les informations détaillées des classements actuels de RTA.
 
-**Utilisation** :
-- `/get_ranks`
+**Description**: Displays detailed information about the current RTA rankings.
 
-**Résultat** :
-- Présente les données des classements dans un format facile à lire.
+**Usage**:
+
+-   `/get_ranks`
+
+**Result**:
+
+-   Presents ranking data in an easy-to-read format.
 
 ---
 
 ### `/get_mob_stats`
-**Description** : Récupère les statistiques des monstres, avec une option pour spécifier la saison.
 
-**Utilisation** :
-- `/get_mob_stats` => Ouverture d'un formulaire pour saisir le nom du monstre et la saison (optionnel).
+**Description**: Retrieves monster statistics, with an option to specify the season.
 
-**Fonctionnalités** :
-- Priorise automatiquement les monstres 2A dans les recherches lorsque cela est applicable.
-- Permet de récupérer des données spécifiques à une saison.
+**Usage**:
+
+-   `/get_mob_stats` => Opens a form to enter the monster name and season (optional).
+
+**Features**:
+
+-   Automatically prioritizes 2A monsters in searches when applicable.
+-   Allows retrieving season-specific data.
 
 ---
 
 ### `/get_duo_stats`
-**Description** : Affiche le winrate d'affrontement ou de coopération de deux monstres donnés.
 
-**Utilisation** :
-- `/get_duo_stats` => Ouverture d'un formulaire pour saisir les noms des deux monstres.
+**Description**: Displays the win rate of two given monsters either in confrontation or cooperation.
 
-**Fonctionnalités** :
-- Priorise automatiquement les monstres 2A dans les recherches lorsque cela est applicable.
+**Usage**:
+
+-   `/get_duo_stats` => Opens a form to enter the names of the two monsters.
+
+**Features**:
+
+-   Automatically prioritizes 2A monsters in searches when applicable.
 
 ---
 
 ### `/track_player_names`
-**Description** : Affiche les différents noms d'utilisateurs que ce joueur a pu avoir. Recherche possible avec l'ID ou le pseudo d'un compte (Le joueur doit exister sur SWARENA)
 
-**Utilisation** :
-- `/track_player_names` => Ouverture d'un formulaire pour saisir le nom ou l'ID du joueur.
+**Description**: Displays the different usernames that this player may have had. Searchable by ID or account username (The player must exist on SWARENA).
+
+**Usage**:
+
+-   `/track_player_names` => Opens a form to enter the player's name or ID.
 
 ---
 
 ### `/send_suggestion`
-**Description** : Permet d'envoyer une suggestion de fonctionnalité ou de déclarer un BUG
 
-**Utilisation** :
-- `/send_suggestion` => Ouverture d'un formulaire pour saisir une suggestion.
+**Description**: Allows sending a feature suggestion or reporting a BUG.
 
-**Fonctionnalités** :
-- L'utilisateur peut fournir une image pour illustrer sa suggestion.
+**Usage**:
+
+-   `/send_suggestion` => Opens a form to enter a suggestion.
+
+**Features**:
+
+-   The user can provide an image to illustrate their suggestion.
 
 ---
 
 ## Contributions
-Ce projet est maintenu et développé par :
-- [B4tiste](https://github.com/B4tiste)
-- [shvvkz](https://github.com/shvvkz)
 
-Les données proviennent de :
-- [SWARENA](https://swarena.gg/) développé par [Relisora](https://github.com/relisora)
-- [SWARFARM](https://swarfarm.com/)
-- [SWRT](https://m.swranking.com/)
+This project is maintained and developed by:
 
-Si vous souhaitez contribuer à ce projet, veuillez contacter B4tiste sur Discord (tag : b4tiste)
+-   [B4tiste](https://github.com/B4tiste)
+-   [shvvkz](https://github.com/shvvkz)
+
+Data is sourced from:
+
+-   [SWARENA](https://swarena.gg/) developed by [Relisora](https://github.com/relisora)
+-   [SWARFARM](https://swarfarm.com/)
+-   [SWRT](https://m.swranking.com/)
+
+If you wish to contribute to this project, please contact B4tiste on Discord (tag: b4tiste).
 
 ---
 
-## Images du bot
+## Bot Images
 
 ![alt text](Images/image.png)
 ![alt text](Images/image-1.png)
