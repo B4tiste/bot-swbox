@@ -36,6 +36,12 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
         true,
     );
 
+    embed = embed.field(
+        "My other project : BP Archive",
+        "[bp-archive](https://bp-archive.netlify.app/)",
+        true,
+    );
+
     let reply = CreateReply {
         embeds: vec![embed.clone()],
         ..Default::default()
