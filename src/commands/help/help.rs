@@ -37,8 +37,8 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
     );
 
     embed = embed.field(
-        "My other project : BP Archive",
-        "[bp-archive](https://bp-archive.netlify.app/)",
+        "My other project",
+        "[BP Archive](https://bp-archive.netlify.app/)",
         true,
     );
 
