@@ -25,11 +25,11 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 -   [ ] Add the response message ID in the log.
 -   [ ] Switch to the GodsArmy database for the /track of usernames.
 -   [ ] Add the current player's photo in the thumbnail of the /track.
--   [ ] Translate the bot to English.
 -   [ ] Add a command for the number of games in the last seasons.
 
 ### Completed:
 
+-   [x] Translate the bot to English.
 -   [x] Add the /help command.
 -   [x] Check if there is a 2A in the list of searched monsters, if so, the bot should prioritize it.
 -   [x] Add the option to choose the season number for monster stats.
