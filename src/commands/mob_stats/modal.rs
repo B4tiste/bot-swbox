@@ -1,12 +1,12 @@
 use poise::Modal;
 
 #[derive(Debug, Modal)]
-#[name = "Entrez le nom du monstre"]
+#[name = "Enter the monster's name"]
 pub struct MobStatsInfosModal {
-    #[name = "Nom du monstre"]
-    #[placeholder = "Entrez le nom du monstre (ex: Bella)"]
+    #[name = "Monster's name"]
+    #[placeholder = "Enter the monster's name (e.g., Bella)"]
     pub name: String,
-    #[name = "Saison (Optionnel)"]
-    #[placeholder = "Entrez la saison (ex: 32)"]
+    #[name = "Season (Optional)"]
+    #[placeholder = "Enter the season (e.g., 32)"]
     pub season: Option<String>,
 }

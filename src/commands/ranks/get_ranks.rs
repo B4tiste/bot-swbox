@@ -1,4 +1,4 @@
-use crate::commands::ranks::utils::info_rank_sw;
+use crate::commands::ranks::utils::get_rank_info;
 use crate::commands::shared::logs::send_log;
 use crate::{
     commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion},
@@ -9,17 +9,16 @@ use poise::{
     CreateReply,
 };
 use std::vec;
-/// 📂 Affiche les montants de points des rangs (C1 -> G3)
-///
-/// Displays the current scores for ranks.
+
+/// 📂 Displays the current scores for ranks (C1 -> G3)
 ///
 /// Usage: `/ranks`
 #[poise::command(slash_command)]
 pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
-    let scores = match info_rank_sw().await {
+    let scores = match get_rank_info().await {
         Ok(scores) => scores,
         Err(_) => {
-            let error_message = "Impossible de récupérer les informations des ELOs.";
+            let error_message = "Unable to retrieve ELO information.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
             send_log(
@@ -35,14 +34,14 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
 
     let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
 
-    // Construction de la description avec les en-têtes de groupe
-    let groups = ["Conquerant", "Punisher", "Gardien"];
+    // Constructing the description with group headers
+    let groups = ["Conqueror", "Punisher", "Guardian"];
     let mut description = String::new();
 
     for (i, group) in groups.iter().enumerate() {
-        // Ajout de l'en-tête du groupe en gras
+        // Adding the group header in bold
         description.push_str(&format!("{} :\n", group));
-        // Pour chaque groupe, on ajoute trois lignes "Rank : Score"
+        // For each group, add three lines "Rank : Score"
         for j in 0..3 {
             let index = i * 3 + j;
             let (rank, score) = &scores[index];
@@ -51,9 +50,9 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         description.push('\n');
     }
 
-    // Création de l'embed en utilisant la description
+    // Creating the embed using the description
     let embed = serenity::CreateEmbed::default()
-        .title("ELOs actuels")
+        .title("Current ELOs")
         .color(serenity::Colour::from_rgb(0, 0, 255))
         .thumbnail(thumbnail)
         .description(description);
@@ -69,7 +68,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         &ctx,
         "Command: /ranks".to_string(),
         true,
-        format!("Embed envoyé"),
+        format!("Embed sent"),
     )
     .await?;
 

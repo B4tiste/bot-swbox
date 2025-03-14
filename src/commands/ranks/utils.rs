@@ -1,5 +1,5 @@
+use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 use serde::Deserialize;
-use crate::{GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID, CONQUEROR_EMOJI_ID};
 
 #[derive(Deserialize)]
 struct ApiResponse {
@@ -24,17 +24,17 @@ struct RankInfo {
     score: i32,
 }
 
-pub async fn info_rank_sw() -> Result<Vec<(String, i32)>, String> {
+pub async fn get_rank_info() -> Result<Vec<(String, i32)>, String> {
     let url = "https://m.swranking.com/api/player/nowline";
     let response = match reqwest::get(url).await {
         Ok(response) => response,
-        Err(_) => return Err("Erreur lors de l'envoie de la requête.".into()),
+        Err(_) => return Err("Error sending the request.".into()),
     };
 
     if response.status().is_success() {
         let api_response: ApiResponse = match response.json().await {
             Ok(api_response) => api_response,
-            Err(_) => return Err("Erreur lors de la conversion en json".into()),
+            Err(_) => return Err("Error converting to JSON".into()),
         };
 
         let conqueror_emote_str = format!("<:conqueror:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());

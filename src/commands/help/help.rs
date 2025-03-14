@@ -1,12 +1,10 @@
+use crate::{commands::shared::logs::send_log, Data};
 use poise::{
     serenity_prelude::{self as serenity, Error},
     CreateReply,
 };
-use crate::{commands::shared::logs::send_log, Data};
 
-/// 📂 Affiche les commandes disponibles
-///
-/// Displays the available commands
+/// 📂 Displays the available commands
 ///
 /// Usage: `/help`
 #[poise::command(slash_command)]
@@ -14,7 +12,7 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
     let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
 
     let mut embed = serenity::CreateEmbed::default()
-        .title("Commandes")
+        .title("Commands")
         .color(serenity::Colour::from_rgb(0, 255, 255))
         .thumbnail(thumbnail);
 
@@ -26,10 +24,14 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
         embed = embed.field(command.name.clone(), description, true);
     }
 
-    embed = embed.field("Créé par", "<@!191619427584835585> & <@!366631137562329091>", true);
+    embed = embed.field(
+        "Created by",
+        "<@!191619427584835585> & <@!366631137562329091>",
+        true,
+    );
 
     embed = embed.field(
-        "Code source & Road Map du projet",
+        "Source code & Project Road Map",
         "[bot-swbox](https://github.com/B4tiste/bot-swbox)",
         true,
     );
@@ -47,7 +49,7 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
                 &ctx,
                 "Command: /help".to_string(),
                 true,
-                format!("Embed envoyé"),
+                format!("Embed sent"),
             )
             .await?;
         }
@@ -56,7 +58,7 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
                 &ctx,
                 "Command: /help".to_string(),
                 false,
-                format!("Erreur lors de l'envoi : {:?}", err),
+                format!("Error sending embed: {:?}", err),
             )
             .await?;
         }

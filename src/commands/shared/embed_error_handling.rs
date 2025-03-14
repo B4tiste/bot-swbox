@@ -1,6 +1,6 @@
 use poise::{
     serenity_prelude::{CreateEmbed, CreateEmbedFooter, Error},
-    ReplyHandle, CreateReply,
+    CreateReply, ReplyHandle,
 };
 use tokio::time::{sleep, Duration};
 
@@ -8,10 +8,12 @@ use crate::Data;
 
 pub fn create_embed_error(error_message: &str) -> CreateReply {
     let embed: CreateEmbed = CreateEmbed::default()
-        .title("Erreur")
+        .title("Error")
         .description(error_message)
         .color(0xff0000)
-        .footer(CreateEmbedFooter::new("Ce message sera supprimé dans 60 secondes."))
+        .footer(CreateEmbedFooter::new(
+            "This message will be deleted in 60 seconds.",
+        ))
         .thumbnail("https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true");
     CreateReply {
         embeds: vec![embed],

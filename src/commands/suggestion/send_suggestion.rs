@@ -1,15 +1,16 @@
 use poise::{
     serenity_prelude::{self as serenity, Error},
-    Modal, CreateReply,
+    CreateReply, Modal,
 };
 
-use crate::{commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion}, Data};
-use crate::commands::suggestion::modal::SuggestionModal;
 use crate::commands::shared::logs::send_log;
+use crate::commands::suggestion::modal::SuggestionModal;
+use crate::{
+    commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion},
+    Data,
+};
 
-/// 📂 Permet d'envoyer une suggestion de fonctionnalité ou de déclarer un BUG
-///
-/// Allow users to send a suggestion or report a bug.
+/// 📂 Allows users to send a feature suggestion or report a BUG
 ///
 /// Usage: `/send_suggestion`
 #[poise::command(slash_command)]
@@ -18,9 +19,15 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
         Ok(Some(data)) => data,
         Ok(None) => return Ok(()),
         Err(_) => {
-            let error_message = "Erreur lors de l'exécution du modal.";
+            let error_message = "Error executing the modal.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
-            send_log(&ctx, "Commande : /send_suggestion".to_string(), false, error_message).await?;
+            send_log(
+                &ctx,
+                "Command: /send_suggestion".to_string(),
+                false,
+                error_message,
+            )
+            .await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
         }
@@ -30,9 +37,10 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
     let user_name = &ctx.author().name;
 
     let mut embed = serenity::CreateEmbed::default()
-        .title("Nouvelle suggestion")
+        .title("New Suggestion")
+        .description(modal_data.name.clone())
         .color(serenity::Colour::from_rgb(70, 200, 120))
-        .field("Utilisateur", user_name, false)
+        .field("User", user_name, false)
         .field("Suggestion", modal_data.description.clone(), false);
 
     if let Some(image) = modal_data.image.clone() {
@@ -50,22 +58,28 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
                 &ctx,
                 format!("Input: {:?}", modal_data),
                 true,
-                format!("Suggestion envoyée : {:?}", embed),
+                format!("Suggestion sent: {:?}", embed),
             )
             .await?;
         }
         Err(_) => {
-            let error_message = "Erreur lors de l'envoi de la suggestion.";
+            let error_message = "Error sending the suggestion.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
-            send_log(&ctx, format!("Input: {:?}", modal_data), false, error_message).await?;
+            send_log(
+                &ctx,
+                format!("Input: {:?}", modal_data),
+                false,
+                error_message,
+            )
+            .await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
         }
     }
 
     let reply_embed = serenity::CreateEmbed::default()
-        .title("Suggestion envoyée")
-        .description("Votre suggestion a bien été envoyée. Merci !")
+        .title("Suggestion Sent")
+        .description("Your suggestion has been sent successfully. Thank you!")
         .color(serenity::Colour::from_rgb(70, 200, 120));
 
     let reply = CreateReply {
@@ -80,7 +94,7 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
         &ctx,
         format!("Input: {:?}", modal_data),
         true,
-        "Confirmation envoyée à l'utilisateur".to_string(),
+        "Confirmation sent to the user".to_string(),
     )
     .await?;
 

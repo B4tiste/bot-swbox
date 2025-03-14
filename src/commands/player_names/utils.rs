@@ -1,10 +1,11 @@
+use futures::future;
 use poise::serenity_prelude::Error;
 use poise::Modal;
-use futures::future;
 
-use crate::{commands::shared::embed_error_handling::{
-    create_embed_error, schedule_message_deletion,
-}, Data};
+use crate::{
+    commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion},
+    Data,
+};
 
 use super::models::PlayerSearchInput;
 
@@ -35,7 +36,7 @@ async fn get_player_id_by_name(name: String) -> Result<String, String> {
             return Ok(api_response["data"][0]["id"].as_i64().unwrap().to_string());
         }
     }
-    Err(format!("Joueur **{}** introuvable.", name))
+    Err(format!("Player **{}** not found.", name))
 }
 
 pub async fn resolve_player_id(
@@ -48,7 +49,7 @@ pub async fn resolve_player_id(
                 if let Ok(_) = id.parse::<i64>() {
                     return Ok(Some(id));
                 } else {
-                    let error_message = format!("L'ID **{}** n'est pas un entier valide.", id);
+                    let error_message = format!("The ID **{}** is not a valid integer.", id);
                     let reply = ctx.send(create_embed_error(&error_message)).await?;
                     schedule_message_deletion(reply, ctx).await?;
                     return Ok(None);
@@ -57,7 +58,7 @@ pub async fn resolve_player_id(
                 match get_player_id_by_name(name).await {
                     Ok(id) => return Ok(Some(id)),
                     Err(err) => {
-                        let error_message = format!("Erreur : {}", err);
+                        let error_message = format!("Error: {}", err);
                         let reply = ctx.send(create_embed_error(&error_message)).await?;
                         schedule_message_deletion(reply, ctx).await?;
                         return Ok(None);
@@ -73,6 +74,7 @@ pub async fn resolve_player_id(
 
     Ok(None)
 }
+
 async fn get_player_seasons_played(player_id: String) -> Result<Vec<i64>, String> {
     let url = format!("https://api.swarena.gg/player/{}/seasons", player_id);
     let response = reqwest::get(url)
@@ -94,7 +96,7 @@ async fn get_player_seasons_played(player_id: String) -> Result<Vec<i64>, String
             return Ok(seasons_played);
         }
     }
-    Err("Aucune saison jouée.".to_string())
+    Err("No seasons played.".to_string())
 }
 
 async fn get_player_name(player_id: String, seasons_played: String) -> Result<String, String> {
@@ -126,9 +128,7 @@ pub async fn get_player_all_names(player_id: String) -> Result<Vec<String>, Stri
 
     let player_names_futures = seasons_played.into_iter().map(|season| {
         let player_id = player_id.clone();
-        tokio::spawn(async move {
-            get_player_name(player_id, season.to_string()).await
-        })
+        tokio::spawn(async move { get_player_name(player_id, season.to_string()).await })
     });
 
     let results = future::join_all(player_names_futures).await;

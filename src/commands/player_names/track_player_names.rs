@@ -11,13 +11,13 @@ use crate::Data;
 use poise::serenity_prelude::{CreateEmbed, Error};
 use poise::CreateReply;
 
-/// 📂 Affiche les différents noms d'utilisateurs que ce joueur a pu avoir (Profil SWARENA requis).
+/// 📂 Displays the different usernames this player may have had (SWARENA profile required).
 ///
 /// Usage: /track_player_names
 #[poise::command(slash_command)]
 pub async fn track_player_names(
     ctx: poise::ApplicationContext<'_, Data, Error>,
-    #[description = "Sélectionnez le moyen de recherche"] mode: PlayerNamesModalData,
+    #[description = "Select the search method"] mode: PlayerNamesModalData,
 ) -> Result<(), Error> {
     let modal_result = match mode {
         PlayerNamesModalData::Id => {
@@ -38,18 +38,18 @@ pub async fn track_player_names(
 
     let (input_data, _input_status) = match &modal_result {
         Ok(Some(data)) => (format!("{:?}", data), true),
-        Ok(None) => ("Aucun input fourni".to_string(), false),
-        Err(_) => ("Erreur dans l'obtention du modal".to_string(), false),
+        Ok(None) => ("No input provided".to_string(), false),
+        Err(_) => ("Error obtaining modal".to_string(), false),
     };
 
     let player_id = match resolve_player_id(ctx, modal_result).await {
         Ok(Some(id)) => id,
         Ok(None) => {
-            send_log(&ctx, input_data, false, "Aucun ID trouvé").await?;
+            send_log(&ctx, input_data, false, "No ID found").await?;
             return Ok(());
         }
         Err(_) => {
-            send_log(&ctx, input_data, false, "Erreur lors de la résolution").await?;
+            send_log(&ctx, input_data, false, "Error resolving ID").await?;
             return Ok(());
         }
     };
@@ -58,33 +58,17 @@ pub async fn track_player_names(
     match player_all_names {
         Ok(names) if names.is_empty() => {
             let embed = CreateEmbed::default()
-                .title("Nom d'utilisateur introuvable")
+                .title("Username not found")
                 .description(format!(
-                    "Nous n'avons retrouvé aucun nom d'utilisateur pour le joueur portant l'ID **{}**.",
+                    "We couldn't find any usernames for the player with ID **{}**.",
                     player_id
                 ))
-                .field("Astuces", "Vérifiez que l'ID est correct ou essayez avec un autre compte.", false)
+                .field(
+                    "Tips",
+                    "Check if the ID is correct or try another account.",
+                    false,
+                )
                 .color(0xff0000)
-                .thumbnail("https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true");
-
-            let create_reply = CreateReply {
-                embeds: vec![embed],
-                ..Default::default()
-            };
-            ctx.send(create_reply).await?;
-
-            send_log(&ctx, input_data, false, "Aucun nom trouvé").await?;
-        }
-        Ok(names) if names.len() == 1 => {
-            let embed = CreateEmbed::default()
-                .title("Nom d'utilisateur trouvé")
-                .description(format!(
-                    "Le nom d'utilisateur pour le joueur portant l'ID **{}** est :",
-                    player_id
-                ))
-                .field("Nom d'utilisateur", &names[0], true)
-                .field("Total des noms", "1", true)
-                .color(0x00ff00)
                 .thumbnail(
                     "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true",
                 );
@@ -95,23 +79,17 @@ pub async fn track_player_names(
             };
             ctx.send(create_reply).await?;
 
-            send_log(&ctx, input_data, true, format!("Nom trouvé: {}", names[0].clone())).await?;
+            send_log(&ctx, input_data, false, "No names found").await?;
         }
-        Ok(names) => {
-            let formatted_names = names
-                .iter()
-                .map(|name| format!("- {}", name))
-                .collect::<Vec<String>>()
-                .join("\n");
-
+        Ok(names) if names.len() == 1 => {
             let embed = CreateEmbed::default()
-                .title("Noms d'utilisateur retrouvés")
+                .title("Username found")
                 .description(format!(
-                    "Les noms d'utilisateur pour le joueur portant l'ID **{}** sont :",
+                    "The username for the player with ID **{}** is:",
                     player_id
                 ))
-                .field("Noms d'utilisateurs", formatted_names, false)
-                .field("Total des noms", &names.len().to_string(), true)
+                .field("Username", &names[0], true)
+                .field("Total names", "1", true)
                 .color(0x00ff00)
                 .thumbnail(
                     "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true",
@@ -127,23 +105,51 @@ pub async fn track_player_names(
                 &ctx,
                 input_data,
                 true,
-                format!("Noms trouvés : {}", names.join(", ")),
+                format!("Name found: {}", names[0].clone()),
+            )
+            .await?;
+        }
+        Ok(names) => {
+            let formatted_names = names
+                .iter()
+                .map(|name| format!("- {}", name))
+                .collect::<Vec<String>>()
+                .join("\n");
+
+            let embed = CreateEmbed::default()
+                .title("Usernames found")
+                .description(format!(
+                    "The usernames for the player with ID **{}** are:",
+                    player_id
+                ))
+                .field("Usernames", formatted_names, false)
+                .field("Total names", &names.len().to_string(), true)
+                .color(0x00ff00)
+                .thumbnail(
+                    "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true",
+                );
+
+            let create_reply = CreateReply {
+                embeds: vec![embed],
+                ..Default::default()
+            };
+            ctx.send(create_reply).await?;
+
+            send_log(
+                &ctx,
+                input_data,
+                true,
+                format!("Names found: {}", names.join(", ")),
             )
             .await?;
         }
 
         Err(_) => {
-            let embed =
-                create_embed_error("Erreur lors de la récupération des noms d'utilisateur.");
+            let embed = create_embed_error("Error retrieving usernames.");
             let reply = ctx.send(embed).await?;
             schedule_message_deletion(reply, ctx).await?;
 
-            send_log(
-                &ctx,
-                input_data,
-                false,
-                "Erreur lors de la récupération des noms d'utilisateur.",
-            ).await?;
+            send_log(&ctx, input_data, false, "Error retrieving usernames.").await?;
         }
     }
 

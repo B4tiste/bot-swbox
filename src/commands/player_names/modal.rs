@@ -1,17 +1,17 @@
 use poise::Modal;
 
 #[derive(Debug, Modal)]
-#[name = "Entrez le pseudo du joueur"]
+#[name = "Enter the player's username"]
 pub struct PlayerNamesInfosModalByName {
-    #[name = "Pseudo du joueur"]
-    #[placeholder = "Entrez le pseudo du joueur (ex: Reynca)"]
+    #[name = "Player's username"]
+    #[placeholder = "Enter the player's username (e.g., Reynca)"]
     pub name: String,
 }
 
 #[derive(Debug, Modal)]
-#[name = "Entrez l'ID du joueur"]
+#[name = "Enter the player's ID"]
 pub struct PlayerNamesInfosModalById {
-    #[name = "ID du joueur"]
-    #[placeholder = "Entrez l'ID du joueur (ex: 123456789)"]
+    #[name = "Player's ID"]
+    #[placeholder = "Enter the player's ID (e.g., 123456789)"]
     pub id: String,
 }

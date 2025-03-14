@@ -1,16 +1,16 @@
 use poise::Modal;
 
 #[derive(Debug, Modal)]
-#[name = "Entrez le nom du monstre"]
+#[name = "Enter the monster's name"]
 pub struct SuggestionModal {
-    #[name = "Nom de la fonctionnalité"]
-    #[placeholder = "Entrez un titre pour votre suggestion"]
+    #[name = "Feature name"]
+    #[placeholder = "Enter a title for your suggestion"]
     pub name: String,
     #[name = "Description"]
-    #[placeholder = "Entrez une description pour votre suggestion"]
+    #[placeholder = "Enter a description for your suggestion"]
     #[paragraph]
     pub description: String,
-    #[name = "Joindre une image"]
-    #[placeholder = "Entrez un lien vers une image"]
+    #[name = "Attach an image"]
+    #[placeholder = "Enter a link to an image"]
     pub image: Option<String>,
 }

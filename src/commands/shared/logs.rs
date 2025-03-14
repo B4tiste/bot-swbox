@@ -13,19 +13,19 @@ pub async fn send_log<T: Debug, G: Debug>(
     let response_output_str = format!("{:?}", response_output);
 
     let log_embed = CreateEmbed::default()
-        .title("Log d'interaction")
-        .field("Utilisateur", &ctx.author().name, true)
-        .field("Commande", &ctx.command().name, true)
-        .field("Input utilisateur", user_input_str, false)
-        .field("Réponse réussie", format!("{}", response_state), true)
-        .field("Résultat de sortie", response_output_str, false)
-        .color(if response_state { 0x00ff00 } else { 0xff0000 }) // Vert pour succès, rouge pour échec
+        .title("Interaction Log")
+        .field("User", &ctx.author().name, true)
+        .field("Command", &ctx.command().name, true)
+        .field("User Input", user_input_str, false)
+        .field("Response Successful", format!("{}", response_state), true)
+        .field("Output Result", response_output_str, false)
+        .color(if response_state { 0x00ff00 } else { 0xff0000 }) // Green for success, red for failure
         .timestamp(chrono::Utc::now());
 
-        let channel_id = ChannelId::from(*LOG_CHANNEL_ID.lock().unwrap());
-        let message = CreateMessage::default()
-            .content("")
-            .embed(log_embed);
-        channel_id.send_message(&ctx.serenity_context().http, message).await?;
+    let channel_id = ChannelId::from(*LOG_CHANNEL_ID.lock().unwrap());
+    let message = CreateMessage::default().content("").embed(log_embed);
+    channel_id
+        .send_message(&ctx.serenity_context().http, message)
+        .await?;
     Ok(())
 }
