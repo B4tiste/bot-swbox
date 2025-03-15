@@ -5,10 +5,8 @@ use crate::commands::shared::logs::send_log;
 use crate::Data;
 use poise::serenity_prelude::{Attachment, Error};
 use reqwest;
-use std::process::Command;
-use tokio::{fs, task};
 
-/// 📂 Upload a JSON file, execute "./runes PATHTOJSONFILE" and return the result
+/// 📂 Upload a JSON file and return its name along with a preview of its content
 ///
 /// Usage: `/upload_json`
 #[poise::command(slash_command)]
@@ -16,7 +14,7 @@ pub async fn upload_json(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     file: Option<Attachment>,
 ) -> Result<(), Error> {
-    // Check that a file has been provided
+    // Vérifier qu'un fichier a bien été fourni
     let file = match file {
         Some(f) => f,
         None => {
@@ -34,7 +32,7 @@ pub async fn upload_json(
         }
     };
 
-    // Check the file extension
+    // Vérifier l'extension du fichier
     if !file.filename.to_lowercase().ends_with(".json") {
         let error_message = "The provided file is not a JSON file.";
         let reply = ctx.send(create_embed_error(&error_message)).await?;
@@ -49,7 +47,7 @@ pub async fn upload_json(
         return Ok(());
     }
 
-    // Download the file content
+    // Télécharger le contenu du fichier via son URL
     let response = match reqwest::get(&file.url).await {
         Ok(resp) => resp,
         Err(e) => {
@@ -84,91 +82,24 @@ pub async fn upload_json(
         }
     };
 
-    // Save the content to a temporary file
-    let temp_dir = std::env::temp_dir();
-    let file_path = temp_dir.join(&file.filename);
-    if let Err(e) = fs::write(&file_path, &content).await {
-        let error_message = format!("Failed to write file to disk: {}", e);
-        let reply = ctx.send(create_embed_error(&error_message)).await?;
-        schedule_message_deletion(reply, ctx).await?;
-        send_log(
-            &ctx,
-            "Command: /upload_json".to_string(),
-            false,
-            error_message,
-        )
-        .await?;
-        return Ok(());
-    }
+    // Extraire les 10 premiers mots pour une prévisualisation
+    let preview = content
+        .split_whitespace()
+        .take(10)
+        .collect::<Vec<_>>()
+        .join(" ");
 
-    // Execute the external command "./runes PATHTOJSONFILE"
-    // Using spawn_blocking to avoid blocking the async runtime
-    let file_path_clone = file_path.clone();
-    let output = match task::spawn_blocking(move || {
-        Command::new("src/commands/json/runes")
-            .arg(file_path_clone)
-            .output()
-    })
-    .await
-    {
-        Ok(res) => match res {
-            Ok(output) => output,
-            Err(e) => {
-                let error_message = format!("Failed to execute command: {}", e);
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                send_log(
-                    &ctx,
-                    "Command: /upload_json".to_string(),
-                    false,
-                    error_message,
-                )
-                .await?;
-                return Ok(());
-            }
-        },
-        Err(e) => {
-            let error_message = format!("Task failed: {}", e);
-            let reply = ctx.send(create_embed_error(&error_message)).await?;
-            schedule_message_deletion(reply, ctx).await?;
-            send_log(
-                &ctx,
-                "Command: /upload_json".to_string(),
-                false,
-                error_message,
-            )
-            .await?;
-            return Ok(());
-        }
-    };
-
-    // Remove the temporary file (ignore errors)
-    let _ = fs::remove_file(&file_path).await;
-
-    // If the command failed, return the stderr as an error message
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        let error_message = format!("Command failed: {}", stderr);
-        let reply = ctx.send(create_embed_error(&error_message)).await?;
-        schedule_message_deletion(reply, ctx).await?;
-        send_log(
-            &ctx,
-            "Command: /upload_json".to_string(),
-            false,
-            error_message,
-        )
-        .await?;
-        return Ok(());
-    }
-
-    // Convert the command's stdout to a string and send it as the reply
-    let result = String::from_utf8_lossy(&output.stdout);
-    ctx.say(format!("Command output:\n{}", result)).await?;
+    // Envoyer le nom du fichier et la prévisualisation sur Discord
+    ctx.say(format!(
+        "File name: {}\nContent preview: {}",
+        file.filename, preview
+    ))
+    .await?;
     send_log(
         &ctx,
         "Command: /upload_json".to_string(),
         true,
-        format!("Executed './runes' successfully"),
+        format!("File {} received with preview", file.filename),
     )
     .await?;
     Ok(())
