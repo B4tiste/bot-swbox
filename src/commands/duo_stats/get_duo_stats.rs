@@ -212,7 +212,14 @@ pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, Data, Error>) -> R
             format!("{}%", against_winrate),
             false,
         )
-        .field("WR 🔄", format!("{}%", 100.0 - against_winrate), false);
+        .field(
+            format!(
+                "WR 🔄 {} against {}",
+                monster_2_slug.name, monster_1_slug.name
+            ),
+            format!("{}%", 100.0 - against_winrate),
+            false,
+        );
 
     let reply = CreateReply {
         embeds: vec![embed],
