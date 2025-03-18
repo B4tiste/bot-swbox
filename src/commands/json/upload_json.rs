@@ -184,5 +184,13 @@ pub async fn upload_json(
     })
     .await?;
 
+    send_log(
+        &ctx,
+        "Command: /upload_json".to_string(),
+        true,
+        format!("JSON processed successfully"),
+    )
+    .await?;
+
     Ok(())
 }
