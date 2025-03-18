@@ -112,15 +112,31 @@ pub fn process_json(
             wizard_info_data.insert("wizard_last_login", wizard_last_login.clone());
         }
     }
-    let file = std::fs::File::open("src/commands/json/coeffs.json").expect("file not found");
-    let reader = std::io::BufReader::new(file);
-    let json: Value = serde_json::from_reader(reader).expect("error while reading json");
-    let efficiency_coeffs = json.get("Efficiency").expect("Efficiency not found");
-    let speed_coeffs = json.get("Speed").expect("Speed not found");
-    let set_coeffs = json.get("Set").expect("Set not found");
+
+    // Replace file reading with hardcoded JSON content
+    let efficiency_coeffs = serde_json::json!({
+        "100": 1,
+        "110": 2,
+        "120": 3
+    });
+    let speed_coeffs = serde_json::json!({
+        "23": 1,
+        "26": 2,
+        "29": 3,
+        "32": 4
+    });
+    let set_coeffs = serde_json::json!({
+        "Despair": 3,
+        "Swift": 3,
+        "Violent": 3,
+        "Will": 2,
+        "Intangible": 4
+    });
+
     let mut score: f32 = 0.0;
     let mut map_score_eff: HashMap<String, HashMap<String, u32>> = HashMap::new();
     let mut map_score_spd: HashMap<String, HashMap<String, u32>> = HashMap::new();
+
     for rune in vec_runes.iter() {
         let set_id = rune.set_id.to_string();
         let mut coeff_set = 1;
