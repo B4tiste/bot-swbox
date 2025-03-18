@@ -29,6 +29,7 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ### Completed:
 
+-   [x] Add the /upload_json command to get an analysis of the JSON file.
 -   [x] Translate the bot to English.
 -   [x] Add the /help command.
 -   [x] Check if there is a 2A in the list of searched monsters, if so, the bot should prioritize it.
@@ -123,6 +124,57 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 **Features**:
 
 -   The user can provide an image to illustrate their suggestion.
+
+---
+
+### `/upload_json`
+
+**Description**:
+Uploads a JSON file to analyze account data and display an account score along with detailed information about rune set efficiency percentages and rune speeds. This command is particularly useful for Summoners War players looking to quickly assess their account's performance metrics.
+
+**Usage**:
+
+-   Type `/upload_json` in your Discord server.
+-   Attach a JSON file (with a `.json` extension) containing the account data.
+-   The bot processes the file and returns a formatted message with:
+    -   **Account Details**: Account name and ID.
+    -   **Score**: The overall account score.
+    -   **Efficiency Data**: A table with buckets (100, 110, 120) for rune set efficiency, broken down by categories (Rest, Will, Swift, Violent, Despair, Intang.).
+    -   **Speed Data**: A table with buckets (23, 26, 29, 32) for rune speed, similarly categorized.
+
+**Error Handling**:
+
+-   If no file is attached or the file provided does not have a `.json` extension, the command responds with an appropriate error message.
+-   The command also handles issues such as failure to download, read, or parse the file content by displaying corresponding error messages.
+
+**Example Output**:
+
+```autohotkey
+-------------[JSON]-------------
+Account: PSEUDO (ID: XXXXX)
+
+Score: 4359
+
+Eff     100     110     120
+Rest    596     167     13
+Will    156     38      3
+Swift   72      8       0
+Violent 172     38      0
+Despair 81      20      1
+Intang. 1       3       1
+Total   1078    274     18
+--------------------------------
+
+Spd     23      26      29      32
+Rest    137     148     14      5
+Will    30      23      6       1
+Swift   20      22      3       0
+Violent 35      30      5       0
+Despair 29      19      3       0
+Intang. 3       1       0       0
+Total   254     243     31      6
+--------------------------------
+```
 
 ---
 
