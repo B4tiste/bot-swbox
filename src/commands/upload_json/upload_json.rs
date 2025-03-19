@@ -111,6 +111,18 @@ pub async fn upload_json(
         .get("wizard_id")
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
+    let json_date = wizard_info_data
+        .get("wizard_last_login")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Unknown");
+
+    // The json date : "2025-03-14 16:33:16" (Fuseaux horaire : Corée du Sud => UTC+9)
+    // Get the day, month and year
+    let date = json_date.split(' ').collect::<Vec<&str>>()[0];
+    let date = date.split('-').collect::<Vec<&str>>();
+    let year = date[0];
+    let month = date[1];
+    let day = date[2];
 
     let mut eff_table = String::new();
     eff_table.push_str("Eff     100     110     120\n");
@@ -180,8 +192,8 @@ pub async fn upload_json(
     let embed = CreateEmbed::default()
         .title("JSON Report")
         .description(format!(
-            "**Account**: {} (ID: {})\n**Score**: {}\n",
-            wizard_name, wizard_id, score
+            "**Account**: {} (ID: {})\n**JSON Date**: {}-{}-{}\n**Score**: {}\n",
+            wizard_name, wizard_id, day, month, year, score
         ))
         .field(
             "Rune Efficiency",
