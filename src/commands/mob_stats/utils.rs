@@ -1,12 +1,23 @@
 use crate::commands::shared::models::MonsterRtaInfoData;
 
-
-pub async fn get_monster_rta_info(mob_id: String, season: i64, is_g3: bool) -> Result<MonsterRtaInfoData, String> {
-    let monster_rta_info_url_g3 = format!("https://api.swarena.gg/monster/{}/summary?season={}&isG3={}", mob_id, season, is_g3);
-    let response = reqwest::get(monster_rta_info_url_g3).await.map_err(|_| "Failed to send request".to_string())?;
+pub async fn get_monster_rta_info(
+    mob_id: String,
+    season: i64,
+    is_g3: bool,
+) -> Result<MonsterRtaInfoData, String> {
+    let monster_rta_info_url_g3 = format!(
+        "https://api.swarena.gg/monster/{}/summary?season={}&isG3={}",
+        mob_id, season, is_g3
+    );
+    let response = reqwest::get(monster_rta_info_url_g3)
+        .await
+        .map_err(|_| "Failed to send request".to_string())?;
 
     if response.status().is_success() {
-        let api_response: serde_json::Value = response.json().await.map_err(|_| "Failed to parse JSON".to_string())?;
+        let api_response: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|_| "Failed to parse JSON".to_string())?;
         if !api_response["data"].is_null() {
             return Ok(MonsterRtaInfoData {
                 played: api_response["data"]["played"].as_i64().unwrap_or(0) as i32,
