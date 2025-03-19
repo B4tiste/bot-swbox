@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use crate::MONGO_URI;
 
 use crate::commands::upload_json::process_json::process_json;
 use crate::commands::shared::embed_error_handling::{
@@ -13,6 +14,8 @@ use poise::{
 };
 use reqwest;
 use serde_json::Value;
+use mongodb::{bson::doc, Client, Collection};
+use chrono::Utc;
 
 /// 📂 Upload a JSON file to get an account score, and some data about rune sets eff% and rune speed
 ///
@@ -235,5 +238,91 @@ pub async fn upload_json(
     )
     .await?;
 
+    // Prepare MongoDB data
+    let mongo_uri = {
+        let uri_guard = MONGO_URI.lock().unwrap();
+        uri_guard.clone()
+    };
+    println!("MongoDB URI acquired: {}", mongo_uri);
+
+    let collection = match get_mongo_collection(&mongo_uri).await {
+        Ok(collection) => {
+            println!("Successfully connected to MongoDB collection.");
+            collection
+        },
+        Err(e) => {
+            let error_message = format!("Failed to get MongoDB collection: {}", e);
+            println!("Error connecting to MongoDB collection: {}", e);
+            ctx.send(create_embed_error(&error_message)).await.ok();
+            return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
+        }
+    };
+
+    // New MongoDB operation with document existence check
+    let filter = doc! { "id": wizard_id.to_string() };
+    let current_date = Utc::now().format("%d-%m-%Y").to_string();
+    let apparition = doc! {
+        "date": current_date,
+        "pseudo": wizard_name,
+        "score_eff": score_eff,
+        "score_spd": score_spd
+    };
+
+    println!("MongoDB filter: {:?}", filter);
+
+    match collection.find_one(filter.clone()).await {
+        Ok(Some(_)) => {
+            // Document exists, update it
+            let update = doc! {
+                "$push": { "apparitions": apparition }
+            };
+            println!("Updating existing MongoDB document with update: {:?}", update);
+
+            match collection.update_one(filter, update).await {
+                Ok(result) => {
+                    println!("Successfully updated MongoDB document: {:?}", result);
+                },
+                Err(e) => {
+                    let error_message = format!("Failed to update MongoDB: {}", e);
+                    println!("Error updating MongoDB document: {}", e);
+                    ctx.send(create_embed_error(&error_message)).await.ok();
+                    return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
+                }
+            }
+        },
+        Ok(None) => {
+            // Document does not exist, insert a new one
+            let new_document = doc! {
+                "id": wizard_id.to_string(),
+                "apparitions": vec![apparition]
+            };
+            println!("Inserting new MongoDB document: {:?}", new_document);
+
+            match collection.insert_one(new_document).await {
+                Ok(result) => {
+                    println!("Successfully inserted new MongoDB document: {:?}", result);
+                },
+                Err(e) => {
+                    let error_message = format!("Failed to insert into MongoDB: {}", e);
+                    println!("Error inserting MongoDB document: {}", e);
+                    ctx.send(create_embed_error(&error_message)).await.ok();
+                    return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
+                }
+            }
+        },
+        Err(e) => {
+            let error_message = format!("Failed to query MongoDB: {}", e);
+            println!("Error querying MongoDB: {}", e);
+            ctx.send(create_embed_error(&error_message)).await.ok();
+            return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
+        }
+    };
+
     Ok(())
+}
+
+async fn get_mongo_collection(mongo_uri: &str) -> Result<Collection<mongodb::bson::Document>, mongodb::error::Error> {
+    let client = Client::with_uri_str(mongo_uri).await?;
+    let db = client.database("bot-swbox-db");
+    Ok(db.collection("upload-json"))
 }
