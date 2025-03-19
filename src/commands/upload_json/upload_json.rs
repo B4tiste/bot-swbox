@@ -18,7 +18,7 @@ use serde_json::Value;
 
 /// 📂 Upload a JSON file to get an account score, and some data about rune sets eff% and rune speed
 ///
-/// Usage: /upload_json
+/// Usage: `/upload_json`
 #[poise::command(slash_command)]
 pub async fn upload_json(
     ctx: poise::ApplicationContext<'_, Data, Error>,
@@ -118,8 +118,8 @@ pub async fn upload_json(
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown");
 
-    // The json date : "2025-03-14 16:33:16" (Fuseaux horaire : Corée du Sud => UTC+9)
-    // Get the day, month and year
+    // La date JSON : "2025-03-14 16:33:16" (Fuseaux horaire : Corée du Sud => UTC+9)
+    // Extraction du jour, mois et année
     let date = json_date.split(' ').collect::<Vec<&str>>()[0];
     let date = date.split('-').collect::<Vec<&str>>();
     let year = date[0];
@@ -200,9 +200,7 @@ pub async fn upload_json(
         .field(
             "Amount of runes per set and efficiency",
             format!(
-                "
-autohotkey\n{}\n\nTotal Efficiency Score: {}\n
-",
+                "```autohotkey\n{}\n\nTotal Efficiency Score: {}\n```",
                 eff_table, score_eff
             ),
             false,
@@ -210,9 +208,7 @@ autohotkey\n{}\n\nTotal Efficiency Score: {}\n
         .field(
             "Amount of runes per set and speed",
             format!(
-                "
-autohotkey\n{}\n\nTotal Speed Score: {}\n
-",
+                "```autohotkey\n{}\n\nTotal Speed Score: {}\n```",
                 spd_table, score_spd
             ),
             false,
@@ -241,7 +237,7 @@ autohotkey\n{}\n\nTotal Speed Score: {}\n
     )
     .await?;
 
-    // Prepare MongoDB data
+    // Préparation des données pour MongoDB
     let mongo_uri = {
         let uri_guard = MONGO_URI.lock().unwrap();
         uri_guard.clone()
@@ -256,7 +252,7 @@ autohotkey\n{}\n\nTotal Speed Score: {}\n
         }
     };
 
-    // Use the JSON date instead of the current date (DD-MM-YYYY)
+    // Utiliser la date JSON au lieu de la date courante (DD-MM-YYYY)
     let apparition = doc! {
         "date": format!("{}-{}-{}", day, month, year),
         "pseudo": wizard_name,
@@ -268,7 +264,7 @@ autohotkey\n{}\n\nTotal Speed Score: {}\n
 
     match collection.find_one(filter.clone()).await {
         Ok(Some(existing_doc)) => {
-            // Check if the date already exists in the apparitions array
+            // Vérifier si la date existe déjà dans le tableau "apparitions"
             if let Some(apparitions) = existing_doc.get_array("apparitions").ok() {
                 let date_exists = apparitions.iter().any(|entry| {
                     if let Some(doc) = entry.as_document() {
@@ -280,12 +276,12 @@ autohotkey\n{}\n\nTotal Speed Score: {}\n
                 });
 
                 if date_exists {
-                    // Date already exists, no need to update
+                    // La date existe déjà, pas besoin de mettre à jour
                     return Ok(());
                 }
             }
 
-            // Date does not exist, update the document
+            // La date n'existe pas, on met à jour le document
             let update = doc! {
                 "$push": { "apparitions": apparition }
             };
@@ -300,7 +296,7 @@ autohotkey\n{}\n\nTotal Speed Score: {}\n
             }
         }
         Ok(None) => {
-            // Document does not exist, insert a new one
+            // Le document n'existe pas, on insère un nouveau document
             let new_document = doc! {
                 "id": wizard_id.to_string(),
                 "apparitions": vec![apparition]
@@ -329,6 +325,7 @@ async fn get_mongo_collection(
     mongo_uri: &str,
 ) -> Result<Collection<mongodb::bson::Document>, mongodb::error::Error> {
     let client = Client::with_uri_str(mongo_uri).await?;
+
     let db = client.database("bot-swbox-db");
     Ok(db.collection("upload-json"))
 }
