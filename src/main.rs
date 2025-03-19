@@ -21,6 +21,7 @@ lazy_static! {
     static ref GUARDIAN_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     static ref PUNISHER_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     static ref CONQUEROR_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    static ref MONGO_URI: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
 }
 
 pub struct Data;
@@ -49,10 +50,16 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         .parse::<u64>()
         .context("'LOG_CHANNEL_ID' is not a valid number")?;
 
+    // Charger l'URI MongoDB depuis secrets.toml
+    let mongo_uri = secret_store
+        .get("MONGO_URI")
+        .context("'MONGO_URI' was not found")?;
+
     *GUARDIAN_EMOJI_ID.lock().unwrap() = guardian_emoji_id;
     *PUNISHER_EMOJI_ID.lock().unwrap() = punisher_emoji_id;
     *CONQUEROR_EMOJI_ID.lock().unwrap() = conqueror_emoji_id;
     *LOG_CHANNEL_ID.lock().unwrap() = log_channel_id;
+    *MONGO_URI.lock().unwrap() = mongo_uri;
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
