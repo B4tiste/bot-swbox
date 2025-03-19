@@ -130,7 +130,7 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 ### `/upload_json`
 
 **Description**:
-Uploads a JSON file to analyze account data and display an account score along with detailed information about rune set efficiency percentages and rune speeds. This command is particularly useful for Summoners War players looking to quickly assess their account's performance metrics.
+Uploads a JSON file to analyze account data and display an account score along with detailed information about rune set efficiency percentages and rune speeds. This command is particularly useful for Summoners War players looking to quickly assess their account's performance metrics. The Scores will be saved in a Database to be able to compare them over time.
 
 **Usage**:
 
