@@ -1,12 +1,13 @@
-use std::collections::HashMap;
 use crate::MONGO_URI;
+use std::collections::HashMap;
 
-use crate::commands::upload_json::process_json::process_json;
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
 use crate::commands::shared::logs::send_log;
+use crate::commands::upload_json::process_json::process_json;
 use crate::Data;
+use mongodb::{bson::doc, Client, Collection};
 use poise::serenity_prelude::CreateEmbed;
 use poise::{
     serenity_prelude::{Attachment, Error},
@@ -14,8 +15,6 @@ use poise::{
 };
 use reqwest;
 use serde_json::Value;
-use mongodb::{bson::doc, Client, Collection};
-use chrono::Utc;
 
 /// 📂 Upload a JSON file to get an account score, and some data about rune sets eff% and rune speed
 ///
@@ -243,76 +242,77 @@ pub async fn upload_json(
         let uri_guard = MONGO_URI.lock().unwrap();
         uri_guard.clone()
     };
-    println!("MongoDB URI acquired: {}", mongo_uri);
 
     let collection = match get_mongo_collection(&mongo_uri).await {
-        Ok(collection) => {
-            println!("Successfully connected to MongoDB collection.");
-            collection
-        },
+        Ok(collection) => collection,
         Err(e) => {
             let error_message = format!("Failed to get MongoDB collection: {}", e);
-            println!("Error connecting to MongoDB collection: {}", e);
             ctx.send(create_embed_error(&error_message)).await.ok();
             return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
         }
     };
 
-    // New MongoDB operation with document existence check
-    let filter = doc! { "id": wizard_id.to_string() };
-    let current_date = Utc::now().format("%d-%m-%Y").to_string();
+    // Use the JSON date instead of the current date (DD-MM-YYYY)
     let apparition = doc! {
-        "date": current_date,
+        "date": format!("{}-{}-{}", day, month, year),
         "pseudo": wizard_name,
         "score_eff": score_eff,
         "score_spd": score_spd
     };
 
-    println!("MongoDB filter: {:?}", filter);
+    let filter = doc! { "id": wizard_id.to_string() };
 
     match collection.find_one(filter.clone()).await {
-        Ok(Some(_)) => {
-            // Document exists, update it
+        Ok(Some(existing_doc)) => {
+            // Check if the date already exists in the apparitions array
+            if let Some(apparitions) = existing_doc.get_array("apparitions").ok() {
+                let date_exists = apparitions.iter().any(|entry| {
+                    if let Some(doc) = entry.as_document() {
+                        if let Ok(date) = doc.get_str("date") {
+                            return date == format!("{}-{}-{}", day, month, year);
+                        }
+                    }
+                    false
+                });
+
+                if date_exists {
+                    // Date already exists, no need to update
+                    return Ok(());
+                }
+            }
+
+            // Date does not exist, update the document
             let update = doc! {
                 "$push": { "apparitions": apparition }
             };
-            println!("Updating existing MongoDB document with update: {:?}", update);
 
             match collection.update_one(filter, update).await {
-                Ok(result) => {
-                    println!("Successfully updated MongoDB document: {:?}", result);
-                },
+                Ok(_result) => {}
                 Err(e) => {
                     let error_message = format!("Failed to update MongoDB: {}", e);
-                    println!("Error updating MongoDB document: {}", e);
                     ctx.send(create_embed_error(&error_message)).await.ok();
                     return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
                 }
             }
-        },
+        }
         Ok(None) => {
             // Document does not exist, insert a new one
             let new_document = doc! {
                 "id": wizard_id.to_string(),
                 "apparitions": vec![apparition]
             };
-            println!("Inserting new MongoDB document: {:?}", new_document);
 
             match collection.insert_one(new_document).await {
-                Ok(result) => {
-                    println!("Successfully inserted new MongoDB document: {:?}", result);
-                },
+                Ok(_result) => {}
                 Err(e) => {
                     let error_message = format!("Failed to insert into MongoDB: {}", e);
-                    println!("Error inserting MongoDB document: {}", e);
                     ctx.send(create_embed_error(&error_message)).await.ok();
                     return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
                 }
             }
-        },
+        }
         Err(e) => {
             let error_message = format!("Failed to query MongoDB: {}", e);
-            println!("Error querying MongoDB: {}", e);
             ctx.send(create_embed_error(&error_message)).await.ok();
             return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
         }
@@ -321,7 +321,9 @@ pub async fn upload_json(
     Ok(())
 }
 
-async fn get_mongo_collection(mongo_uri: &str) -> Result<Collection<mongodb::bson::Document>, mongodb::error::Error> {
+async fn get_mongo_collection(
+    mongo_uri: &str,
+) -> Result<Collection<mongodb::bson::Document>, mongodb::error::Error> {
     let client = Client::with_uri_str(mongo_uri).await?;
     let db = client.database("bot-swbox-db");
     Ok(db.collection("upload-json"))
