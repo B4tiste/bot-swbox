@@ -18,7 +18,7 @@ use serde_json::Value;
 
 /// 📂 Upload a JSON file to get an account score, and some data about rune sets eff% and rune speed
 ///
-/// Usage: `/upload_json`
+/// Usage: /upload_json
 #[poise::command(slash_command)]
 pub async fn upload_json(
     ctx: poise::ApplicationContext<'_, Data, Error>,
@@ -118,8 +118,8 @@ pub async fn upload_json(
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown");
 
-    // La date JSON : "2025-03-14 16:33:16" (Fuseaux horaire : Corée du Sud => UTC+9)
-    // Extraction du jour, mois et année
+    // The json date : "2025-03-14 16:33:16" (Fuseaux horaire : Corée du Sud => UTC+9)
+    // Get the day, month and year
     let date = json_date.split(' ').collect::<Vec<&str>>()[0];
     let date = date.split('-').collect::<Vec<&str>>();
     let year = date[0];
@@ -200,7 +200,9 @@ pub async fn upload_json(
         .field(
             "Amount of runes per set and efficiency",
             format!(
-                "```autohotkey\n{}\n\nTotal Efficiency Score: {}\n```",
+                "
+autohotkey\n{}\n\nTotal Efficiency Score: {}\n
+",
                 eff_table, score_eff
             ),
             false,
@@ -208,7 +210,9 @@ pub async fn upload_json(
         .field(
             "Amount of runes per set and speed",
             format!(
-                "```autohotkey\n{}\n\nTotal Speed Score: {}\n```",
+                "
+autohotkey\n{}\n\nTotal Speed Score: {}\n
+",
                 spd_table, score_spd
             ),
             false,
@@ -237,17 +241,11 @@ pub async fn upload_json(
     )
     .await?;
 
-    // Préparation des données pour MongoDB
+    // Prepare MongoDB data
     let mongo_uri = {
         let uri_guard = MONGO_URI.lock().unwrap();
         uri_guard.clone()
     };
-
-    // Affichage du mongo_uri pour débogage
-    println!(
-        "Debug: Création du client Mongo avec mongo_uri: {}",
-        mongo_uri
-    );
 
     let collection = match get_mongo_collection(&mongo_uri).await {
         Ok(collection) => collection,
@@ -258,7 +256,7 @@ pub async fn upload_json(
         }
     };
 
-    // Utiliser la date JSON au lieu de la date courante (DD-MM-YYYY)
+    // Use the JSON date instead of the current date (DD-MM-YYYY)
     let apparition = doc! {
         "date": format!("{}-{}-{}", day, month, year),
         "pseudo": wizard_name,
@@ -270,7 +268,7 @@ pub async fn upload_json(
 
     match collection.find_one(filter.clone()).await {
         Ok(Some(existing_doc)) => {
-            // Vérifier si la date existe déjà dans le tableau "apparitions"
+            // Check if the date already exists in the apparitions array
             if let Some(apparitions) = existing_doc.get_array("apparitions").ok() {
                 let date_exists = apparitions.iter().any(|entry| {
                     if let Some(doc) = entry.as_document() {
@@ -282,12 +280,12 @@ pub async fn upload_json(
                 });
 
                 if date_exists {
-                    // La date existe déjà, pas besoin de mettre à jour
+                    // Date already exists, no need to update
                     return Ok(());
                 }
             }
 
-            // La date n'existe pas, on met à jour le document
+            // Date does not exist, update the document
             let update = doc! {
                 "$push": { "apparitions": apparition }
             };
@@ -302,7 +300,7 @@ pub async fn upload_json(
             }
         }
         Ok(None) => {
-            // Le document n'existe pas, on insère un nouveau document
+            // Document does not exist, insert a new one
             let new_document = doc! {
                 "id": wizard_id.to_string(),
                 "apparitions": vec![apparition]
@@ -330,15 +328,7 @@ pub async fn upload_json(
 async fn get_mongo_collection(
     mongo_uri: &str,
 ) -> Result<Collection<mongodb::bson::Document>, mongodb::error::Error> {
-    // Affichage pour déboguer dans la fonction de connexion
-    println!(
-        "Debug: Tentative de connexion à MongoDB avec URI: {}",
-        mongo_uri
-    );
-
     let client = Client::with_uri_str(mongo_uri).await?;
-    println!("Debug: Client MongoDB créé avec succès.");
-
     let db = client.database("bot-swbox-db");
     Ok(db.collection("upload-json"))
 }

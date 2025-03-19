@@ -10,11 +10,11 @@ use std::sync::{Arc, Mutex};
 
 use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
 use crate::commands::help::help::help;
-use crate::commands::upload_json::upload_json::upload_json;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
 use crate::commands::player_names::track_player_names::track_player_names;
 use crate::commands::ranks::get_ranks::get_ranks;
 use crate::commands::suggestion::send_suggestion::send_suggestion;
+use crate::commands::upload_json::upload_json::upload_json;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
