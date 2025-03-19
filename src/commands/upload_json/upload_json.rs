@@ -193,6 +193,11 @@ pub async fn upload_json(
             format!("```autohotkey\n{}\n```", spd_table),
             false,
         )
+        .field(
+            "User that uploaded the JSON",
+            format!("<@{}>", ctx.author().id),
+            false,
+        )
         .color(0x00FF00);
     ctx.send(CreateReply {
         embeds: vec![embed],
