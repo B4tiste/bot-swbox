@@ -1,9 +1,12 @@
-use crate::commands::json::process_json::process_json;
+use std::collections::HashMap;
+
+use crate::commands::upload_json::process_json::process_json;
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
 use crate::commands::shared::logs::send_log;
 use crate::Data;
+use poise::serenity_prelude::CreateEmbed;
 use poise::{
     serenity_prelude::{Attachment, Error},
     CreateReply,
@@ -109,18 +112,14 @@ pub async fn upload_json(
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
 
-    let mut message = String::new();
-    message.push_str("-------------[JSON]-------------\n");
-    message.push_str(&format!("Account: {} (ID: {})\n\n", wizard_name, wizard_id));
-    message.push_str(&format!("Score: {}\n\n", score));
+    let mut eff_table = String::new();
+    eff_table.push_str("Eff     100     110     120\n");
 
-    message.push_str("Eff     100     110     120\n");
-
-    use std::collections::HashMap;
     let mut total_eff: HashMap<&str, i32> = HashMap::new();
     for bucket in &["100", "110", "120"] {
         total_eff.insert(bucket, 0);
     }
+
     let row_order_eff = ["Other", "Will", "Swift", "Violent", "Despair", "Intangible"];
 
     for key in &row_order_eff {
@@ -137,17 +136,18 @@ pub async fn upload_json(
                 *total_eff.get_mut(bucket).unwrap() += count as i32;
             }
             row.push('\n');
-            message.push_str(&row);
+            eff_table.push_str(&row);
         }
     }
-    message.push_str(&format!("{:<8}", "Total"));
+    eff_table.push_str(&format!("{:<8}", "Total"));
     for bucket in &["100", "110", "120"] {
         let total = total_eff.get(bucket).unwrap();
-        message.push_str(&format!("{:<8}", total));
+        eff_table.push_str(&format!("{:<8}", total));
     }
-    message.push_str("\n--------------------------------\n\n");
 
-    message.push_str("Spd     23      26      29      32\n");
+    let mut spd_table = String::new();
+    spd_table.push_str("Spd     23      26      29      32\n");
+
     let mut total_spd: HashMap<&str, i32> = HashMap::new();
     for bucket in &["23", "26", "29", "32"] {
         total_spd.insert(bucket, 0);
@@ -168,22 +168,37 @@ pub async fn upload_json(
                 *total_spd.get_mut(bucket).unwrap() += count as i32;
             }
             row.push('\n');
-            message.push_str(&row);
+            spd_table.push_str(&row);
         }
     }
-    message.push_str(&format!("{:<8}", "Total"));
+    spd_table.push_str(&format!("{:<8}", "Total"));
     for bucket in &["23", "26", "29", "32"] {
         let total = total_spd.get(bucket).unwrap();
-        message.push_str(&format!("{:<8}", total));
+        spd_table.push_str(&format!("{:<8}", total));
     }
-    message.push_str("\n--------------------------------\n");
 
+    let embed = CreateEmbed::default()
+        .title("JSON Report")
+        .description(format!(
+            "**Account**: {} (ID: {})\n**Score**: {}\n",
+            wizard_name, wizard_id, score
+        ))
+        .field(
+            "Rune Efficiency",
+            format!("```autohotkey\n{}\n```", eff_table),
+            false,
+        )
+        .field(
+            "Rune Speed",
+            format!("```autohotkey\n{}\n```", spd_table),
+            false,
+        )
+        .color(0x00FF00);
     ctx.send(CreateReply {
-        content: Some(format!("```autohotkey\n{}```", message)),
+        embeds: vec![embed],
         ..Default::default()
     })
     .await?;
-
     send_log(
         &ctx,
         "Command: /upload_json".to_string(),

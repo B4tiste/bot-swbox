@@ -1,7 +1,8 @@
-use crate::commands::json::rune::{
-    get_rune_set_id_by_id, get_rune_stat_id_by_id, get_stars_ammount_by_id, Rune,
+use crate::commands::upload_json::rune::Rune;
+use crate::commands::upload_json::rune::{Property, RuneStatId};
+use crate::commands::upload_json::utils::{
+    get_rune_set_id_by_id, get_rune_stat_id_by_id, get_stars_ammount_by_id,
 };
-use crate::commands::json::rune::{Property, RuneStatId};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -73,6 +74,7 @@ fn extract_rune(rune: &Value) -> Option<Rune> {
     ))
 }
 
+/// Fonction qui traite un objet JSON et retourne un tuple contenant le score, les statistiques de runes et les informations du joueur
 pub fn process_json(
     json: Value,
 ) -> (
@@ -113,7 +115,6 @@ pub fn process_json(
         }
     }
 
-    // Replace file reading with hardcoded JSON content
     let efficiency_coeffs = serde_json::json!({
         "100": 1,
         "110": 2,
