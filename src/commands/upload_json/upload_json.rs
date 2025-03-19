@@ -101,7 +101,7 @@ pub async fn upload_json(
         }
     };
 
-    let (score, map_score_eff, map_score_spd, wizard_info_data) = process_json(json);
+    let (score_eff, score_spd, map_score_eff, map_score_spd, wizard_info_data) = process_json(json);
 
     let wizard_name = wizard_info_data
         .get("wizard_name")
@@ -125,7 +125,7 @@ pub async fn upload_json(
     let day = date[2];
 
     let mut eff_table = String::new();
-    eff_table.push_str("Eff     100     110     120\n");
+    eff_table.push_str("Eff%    100     110     120\n");
 
     let mut total_eff: HashMap<&str, i32> = HashMap::new();
     for bucket in &["100", "110", "120"] {
@@ -192,17 +192,28 @@ pub async fn upload_json(
     let embed = CreateEmbed::default()
         .title("JSON Report")
         .description(format!(
-            "**Account**: {} (ID: {})\n**JSON Date**: {}-{}-{}\n**Score**: {}\n",
-            wizard_name, wizard_id, day, month, year, score
+            "**Account**: {} (ID: {})\n**JSON Date**: {}-{}-{}\n",
+            wizard_name, wizard_id, day, month, year
         ))
         .field(
-            "Rune Efficiency",
-            format!("```autohotkey\n{}\n```", eff_table),
+            "Amount of runes per set and efficiency",
+            format!(
+                "```autohotkey\n{}\n\nTotal Efficiency Score: {}\n```",
+                eff_table, score_eff
+            ),
             false,
         )
         .field(
-            "Rune Speed",
-            format!("```autohotkey\n{}\n```", spd_table),
+            "Amount of runes per set and speed",
+            format!(
+                "```autohotkey\n{}\n\nTotal Speed Score: {}\n```",
+                spd_table, score_spd
+            ),
+            false,
+        )
+        .field(
+            "Combined Score",
+            format!("Efficiency + Speed = **{}**", score_eff + score_spd),
             false,
         )
         .field(

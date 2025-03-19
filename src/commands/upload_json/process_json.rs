@@ -79,6 +79,7 @@ pub fn process_json(
     json: Value,
 ) -> (
     f32,
+    f32,
     HashMap<String, HashMap<String, u32>>,
     HashMap<String, HashMap<String, u32>>,
     HashMap<&'static str, Value>,
@@ -134,7 +135,8 @@ pub fn process_json(
         "Intangible": 4
     });
 
-    let mut score: f32 = 0.0;
+    let mut score_eff: f32 = 0.0;
+    let mut score_spd: f32 = 0.0;
     let mut map_score_eff: HashMap<String, HashMap<String, u32>> = HashMap::new();
     let mut map_score_spd: HashMap<String, HashMap<String, u32>> = HashMap::new();
 
@@ -194,7 +196,8 @@ pub fn process_json(
             .entry(set_category.clone())
             .or_insert_with(HashMap::new);
         *spd_entry.entry(spd_key).or_insert(0) += 1;
-        score += coeff_set as f32 * (coeff_spd as f32 + coeff_eff as f32);
+        score_eff += coeff_set as f32 * coeff_eff as f32;
+        score_spd += coeff_set as f32 * coeff_spd as f32;
     }
-    (score, map_score_eff, map_score_spd, wizard_info_data)
+    (score_eff, score_spd, map_score_eff, map_score_spd, wizard_info_data)
 }
