@@ -118,8 +118,8 @@ pub async fn upload_json(
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown");
 
-    // The json date : "2025-03-14 16:33:16" (Fuseaux horaire : Corée du Sud => UTC+9)
-    // Get the day, month and year
+    // La date JSON : "2025-03-14 16:33:16" (Fuseaux horaire : Corée du Sud => UTC+9)
+    // Extraction du jour, mois et année
     let date = json_date.split(' ').collect::<Vec<&str>>()[0];
     let date = date.split('-').collect::<Vec<&str>>();
     let year = date[0];
@@ -237,11 +237,17 @@ pub async fn upload_json(
     )
     .await?;
 
-    // Prepare MongoDB data
+    // Préparation des données pour MongoDB
     let mongo_uri = {
         let uri_guard = MONGO_URI.lock().unwrap();
         uri_guard.clone()
     };
+
+    // Affichage du mongo_uri pour débogage
+    println!(
+        "Debug: Création du client Mongo avec mongo_uri: {}",
+        mongo_uri
+    );
 
     let collection = match get_mongo_collection(&mongo_uri).await {
         Ok(collection) => collection,
@@ -252,7 +258,7 @@ pub async fn upload_json(
         }
     };
 
-    // Use the JSON date instead of the current date (DD-MM-YYYY)
+    // Utiliser la date JSON au lieu de la date courante (DD-MM-YYYY)
     let apparition = doc! {
         "date": format!("{}-{}-{}", day, month, year),
         "pseudo": wizard_name,
@@ -264,7 +270,7 @@ pub async fn upload_json(
 
     match collection.find_one(filter.clone()).await {
         Ok(Some(existing_doc)) => {
-            // Check if the date already exists in the apparitions array
+            // Vérifier si la date existe déjà dans le tableau "apparitions"
             if let Some(apparitions) = existing_doc.get_array("apparitions").ok() {
                 let date_exists = apparitions.iter().any(|entry| {
                     if let Some(doc) = entry.as_document() {
@@ -276,12 +282,12 @@ pub async fn upload_json(
                 });
 
                 if date_exists {
-                    // Date already exists, no need to update
+                    // La date existe déjà, pas besoin de mettre à jour
                     return Ok(());
                 }
             }
 
-            // Date does not exist, update the document
+            // La date n'existe pas, on met à jour le document
             let update = doc! {
                 "$push": { "apparitions": apparition }
             };
@@ -296,7 +302,7 @@ pub async fn upload_json(
             }
         }
         Ok(None) => {
-            // Document does not exist, insert a new one
+            // Le document n'existe pas, on insère un nouveau document
             let new_document = doc! {
                 "id": wizard_id.to_string(),
                 "apparitions": vec![apparition]
@@ -324,7 +330,15 @@ pub async fn upload_json(
 async fn get_mongo_collection(
     mongo_uri: &str,
 ) -> Result<Collection<mongodb::bson::Document>, mongodb::error::Error> {
+    // Affichage pour déboguer dans la fonction de connexion
+    println!(
+        "Debug: Tentative de connexion à MongoDB avec URI: {}",
+        mongo_uri
+    );
+
     let client = Client::with_uri_str(mongo_uri).await?;
+    println!("Debug: Client MongoDB créé avec succès.");
+
     let db = client.database("bot-swbox-db");
     Ok(db.collection("upload-json"))
 }
