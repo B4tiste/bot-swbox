@@ -12,10 +12,22 @@ pub async fn send_log<T: Debug, G: Debug>(
     let user_input_str = format!("{:?}", user_input);
     let response_output_str = format!("{:?}", response_output);
 
+    // Récupérer le nom du serveur
+    let guild_name = if let Some(guild_id) = ctx.guild_id() {
+        if let Some(guild) = guild_id.to_guild_cached(&ctx.serenity_context().cache) {
+            guild.name.clone()
+        } else {
+            "Unknown Guild".to_string()
+        }
+    } else {
+        "DM (Direct Message)".to_string()
+    };
+
     let log_embed = CreateEmbed::default()
         .title("Interaction Log")
         .field("User", &ctx.author().name, true)
         .field("Command", &ctx.command().name, true)
+        .field("Server", guild_name, true) // Ajouter le nom du serveur
         .field("User Input", user_input_str, false)
         .field("Response Successful", format!("{}", response_state), true)
         .field("Output Result", response_output_str, false)
