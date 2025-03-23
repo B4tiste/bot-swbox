@@ -50,12 +50,21 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         description.push('\n');
     }
 
+    // cutoff image url : https://sw-tt.com/test.png
+    let cutoff_image = "https://sw-tt.com/test.png";
+
     // Creating the embed using the description
     let embed = serenity::CreateEmbed::default()
         .title("Current ELOs")
         .color(serenity::Colour::from_rgb(0, 0, 255))
         .thumbnail(thumbnail)
-        .description(description);
+        .description(description)
+        .field(
+            "Cutoffs :",
+            format!("from [SW-TT](https://sw-tt.com)"),
+            false,
+        )
+        .image(cutoff_image);
 
     let reply = CreateReply {
         embeds: vec![embed],
