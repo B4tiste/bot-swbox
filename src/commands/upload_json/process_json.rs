@@ -1,5 +1,5 @@
+use crate::commands::upload_json::rune::Property;
 use crate::commands::upload_json::rune::Rune;
-use crate::commands::upload_json::rune::{Property, RuneStatId};
 use crate::commands::upload_json::utils::{
     get_rune_set_id_by_id, get_rune_stat_id_by_id, get_stars_ammount_by_id,
 };
@@ -166,14 +166,7 @@ pub fn process_json(
                 break;
             }
         }
-        let mut speed = 0;
-        if let Some(sub_stats) = Some(&rune.secondary_properties) {
-            for stat in sub_stats {
-                if stat.id == RuneStatId::Spd {
-                    speed += stat.value as u32 + stat.boost_value.unwrap_or(0.0) as u32;
-                }
-            }
-        }
+        let speed = rune.speed_value.unwrap_or_default();
         let mut coeff_spd = 0;
         let mut spd_key = "0".to_string();
         for (key, value) in speed_coeffs
@@ -199,5 +192,11 @@ pub fn process_json(
         score_eff += coeff_set as f32 * coeff_eff as f32;
         score_spd += coeff_set as f32 * coeff_spd as f32;
     }
-    (score_eff, score_spd, map_score_eff, map_score_spd, wizard_info_data)
+    (
+        score_eff,
+        score_spd,
+        map_score_eff,
+        map_score_spd,
+        wizard_info_data,
+    )
 }
