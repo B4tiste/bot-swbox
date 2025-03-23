@@ -61,7 +61,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         .description(description)
         .field(
             "Cutoffs :",
-            format!("from [SW-TT](https://sw-tt.com)"),
+            format!("From [SW-TT](https://sw-tt.com)"),
             false,
         )
         .image(cutoff_image);
