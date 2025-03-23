@@ -223,6 +223,12 @@ pub async fn upload_json(
             format!("<@{}>", ctx.author().id),
             false,
         )
+        // Add a field with that hyperlink : https://leaderboard-bot-swbox.netlify.app/
+        .field(
+            "Leaderboard",
+            "You can check the leaderboard [here](https://leaderboard-bot-swbox.netlify.app/)",
+            false,
+        )
         .color(0x00FF00);
     ctx.send(CreateReply {
         embeds: vec![embed],
