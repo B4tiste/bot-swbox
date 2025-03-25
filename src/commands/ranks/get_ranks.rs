@@ -12,9 +12,12 @@ use std::vec;
 
 /// 📂 Displays the current scores for ranks (C1 -> G3)
 ///
-/// Usage: `/ranks`
+/// Usage: `/get_ranks`
 #[poise::command(slash_command)]
 pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
+    // Defer the response to avoid the 3 seconds timeout
+    ctx.defer().await?;
+
     let scores = match get_rank_info().await {
         Ok(scores) => scores,
         Err(_) => {
@@ -51,7 +54,16 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
     }
 
     // cutoff image url : https://sw-tt.com/test.png
-    let cutoff_image = "https://sw-tt.com/test.png";
+    let cutoff_image_url = "https://sw-tt.com/test.png";
+
+    // Télécharger l'image
+    let response = reqwest::get(cutoff_image_url)
+        .await
+        .map_err(|_| serenity::Error::Other("Failed to download cutoff image"))?;
+    let image_bytes = response
+        .bytes()
+        .await
+        .map_err(|_| serenity::Error::Other("Failed to read cutoff image bytes"))?;
 
     // Creating the embed using the description
     let embed = serenity::CreateEmbed::default()
@@ -64,10 +76,13 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
             format!("From [SW-TT](https://sw-tt.com)"),
             false,
         )
-        .image(cutoff_image);
+        .image("attachment://cutoffs.png");
+
+    let attachements = serenity::CreateAttachment::bytes(image_bytes.to_vec(), "cutoffs.png");
 
     let reply = CreateReply {
         embeds: vec![embed],
+        attachments: vec![attachements],
         ..Default::default()
     };
 
