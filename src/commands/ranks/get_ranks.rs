@@ -8,6 +8,7 @@ use poise::{
     serenity_prelude::{self as serenity, Error},
     CreateReply,
 };
+use serenity::builder::CreateEmbedFooter;
 use std::vec;
 
 /// 📂 Displays the current scores for ranks (C1 -> G3)
@@ -76,7 +77,10 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
             format!("From [SW-TT](https://sw-tt.com)"),
             false,
         )
-        .image("attachment://cutoffs.png");
+        .image("attachment://cutoffs.png")
+        .footer(CreateEmbedFooter::new(
+            "Please use /send_suggestion to report any issue.",
+        ));
 
     let attachements = serenity::CreateAttachment::bytes(image_bytes.to_vec(), "cutoffs.png");
 

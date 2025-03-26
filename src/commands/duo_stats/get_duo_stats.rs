@@ -2,6 +2,7 @@ use poise::{
     serenity_prelude::{self as serenity, CreateEmbed, Error},
     CreateReply, Modal,
 };
+use serenity::builder::CreateEmbedFooter;
 
 use crate::commands::duo_stats::modal::DuoStatsInfosModal;
 use crate::commands::duo_stats::utils::{create_collage_from_urls, get_monsters_duo_stats};
@@ -219,7 +220,11 @@ pub async fn get_duo_stats(ctx: poise::ApplicationContext<'_, Data, Error>) -> R
             ),
             format!("{}%", 100.0 - against_winrate),
             false,
-        );
+        )
+        .color(serenity::Colour::from_rgb(10, 50, 128))
+        .footer(CreateEmbedFooter::new(
+            "Please use /send_suggestion to report any issue.",
+        ));
 
     let reply = CreateReply {
         embeds: vec![embed],

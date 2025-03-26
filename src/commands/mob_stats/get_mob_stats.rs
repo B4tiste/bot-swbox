@@ -2,6 +2,7 @@ use poise::{
     serenity_prelude::{self as serenity, CreateEmbed, Error},
     CreateReply, Modal,
 };
+use serenity::builder::CreateEmbedFooter;
 
 use crate::commands::mob_stats::modal::MobStatsInfosModal;
 use crate::commands::mob_stats::utils::get_monster_rta_info;
@@ -179,7 +180,10 @@ pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, Data, Error>) -> R
                 monster_rta_info_g3.lead_rate, monster_rta_info_g3.leader
             ),
             true,
-        );
+        )
+        .footer(CreateEmbedFooter::new(
+            "Please use /send_suggestion to report any issue.",
+        ));
 
     let reply = CreateReply {
         embeds: vec![embed.clone()],

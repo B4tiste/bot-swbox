@@ -10,11 +10,12 @@ use crate::Data;
 use mongodb::{bson::doc, Client, Collection};
 use poise::serenity_prelude::CreateEmbed;
 use poise::{
-    serenity_prelude::{Attachment, Error},
+    serenity_prelude::{self as serenity, Attachment, Error},
     CreateReply,
 };
 use reqwest;
 use serde_json::Value;
+use serenity::builder::CreateEmbedFooter;
 
 /// 📂 Upload a JSON file to get an account score, and some data about rune sets eff% and rune speed
 ///
@@ -229,7 +230,11 @@ pub async fn upload_json(
             "You can check the leaderboard [here](https://leaderboard-bot-swbox.netlify.app/)",
             false,
         )
-        .color(0x00FF00);
+        .color(0x00FF00)
+        .footer(CreateEmbedFooter::new(
+            "Please use /send_suggestion to report any issue.",
+        ));
+
     ctx.send(CreateReply {
         embeds: vec![embed],
         ..Default::default()

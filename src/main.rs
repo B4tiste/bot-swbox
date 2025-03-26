@@ -70,7 +70,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 get_duo_stats(),
                 send_suggestion(),
                 track_player_names(),
-                upload_json(), // Add the new command here
+                upload_json(),
             ],
             ..Default::default()
         })

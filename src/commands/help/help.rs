@@ -3,6 +3,7 @@ use poise::{
     serenity_prelude::{self as serenity, Error},
     CreateReply,
 };
+use serenity::builder::CreateEmbedFooter;
 
 /// 📂 Displays the available commands and prints the list of servers to the console.
 ///
@@ -44,7 +45,7 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
 
     // Additional fields for credits and source code links
     embed = embed.field(
-        "Created by",
+        "Created by <@191619427584835585> & <@366631137562329091>",
         "<@!191619427584835585> & <@!366631137562329091>",
         true,
     );
@@ -58,6 +59,10 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
         "[BP Archive](https://bp-archive.netlify.app/)",
         true,
     );
+
+    embed = embed.footer(CreateEmbedFooter::new(
+        "Please use /send_suggestion to report any issue.",
+    ));
 
     // Send the embed reply
     let reply = CreateReply {
