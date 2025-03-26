@@ -21,11 +21,11 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ### ToDo:
 
--   [ ] In the `/get_ranks` command, add the amounts from previous days (e.g., +10 places since yesterday, +20 since a week ago), and the remaining time before the end of the season. Possibility to create a graph to show ranking evolution, with a prediction based on the trend.
--   [ ] Add the response message ID in the log.
+-   [ ] Separate RTA & Siege JSON analysis using different coeffs.
+-   [ ] In the `/get_ranks` command, create a DB to store the data for a future implementation of a graph/prediction.
 -   [ ] Switch to the GodsArmy database for the /track of usernames.
+-   [ ] Switch from Swarena to swrt for monster WR.
 -   [ ] Add the current player's photo in the thumbnail of the /track.
--   [ ] Add a command for the number of games in the last seasons.
 
 ### Completed:
 
