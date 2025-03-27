@@ -80,6 +80,8 @@ pub fn process_json(
 ) -> (
     f32,
     f32,
+    f32,
+    f32,
     HashMap<String, HashMap<String, u32>>,
     HashMap<String, HashMap<String, u32>>,
     HashMap<&'static str, Value>,
@@ -116,85 +118,176 @@ pub fn process_json(
         }
     }
 
-    let efficiency_coeffs = serde_json::json!({
-        "100": 1,
+    // Coefficients globaux
+    let global_efficiency_coeffs = serde_json::json!({
+        "100": 0.5,
         "110": 2,
-        "120": 3
+        "120": 3,
+        "130": 4,
     });
-    let speed_coeffs = serde_json::json!({
-        "23": 1,
-        "26": 2,
-        "29": 3,
-        "32": 4
-    });
-    let set_coeffs = serde_json::json!({
-        "Despair": 3,
-        "Swift": 3,
-        "Violent": 3,
-        "Will": 2,
-        "Intangible": 4
+    let global_speed_coeffs = serde_json::json!({
+        "24": 0.5,
+        "26": 1,
+        "30": 3,
+        "34": 4,
+        "36": 6
     });
 
-    let mut score_eff: f32 = 0.0;
-    let mut score_spd: f32 = 0.0;
-    let mut map_score_eff: HashMap<String, HashMap<String, u32>> = HashMap::new();
-    let mut map_score_spd: HashMap<String, HashMap<String, u32>> = HashMap::new();
+    // Coefficients RTA
+    let rta_set_eff_coeffs = serde_json::json!({
+        "Despair": 2,
+        "Swift": 1,
+        "Violent": 3,
+        "Will": 3,
+        "Intangible": 3
+    });
+    let rta_set_spd_coeffs = serde_json::json!({
+        "Despair": 2,
+        "Swift": 4,
+        "Intangible": 4,
+        "Violent": 3,
+        "Will": 3,
+    });
+
+    // Coefficients Siege
+    let siege_set_eff_coeffs = serde_json::json!({
+        "Despair": 2,
+        "Swift": 1,
+        "Violent": 3,
+        "Will": 3,
+        "Intangible": 3,
+        "Destroy": 3
+    });
+    let siege_set_spd_coeffs = serde_json::json!({
+        "Despair": 2,
+        "Swift": 4,
+        "Intangible": 4,
+        "Violent": 3,
+        "Will": 3,
+        "Destroy": 3,
+    });
+
+    // --- Initialisation des scores ---
+    let mut rta_score_eff: f32 = 0.0; // global_efficiency_coeff * rta_set_eff_coeff
+    let mut siege_score_eff: f32 = 0.0; // global_efficiency_coeff * siege_set_eff_coeff
+    let mut rta_score_spd: f32 = 0.0; // global_speed_coeff * rta_set_spd_coeff
+    let mut siege_score_spd: f32 = 0.0; // global_speed_coeff * siege_set_spd_coeff
+
+    // --- Initialisation des maps de statistiques ---
+    let mut map_score_eff: HashMap<String, HashMap<String, u32>> = HashMap::new(); // Old map
+    let mut map_score_spd: HashMap<String, HashMap<String, u32>> = HashMap::new(); // Old map
 
     for rune in vec_runes.iter() {
+
+        // RTA and Siege spd/eff coefficients
         let set_id = rune.set_id.to_string();
-        let mut coeff_set = 1;
-        let set_category = if set_coeffs.get(set_id.as_str()).is_some() {
+        // let coeff_set = 1; // Old coeff
+        let mut rta_set_eff_coeff = 1;
+        let mut siege_set_eff_coeff = 1;
+        let mut rta_set_spd_coeff = 1;
+        let mut siege_set_spd_coeff = 1;
+
+        // New
+        // Set category
+        let set_category = if rta_set_eff_coeffs.get(set_id.as_str()).is_some() {
             set_id.clone()
         } else {
             "Other".to_string()
         };
-        if let Some(set_coeff) = set_coeffs.get(set_id.as_str()) {
-            coeff_set = set_coeff.as_u64().expect("coeff_set should be an integer") as u32;
+        // RTA
+        if let Some(set_coeff) = rta_set_eff_coeffs.get(set_id.as_str()) {
+            rta_set_eff_coeff = set_coeff.as_u64().expect("rta_set_eff_coeff should be an integer") as u32;
         }
+        if let Some(set_coeff) = rta_set_spd_coeffs.get(set_id.as_str()) {
+            rta_set_spd_coeff = set_coeff.as_u64().expect("rta_set_spd_coeff should be an integer") as u32;
+        }
+        // Siege
+        // let siege_set_category = if siege_set_eff_coeffs.get(set_id.as_str()).is_some() {
+        //     set_id.clone()
+        // } else {
+        //     "Other".to_string()
+        // };
+        if let Some(set_coeff) = siege_set_eff_coeffs.get(set_id.as_str()) {
+            siege_set_eff_coeff = set_coeff.as_u64().expect("siege_set_eff_coeff should be an integer") as u32;
+        }
+        if let Some(set_coeff) = siege_set_spd_coeffs.get(set_id.as_str()) {
+            siege_set_spd_coeff = set_coeff.as_u64().expect("siege_set_spd_coeff should be an integer") as u32;
+        }
+
+        // Global_efficiency_coeff
         let efficiency = rune.efficiency.unwrap_or_default();
-        let mut coeff_eff = 0;
-        let mut eff_key = "0".to_string();
-        for (key, value) in efficiency_coeffs
+
+        let mut global_coeff_eff = 0.0;
+        let mut global_eff_key = "0".to_string();
+
+        for (key, value) in global_efficiency_coeffs
             .as_object()
             .expect("Efficiency should be an object")
             .iter()
             .rev()
         {
             if efficiency >= key.parse::<f32>().expect("Invalid efficiency key") {
-                coeff_eff = value.as_u64().expect("coeff_eff should be an integer") as u32;
-                eff_key = key.clone();
+                global_coeff_eff = value.as_f64().expect("Invalid efficiency value") as f32;
+                global_eff_key = key.clone();
                 break;
             }
         }
+
+        // Global_speed_coeff
         let speed = rune.speed_value.unwrap_or_default();
-        let mut coeff_spd = 0;
-        let mut spd_key = "0".to_string();
-        for (key, value) in speed_coeffs
+
+        let mut global_coeff_spd = 0.0;
+        let mut global_spd_key = "0".to_string();
+
+        for (key, value) in global_speed_coeffs
             .as_object()
             .expect("Speed should be an object")
             .iter()
             .rev()
         {
             if speed >= key.parse::<u32>().expect("Invalid speed key") {
-                coeff_spd = value.as_u64().expect("coeff_spd should be an integer") as u32;
-                spd_key = key.clone();
+                global_coeff_spd = value.as_f64().expect("Invalid efficiency value") as f32;
+                global_spd_key = key.clone();
                 break;
             }
         }
+
+        // OLD
+        // let eff_entry = map_score_eff
+        //     .entry(set_category.clone())
+        //     .or_insert_with(HashMap::new);
+        // *eff_entry.entry(eff_key).or_insert(0) += 1;
+        // let spd_entry = map_score_spd
+        //     .entry(set_category.clone())
+        //     .or_insert_with(HashMap::new);
+        // *spd_entry.entry(spd_key).or_insert(0) += 1;
+        // score_eff += coeff_set as f32 * coeff_eff as f32;
+        // score_spd += coeff_set as f32 * coeff_spd as f32;
+
+        // NEW
+        // Mapping set category
         let eff_entry = map_score_eff
             .entry(set_category.clone())
             .or_insert_with(HashMap::new);
-        *eff_entry.entry(eff_key).or_insert(0) += 1;
+        *eff_entry.entry(global_eff_key).or_insert(0) += 1;
         let spd_entry = map_score_spd
             .entry(set_category.clone())
             .or_insert_with(HashMap::new);
-        *spd_entry.entry(spd_key).or_insert(0) += 1;
-        score_eff += coeff_set as f32 * coeff_eff as f32;
-        score_spd += coeff_set as f32 * coeff_spd as f32;
+        *spd_entry.entry(global_spd_key).or_insert(0) += 1;
+
+        // RTA
+        rta_score_eff += rta_set_eff_coeff as f32 * global_coeff_eff as f32;
+        rta_score_spd += rta_set_spd_coeff as f32 * global_coeff_spd as f32;
+
+        // Siege
+        siege_score_eff += siege_set_eff_coeff as f32 * global_coeff_eff as f32;
+        siege_score_spd += siege_set_spd_coeff as f32 * global_coeff_spd as f32;
     }
     (
-        score_eff,
-        score_spd,
+        rta_score_eff,
+        rta_score_spd,
+        siege_score_eff,
+        siege_score_spd,
         map_score_eff,
         map_score_spd,
         wizard_info_data,
