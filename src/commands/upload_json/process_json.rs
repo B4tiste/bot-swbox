@@ -156,7 +156,10 @@ pub fn process_json(
         "Violent": 3,
         "Will": 3,
         "Intangible": 3,
-        "Destroy": 3
+        "Destroy": 3,
+        "Shield": 2,
+        "Sceal": 2,
+        "Nemesis" : 2
     });
     let siege_set_spd_coeffs = serde_json::json!({
         "Despair": 2,
@@ -165,6 +168,9 @@ pub fn process_json(
         "Violent": 3,
         "Will": 3,
         "Destroy": 3,
+        "Shield": 3,
+        "Sceal" : 2,
+        "Nemesis" : 2
     });
 
     // --- Initialisation des scores ---
