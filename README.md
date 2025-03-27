@@ -22,7 +22,6 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ### ToDo:
 
--   [ ] Separate RTA & Siege JSON analysis using different coeffs.
 -   [ ] In the `/get_ranks` command, create a DB to store the data for a future implementation of a graph/prediction.
 -   [ ] Switch to the GodsArmy database for the /track of usernames.
 -   [ ] Switch from Swarena to swrt for monster WR.
@@ -30,6 +29,7 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ### Completed:
 
+-   [x] Separate RTA & Siege JSON analysis using different coeffs.
 -   [x] Add the /upload_json command to get an analysis of the JSON file.
 -   [x] Translate the bot to English.
 -   [x] Add the /help command.
