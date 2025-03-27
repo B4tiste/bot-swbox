@@ -58,7 +58,7 @@ pub enum RuneSetId {
     Enhance,
     Accuracy,
     Tolerance,
-    Sceal,
+    Seal,
     Intangible,
 }
 

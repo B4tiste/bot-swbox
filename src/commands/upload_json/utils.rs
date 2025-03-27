@@ -31,7 +31,7 @@ pub fn get_rune_set_id_by_id(id: u32) -> RuneSetId {
         21 => RuneSetId::Enhance,
         22 => RuneSetId::Accuracy,
         23 => RuneSetId::Tolerance,
-        24 => RuneSetId::Sceal,
+        24 => RuneSetId::Seal,
         25 => RuneSetId::Intangible,
         _ => panic!("Invalid runes set id"),
     }

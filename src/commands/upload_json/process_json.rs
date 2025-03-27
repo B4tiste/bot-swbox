@@ -158,7 +158,7 @@ pub fn process_json(
         "Intangible": 3,
         "Destroy": 3,
         "Shield": 2,
-        "Sceal": 2,
+        "Seal": 2,
         "Nemesis" : 2
     });
     let siege_set_spd_coeffs = serde_json::json!({
@@ -169,7 +169,7 @@ pub fn process_json(
         "Will": 3,
         "Destroy": 3,
         "Shield": 3,
-        "Sceal" : 2,
+        "Seal" : 2,
         "Nemesis" : 2
     });
 

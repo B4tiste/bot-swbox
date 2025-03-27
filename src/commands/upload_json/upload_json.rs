@@ -144,7 +144,7 @@ pub async fn upload_json(
         total_eff.insert(bucket, 0);
     }
 
-    let row_order_eff = ["Other", "Will", "Swift", "Violent", "Despair", "Shield", "Nemesis", "Sceal", "Intangible"];
+    let row_order_eff = ["Other", "Will", "Swift", "Violent", "Despair", "Shield", "Nemesis", "Seal", "Intangible"];
 
     for key in &row_order_eff {
         if let Some(category) = map_score_eff.get(&key.to_string()) {
@@ -177,7 +177,7 @@ pub async fn upload_json(
     for bucket in &["26", "30", "34", "36"] {
         total_spd.insert(bucket, 0);
     }
-    let row_order_spd = ["Other", "Will", "Swift", "Violent", "Despair", "Shield", "Nemesis", "Sceal", "Intangible"];
+    let row_order_spd = ["Other", "Will", "Swift", "Violent", "Despair", "Shield", "Nemesis", "Seal", "Intangible"];
 
     for key in &row_order_spd {
         if let Some(category) = map_score_spd.get(&key.to_string()) {
