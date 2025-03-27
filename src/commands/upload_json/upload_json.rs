@@ -135,7 +135,7 @@ pub async fn upload_json(
         total_eff.insert(bucket, 0);
     }
 
-    let row_order_eff = ["Other", "Will", "Swift", "Violent", "Despair", "Intangible"];
+    let row_order_eff = ["Other", "Will", "Swift", "Violent", "Despair", "Shield", "Nemesis", "Sceal", "Intangible"];
 
     for key in &row_order_eff {
         if let Some(category) = map_score_eff.get(&key.to_string()) {
@@ -154,6 +154,7 @@ pub async fn upload_json(
             eff_table.push_str(&row);
         }
     }
+    eff_table.push('\n');
     eff_table.push_str(&format!("{:<8}", "Total"));
     for bucket in &["100", "110", "120", "130"] {
         let total = total_eff.get(bucket).unwrap();
@@ -167,7 +168,7 @@ pub async fn upload_json(
     for bucket in &["26", "30", "34", "36"] {
         total_spd.insert(bucket, 0);
     }
-    let row_order_spd = ["Other", "Will", "Swift", "Violent", "Despair", "Intangible"];
+    let row_order_spd = ["Other", "Will", "Swift", "Violent", "Despair", "Shield", "Nemesis", "Sceal", "Intangible"];
 
     for key in &row_order_spd {
         if let Some(category) = map_score_spd.get(&key.to_string()) {
@@ -186,6 +187,7 @@ pub async fn upload_json(
             spd_table.push_str(&row);
         }
     }
+    spd_table.push('\n');
     spd_table.push_str(&format!("{:<8}", "Total"));
     for bucket in &["26", "30", "34", "36"] {
         let total = total_spd.get(bucket).unwrap();
@@ -201,16 +203,32 @@ pub async fn upload_json(
         .field(
             "Amount of runes per set and efficiency",
             format!(
-                "```autohotkey\n{}\n\nRTA Efficiency Score: {}\nSiege Efficiency Score: {}\n```",
-                eff_table, rta_score_eff, siege_score_eff
+                "```autohotkey\n{}\n```",
+                eff_table
+            ),
+            false,
+        )
+        .field(
+            "Efficiency Score",
+            format!(
+                "RTA: **{}** - Siege: **{}**\n",
+                rta_score_eff, siege_score_eff
             ),
             false,
         )
         .field(
             "Amount of runes per set and speed",
             format!(
-                "```autohotkey\n{}\n\nRTA Speed Score: {}\nSiege Speed Score: {}\n```",
-                spd_table, rta_score_spd, siege_score_spd
+                "```autohotkey\n{}\n```",
+                spd_table
+            ),
+            false,
+        )
+        .field(
+            "Speed Score",
+            format!(
+                "RTA: **{}** - Siege: **{}**\n",
+                rta_score_spd, siege_score_spd
             ),
             false,
         )

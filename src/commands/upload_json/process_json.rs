@@ -194,7 +194,7 @@ pub fn process_json(
         let mut siege_set_spd_coeff = 1;
 
         // Set category
-        let set_category = if rta_set_eff_coeffs.get(set_id.as_str()).is_some() {
+        let set_category = if siege_set_spd_coeffs.get(set_id.as_str()).is_some() {
             set_id.clone()
         } else {
             "Other".to_string()
