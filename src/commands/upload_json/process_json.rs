@@ -85,6 +85,7 @@ pub fn process_json(
     HashMap<String, HashMap<String, u32>>,
     HashMap<String, HashMap<String, u32>>,
     HashMap<&'static str, Value>,
+    HashMap<&'static str, Value>,
 ) {
     let mut vec_runes: Vec<Rune> = Vec::new();
     if let Some(unit_list) = json.get("unit_list") {
@@ -115,6 +116,12 @@ pub fn process_json(
         }
         if let Some(wizard_last_login) = wizard_info.get("wizard_last_login") {
             wizard_info_data.insert("wizard_last_login", wizard_last_login.clone());
+        }
+    }
+    let mut account_info_data = HashMap::new();
+    if let Some(account_info) = json.get("account_info") {
+        if let Some(channel_uid) = account_info.get("channel_uid") {
+            account_info_data.insert("channel_uid", channel_uid.clone());
         }
     }
 
@@ -278,5 +285,6 @@ pub fn process_json(
         map_score_eff,
         map_score_spd,
         wizard_info_data,
+        account_info_data,
     )
 }

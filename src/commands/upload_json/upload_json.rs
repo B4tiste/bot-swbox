@@ -27,6 +27,9 @@ pub async fn upload_json(
     file: Attachment,
     #[description = "Select the mode :"] mode: Mode,
 ) -> Result<(), Error> {
+    // Defer the response to avoid the 3 seconds timeout
+    ctx.defer().await?;
+
     if file.url.is_empty() {
         let error_message = "No file provided. Please attach a JSON file.";
         let reply = ctx.send(create_embed_error(&error_message)).await?;
@@ -113,7 +116,7 @@ pub async fn upload_json(
         Mode::NoSpeedDetailAndAnonymized => 3,
     };
 
-    let (rta_score_eff, rta_score_spd, siege_score_eff, siege_score_spd, map_score_eff, map_score_spd, wizard_info_data) = process_json(json);
+    let (rta_score_eff, rta_score_spd, siege_score_eff, siege_score_spd, map_score_eff, map_score_spd, wizard_info_data, account_info_data) = process_json(json);
 
     let wizard_name = wizard_info_data
         .get("wizard_name")
@@ -127,6 +130,11 @@ pub async fn upload_json(
         .get("wizard_last_login")
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown");
+
+    let hive_id = account_info_data
+        .get("channel_uid")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
 
     // La date JSON : "2025-03-14 16:33:16" (Fuseaux horaire : Corée du Sud => UTC+9)
     // Extraction du jour, mois et année
@@ -203,6 +211,20 @@ pub async fn upload_json(
         spd_table.push_str(&format!("{:<8}", total));
     }
 
+    // Ajouter l'image du JSON
+    let pp_base_url = "https://swex.oss-cn-hangzhou.aliyuncs.com/playerImage/";
+
+    let pp_url = format!("{}{}.jpg", pp_base_url, hive_id);
+
+    // Télécharger l'image
+    let response = reqwest::get(pp_url)
+        .await
+        .map_err(|_| serenity::Error::Other("Failed to download pp image"))?;
+    let image_bytes = response
+        .bytes()
+        .await
+        .map_err(|_| serenity::Error::Other("Failed to read pp image bytes"))?;
+
     let embed = CreateEmbed::default()
         .title("JSON Report")
         .description(format!(
@@ -221,6 +243,7 @@ pub async fn upload_json(
             },
             day, month, year
         ))
+        .thumbnail("attachment://pp.jpg")
         .field(
             "Amount of runes per set and efficiency",
             format!(
@@ -273,11 +296,16 @@ pub async fn upload_json(
             "Please use /send_suggestion to report any issue.",
         ));
 
-    ctx.send(CreateReply {
+    let attachements = serenity::CreateAttachment::bytes(image_bytes.to_vec(), "pp.jpg");
+
+    let reply = CreateReply {
         embeds: vec![embed],
+        attachments: vec![attachements],
         ..Default::default()
-    })
-    .await?;
+    };
+
+    ctx.send(reply).await?;
+
     send_log(
         &ctx,
         "Command: /upload_json".to_string(),
