@@ -104,7 +104,8 @@ pub async fn upload_json(
         }
     };
 
-    let (score_eff, score_spd, map_score_eff, map_score_spd, wizard_info_data) = process_json(json);
+    // let (score_eff, score_spd, map_score_eff, map_score_spd, wizard_info_data) = process_json(json);
+    let (rta_score_eff, rta_score_spd, siege_score_eff, siege_score_spd, map_score_eff, map_score_spd, wizard_info_data) = process_json(json);
 
     let wizard_name = wizard_info_data
         .get("wizard_name")
@@ -128,10 +129,10 @@ pub async fn upload_json(
     let day = date[2];
 
     let mut eff_table = String::new();
-    eff_table.push_str("Eff%    100     110     120\n");
+    eff_table.push_str("Eff%    100     110     120     130\n");
 
     let mut total_eff: HashMap<&str, i32> = HashMap::new();
-    for bucket in &["100", "110", "120"] {
+    for bucket in &["100", "110", "120", "130"] {
         total_eff.insert(bucket, 0);
     }
 
@@ -145,7 +146,7 @@ pub async fn upload_json(
                 other => other,
             };
             let mut row = format!("{:<8}", display_key);
-            for &bucket in &["100", "110", "120"] {
+            for &bucket in &["100", "110", "120", "130"] {
                 let count = category.get(bucket).copied().unwrap_or(0);
                 row.push_str(&format!("{:<8}", count));
                 *total_eff.get_mut(bucket).unwrap() += count as i32;
@@ -155,16 +156,16 @@ pub async fn upload_json(
         }
     }
     eff_table.push_str(&format!("{:<8}", "Total"));
-    for bucket in &["100", "110", "120"] {
+    for bucket in &["100", "110", "120", "130"] {
         let total = total_eff.get(bucket).unwrap();
         eff_table.push_str(&format!("{:<8}", total));
     }
 
     let mut spd_table = String::new();
-    spd_table.push_str("Spd     23      26      29      32\n");
+    spd_table.push_str("Spd     26      30      34      36\n");
 
     let mut total_spd: HashMap<&str, i32> = HashMap::new();
-    for bucket in &["23", "26", "29", "32"] {
+    for bucket in &["26", "30", "34", "36"] {
         total_spd.insert(bucket, 0);
     }
     let row_order_spd = ["Other", "Will", "Swift", "Violent", "Despair", "Intangible"];
@@ -177,7 +178,7 @@ pub async fn upload_json(
                 other => other,
             };
             let mut row = format!("{:<8}", display_key);
-            for &bucket in &["23", "26", "29", "32"] {
+            for &bucket in &["26", "30", "34", "36"] {
                 let count = category.get(bucket).copied().unwrap_or(0);
                 row.push_str(&format!("{:<8}", count));
                 *total_spd.get_mut(bucket).unwrap() += count as i32;
@@ -187,7 +188,7 @@ pub async fn upload_json(
         }
     }
     spd_table.push_str(&format!("{:<8}", "Total"));
-    for bucket in &["23", "26", "29", "32"] {
+    for bucket in &["26", "30", "34", "36"] {
         let total = total_spd.get(bucket).unwrap();
         spd_table.push_str(&format!("{:<8}", total));
     }
@@ -201,24 +202,24 @@ pub async fn upload_json(
         .field(
             "Amount of runes per set and efficiency",
             format!(
-                "```autohotkey\n{}\n\nTotal Efficiency Score: {}\n```",
-                eff_table, score_eff
+                "```autohotkey\n{}\n\nRTA Efficiency Score: {}\nSiege Efficiency Score: {}\n```",
+                eff_table, rta_score_eff, siege_score_eff
             ),
             false,
         )
         .field(
             "Amount of runes per set and speed",
             format!(
-                "```autohotkey\n{}\n\nTotal Speed Score: {}\n```",
-                spd_table, score_spd
+                "```autohotkey\n{}\n\nRTA Speed Score: {}\nSiege Speed Score: {}\n```",
+                spd_table, rta_score_spd, siege_score_spd
             ),
             false,
         )
-        .field(
-            "Combined Score",
-            format!("Efficiency + Speed = **{}**", score_eff + score_spd),
-            false,
-        )
+        // .field(
+        //     "Combined Score",
+        //     format!("Efficiency + Speed = **{}**", score_eff + score_spd),
+        //     false,
+        // )
         .field(
             "User that uploaded the JSON",
             format!("<@{}>", ctx.author().id),
@@ -267,8 +268,10 @@ pub async fn upload_json(
     let apparition = doc! {
         "date": format!("{}-{}-{}", day, month, year),
         "pseudo": wizard_name,
-        "score_eff": score_eff,
-        "score_spd": score_spd
+        "rta_eff": rta_score_eff,
+        "siege_eff": siege_score_eff,
+        "rta_spd": rta_score_spd,
+        "siege_spd": siege_score_spd,
     };
 
     let filter = doc! { "id": wizard_id.to_string() };
