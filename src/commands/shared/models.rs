@@ -30,3 +30,11 @@ pub struct DuoStatsInfosData {
     pub win_against_rate: String,
     pub win_together_rate: String,
 }
+
+#[derive(Debug, poise::ChoiceParameter)]
+pub enum Mode {
+    Classic,
+    NoSpeedDetail,
+    Anonymized,
+    NoSpeedDetailAndAnonymized,
+}

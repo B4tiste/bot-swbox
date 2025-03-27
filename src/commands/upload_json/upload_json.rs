@@ -5,6 +5,7 @@ use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
 use crate::commands::shared::logs::send_log;
+use crate::commands::shared::models::Mode;
 use crate::commands::upload_json::process_json::process_json;
 use crate::Data;
 use mongodb::{bson::doc, Client, Collection};
@@ -24,6 +25,7 @@ use serenity::builder::CreateEmbedFooter;
 pub async fn upload_json(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     file: Attachment,
+    #[description = "Select the mode :"] mode: Mode,
 ) -> Result<(), Error> {
     if file.url.is_empty() {
         let error_message = "No file provided. Please attach a JSON file.";
@@ -102,6 +104,13 @@ pub async fn upload_json(
             .await?;
             return Ok(());
         }
+    };
+
+    let mode_id = match mode {
+        Mode::Classic => 0,
+        Mode::NoSpeedDetail => 1,
+        Mode::Anonymized => 2,
+        Mode::NoSpeedDetailAndAnonymized => 3,
     };
 
     let (rta_score_eff, rta_score_spd, siege_score_eff, siege_score_spd, map_score_eff, map_score_spd, wizard_info_data) = process_json(json);
@@ -198,7 +207,19 @@ pub async fn upload_json(
         .title("JSON Report")
         .description(format!(
             "**Account**: {} (ID: {})\n**JSON Date**: {}-{}-{}\n",
-            wizard_name, wizard_id, day, month, year
+            // if mode_id == 2 || mode_id == 3  => wizard_name = "Hidden" & wizard_id = 0
+            // wizard_name, wizard_id, day, month, year
+            if mode_id == 2 || mode_id == 3 {
+                "HIDDEN"
+            } else {
+                wizard_name
+            },
+            if mode_id == 2 || mode_id == 3 {
+                "HIDDEN".to_string()
+            } else {
+                wizard_id.to_string()
+            },
+            day, month, year
         ))
         .field(
             "Amount of runes per set and efficiency",
@@ -220,7 +241,12 @@ pub async fn upload_json(
             "Amount of runes per set and speed",
             format!(
                 "```autohotkey\n{}\n```",
-                spd_table
+                // spd_table if mode_id != 2 or 3
+                if mode_id == 1 || mode_id == 3 {
+                    "HIDDEN"
+                } else {
+                    &spd_table
+                }
             ),
             false,
         )
@@ -283,6 +309,7 @@ pub async fn upload_json(
         "siege_eff": siege_score_eff,
         "rta_spd": rta_score_spd,
         "siege_spd": siege_score_spd,
+        "anonyme": if mode_id == 2 || mode_id == 3 { 1 } else { 0 }
     };
 
     let filter = doc! { "id": wizard_id.to_string() };
