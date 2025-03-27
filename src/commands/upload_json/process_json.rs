@@ -193,7 +193,6 @@ pub fn process_json(
         let mut rta_set_spd_coeff = 1;
         let mut siege_set_spd_coeff = 1;
 
-        // New
         // Set category
         let set_category = if rta_set_eff_coeffs.get(set_id.as_str()).is_some() {
             set_id.clone()
@@ -208,11 +207,6 @@ pub fn process_json(
             rta_set_spd_coeff = set_coeff.as_u64().expect("rta_set_spd_coeff should be an integer") as u32;
         }
         // Siege
-        // let siege_set_category = if siege_set_eff_coeffs.get(set_id.as_str()).is_some() {
-        //     set_id.clone()
-        // } else {
-        //     "Other".to_string()
-        // };
         if let Some(set_coeff) = siege_set_eff_coeffs.get(set_id.as_str()) {
             siege_set_eff_coeff = set_coeff.as_u64().expect("siege_set_eff_coeff should be an integer") as u32;
         }
@@ -258,19 +252,6 @@ pub fn process_json(
             }
         }
 
-        // OLD
-        // let eff_entry = map_score_eff
-        //     .entry(set_category.clone())
-        //     .or_insert_with(HashMap::new);
-        // *eff_entry.entry(eff_key).or_insert(0) += 1;
-        // let spd_entry = map_score_spd
-        //     .entry(set_category.clone())
-        //     .or_insert_with(HashMap::new);
-        // *spd_entry.entry(spd_key).or_insert(0) += 1;
-        // score_eff += coeff_set as f32 * coeff_eff as f32;
-        // score_spd += coeff_set as f32 * coeff_spd as f32;
-
-        // NEW
         // Mapping set category
         let eff_entry = map_score_eff
             .entry(set_category.clone())

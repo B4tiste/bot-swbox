@@ -104,7 +104,6 @@ pub async fn upload_json(
         }
     };
 
-    // let (score_eff, score_spd, map_score_eff, map_score_spd, wizard_info_data) = process_json(json);
     let (rta_score_eff, rta_score_spd, siege_score_eff, siege_score_spd, map_score_eff, map_score_spd, wizard_info_data) = process_json(json);
 
     let wizard_name = wizard_info_data
@@ -215,17 +214,11 @@ pub async fn upload_json(
             ),
             false,
         )
-        // .field(
-        //     "Combined Score",
-        //     format!("Efficiency + Speed = **{}**", score_eff + score_spd),
-        //     false,
-        // )
         .field(
             "User that uploaded the JSON",
             format!("<@{}>", ctx.author().id),
             false,
         )
-        // Add a field with that hyperlink : https://leaderboard-bot-swbox.netlify.app/
         .field(
             "Leaderboard",
             "You can check the leaderboard [here](https://leaderboard-bot-swbox.netlify.app/)",
