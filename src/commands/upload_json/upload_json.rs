@@ -25,7 +25,7 @@ use serenity::builder::CreateEmbedFooter;
 pub async fn upload_json(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     file: Attachment,
-    #[description = "Select the mode :"] mode: Mode,
+    #[description = "Select the mode (defaults to Classic)"] mode: Option<Mode>,
 ) -> Result<(), Error> {
     // Defer the response to avoid the 3 seconds timeout
     ctx.defer().await?;
@@ -109,6 +109,8 @@ pub async fn upload_json(
         }
     };
 
+    let mode = mode.unwrap_or(Mode::Classic); // valeur par défaut si None
+
     let mode_id = match mode {
         Mode::Classic => 0,
         Mode::NoSpeedDetail => 1,
@@ -116,7 +118,16 @@ pub async fn upload_json(
         Mode::NoSpeedDetailAndAnonymized => 3,
     };
 
-    let (rta_score_eff, rta_score_spd, siege_score_eff, siege_score_spd, map_score_eff, map_score_spd, wizard_info_data, account_info_data) = process_json(json);
+    let (
+        rta_score_eff,
+        rta_score_spd,
+        siege_score_eff,
+        siege_score_spd,
+        map_score_eff,
+        map_score_spd,
+        wizard_info_data,
+        account_info_data,
+    ) = process_json(json);
 
     let wizard_name = wizard_info_data
         .get("wizard_name")
@@ -152,7 +163,17 @@ pub async fn upload_json(
         total_eff.insert(bucket, 0);
     }
 
-    let row_order_eff = ["Other", "Will", "Swift", "Violent", "Despair", "Shield", "Nemesis", "Seal", "Intangible"];
+    let row_order_eff = [
+        "Other",
+        "Will",
+        "Swift",
+        "Violent",
+        "Despair",
+        "Shield",
+        "Nemesis",
+        "Seal",
+        "Intangible",
+    ];
 
     for key in &row_order_eff {
         if let Some(category) = map_score_eff.get(&key.to_string()) {
@@ -185,7 +206,17 @@ pub async fn upload_json(
     for bucket in &["26", "30", "34", "36"] {
         total_spd.insert(bucket, 0);
     }
-    let row_order_spd = ["Other", "Will", "Swift", "Violent", "Despair", "Shield", "Nemesis", "Seal", "Intangible"];
+    let row_order_spd = [
+        "Other",
+        "Will",
+        "Swift",
+        "Violent",
+        "Despair",
+        "Shield",
+        "Nemesis",
+        "Seal",
+        "Intangible",
+    ];
 
     for key in &row_order_spd {
         if let Some(category) = map_score_spd.get(&key.to_string()) {
@@ -241,15 +272,14 @@ pub async fn upload_json(
             } else {
                 wizard_id.to_string()
             },
-            day, month, year
+            day,
+            month,
+            year
         ))
         .thumbnail("attachment://pp.jpg")
         .field(
             "Amount of runes per set and efficiency",
-            format!(
-                "```autohotkey\n{}\n```",
-                eff_table
-            ),
+            format!("```autohotkey\n{}\n```", eff_table),
             false,
         )
         .field(
