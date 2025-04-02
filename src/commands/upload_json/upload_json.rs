@@ -172,6 +172,7 @@ pub async fn upload_json(
         "Shield",
         "Nemesis",
         "Seal",
+        "Destroy",
         "Intangible",
     ];
 
@@ -215,6 +216,7 @@ pub async fn upload_json(
         "Shield",
         "Nemesis",
         "Seal",
+        "Destroy",
         "Intangible",
     ];
 
