@@ -190,7 +190,6 @@ fn create_player_embed(
     ld_emojis: Vec<String>,
     top_monsters: Vec<String>,
 ) -> CreateEmbed {
-    // Join emojis safely
     let format_emojis = |mut list: Vec<String>| {
         let mut result = list.join(" ");
         while result.len() > 1020 && !list.is_empty() {
@@ -213,15 +212,23 @@ fn create_player_embed(
     let embed = CreateEmbed::default();
     embed
         .title(format!("Player Statistics {}", details.name))
-        .thumbnail(details.headImg.clone().unwrap_or_default())
+        .thumbnail(details.head_img.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .field(
             "WinRate",
-            format!("{:.2}%", details.winRate.unwrap_or(0.0) * 100.0),
+            format!("{:.2}%", details.win_rate.unwrap_or(0.0) * 100.0),
             true,
         )
-        .field("Score", details.playerScore.unwrap_or(0).to_string(), true)
-        .field("Rank", details.playerRank.unwrap_or(0).to_string(), true)
+        .field(
+            "Score",
+            details.player_score.unwrap_or(0).to_string(),
+            true,
+        )
+        .field(
+            "Rank",
+            details.player_rank.unwrap_or(0).to_string(),
+            true,
+        )
         .field("✨ LD Monsters", ld_display, false)
         .field("🔥 Played Monsters", top_display, false)
         .footer(CreateEmbedFooter::new("Data from SWRanking.com"))

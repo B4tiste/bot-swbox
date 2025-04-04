@@ -25,3 +25,5 @@ jobs:
             CONQUEROR_EMOJI_ID = '${{ secrets.CONQUEROR_EMOJI_ID }}'
             LOG_CHANNEL_ID = '${{ secrets.LOG_CHANNEL_ID }}'
             MONGO_URI = '${{ secrets.MONGO_URI }}'
+            USERNAME = '${{ secrets.USERNAME }}'
+            PASSWORD = '${{ secrets.PASSWORD }}'

@@ -14,7 +14,8 @@ pub struct Player {
 #[derive(Debug, Deserialize)]
 struct SearchResponse {
     data: Option<SearchData>,
-    enMessage: Option<String>,
+    #[serde(rename = "enMessage")]
+    en_message: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,34 +27,48 @@ struct SearchData {
 pub struct PlayerDetail {
     #[serde(rename = "playerName")]
     pub name: String,
-    pub playerScore: Option<i32>,
-    pub playerRank: Option<i32>,
-    pub winRate: Option<f32>,
-    pub headImg: Option<String>,
-    pub playerMonsters: Option<Vec<PlayerMonster>>,
-    pub monsterSimpleImgs: Option<Vec<String>>,
-    pub monsterLDImgs: Option<Vec<String>>,
+    #[serde(rename = "playerScore")]
+    pub player_score: Option<i32>,
+    #[serde(rename = "playerRank")]
+    pub player_rank: Option<i32>,
+    #[serde(rename = "winRate")]
+    pub win_rate: Option<f32>,
+    #[serde(rename = "headImg")]
+    pub head_img: Option<String>,
+    #[serde(rename = "playerMonsters")]
+    pub player_monsters: Option<Vec<PlayerMonster>>,
+    // #[serde(rename = "monsterSimpleImgs")]
+    // pub monster_simple_imgs: Option<Vec<String>>,
+    #[serde(rename = "monsterLDImgs")]
+    pub monster_ld_imgs: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct PlayerMonster {
-    pub monsterId: i32,
-    pub monsterImg: String,
-    pub winRate: f32,
+    // #[serde(rename = "monsterId")]
+    // pub monster_id: i32,
+    #[serde(rename = "monsterImg")]
+    pub monster_img: String,
+    #[serde(rename = "winRate")]
+    pub win_rate: f32,
 }
 
 #[derive(Debug, Deserialize)]
 struct DetailResponse {
     data: Option<PlayerDetailWrapper>,
-    enMessage: Option<String>,
+    #[serde(rename = "enMessage")]
+    en_message: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct PlayerDetailWrapper {
     player: PlayerDetail,
-    playerMonsters: Option<Vec<PlayerMonster>>,
-    monsterSimpleImgs: Option<Vec<String>>,
-    monsterLDImgs: Option<Vec<String>>,
+    #[serde(rename = "playerMonsters")]
+    player_monsters: Option<Vec<PlayerMonster>>,
+    // #[serde(rename = "monsterSimpleImgs")]
+    // monster_simple_imgs: Option<Vec<String>>,
+    #[serde(rename = "monsterLDImgs")]
+    monster_ld_imgs: Option<Vec<String>>,
 }
 
 pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetail> {
@@ -77,7 +92,7 @@ pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetai
         return Err(anyhow!(
             "Error status {}: {:?}",
             status,
-            resp_json.enMessage
+            resp_json.en_message
         ));
     }
 
@@ -85,13 +100,13 @@ pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetai
         .data
         .map(|d| PlayerDetail {
             name: d.player.name,
-            playerScore: d.player.playerScore,
-            playerRank: d.player.playerRank,
-            winRate: d.player.winRate,
-            headImg: d.player.headImg,
-            playerMonsters: d.playerMonsters, // ✅ from data.*
-            monsterSimpleImgs: d.monsterSimpleImgs, // ✅ from data.*
-            monsterLDImgs: d.monsterLDImgs,   // ✅ from data.*
+            player_score: d.player.player_score,
+            player_rank: d.player.player_rank,
+            win_rate: d.player.win_rate,
+            head_img: d.player.head_img,
+            player_monsters: d.player_monsters,
+            // monster_simple_imgs: d.monster_simple_imgs,
+            monster_ld_imgs: d.monster_ld_imgs,
         })
         .ok_or_else(|| anyhow!("Player details not found"))
 }
@@ -124,14 +139,13 @@ pub async fn search_users(token: &str, username: &str) -> Result<Vec<Player>> {
         return Err(anyhow!(
             "Error status {}: {:?}",
             status,
-            resp_json.enMessage
+            resp_json.en_message
         ));
     }
 
     Ok(resp_json.data.map(|d| d.list).unwrap_or_default())
 }
 
-/// Retrieves the Mongo collection only once
 pub async fn get_mob_emoji_collection() -> Result<Collection<mongodb::bson::Document>> {
     let mongo_uri = {
         let uri_guard = MONGO_URI.lock().unwrap();
@@ -144,7 +158,6 @@ pub async fn get_mob_emoji_collection() -> Result<Collection<mongodb::bson::Docu
         .collection::<mongodb::bson::Document>("mob-emoji"))
 }
 
-/// Retrieves a Discord emoji from MongoDB using the monster's filename
 pub async fn get_emoji_from_filename(
     collection: &Collection<mongodb::bson::Document>,
     filename: &str,
@@ -164,15 +177,9 @@ pub async fn format_player_emojis_only(details: &PlayerDetail) -> Vec<String> {
     let mut emojis = vec![];
 
     let mut files = vec![];
-    if let Some(ld) = &details.monsterLDImgs {
+    if let Some(ld) = &details.monster_ld_imgs {
         files.extend(ld.clone());
     }
-    // if let Some(simple) = &details.monsterSimpleImgs {
-    //     files.extend(simple.clone());
-    // }
-    // if let Some(top) = &details.playerMonsters {
-    //     files.extend(top.iter().map(|m| m.monsterImg.clone()));
-    // }
 
     files.sort();
     files.dedup();
@@ -191,16 +198,15 @@ pub async fn format_player_emojis_only(details: &PlayerDetail) -> Vec<String> {
 pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     let mut output = vec![];
 
-    // Retrieve the Mongo collection only once
     let collection = match get_mob_emoji_collection().await {
         Ok(c) => c,
         Err(_) => return output,
     };
 
-    if let Some(monsters) = &details.playerMonsters {
+    if let Some(monsters) = &details.player_monsters {
         for m in monsters {
-            if let Some(emoji) = get_emoji_from_filename(&collection, &m.monsterImg).await {
-                let entry = format!("{} `{:.2}%`\n", emoji, m.winRate * 100.0);
+            if let Some(emoji) = get_emoji_from_filename(&collection, &m.monster_img).await {
+                let entry = format!("{} `{:.2}%`\n", emoji, m.win_rate * 100.0);
                 output.push(entry);
             }
         }
