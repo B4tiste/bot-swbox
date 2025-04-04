@@ -230,7 +230,7 @@ fn create_player_embed(
             true,
         )
         .field("✨ LD Monsters", ld_display, false)
-        .field("🔥 Most Used Units", top_display, false)
+        .field("🔥 Most Used Units Winrate", top_display, false)
         .footer(CreateEmbedFooter::new("Please use /send_suggestion to report any issue."))
         .clone()
 }
