@@ -206,7 +206,7 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     if let Some(monsters) = &details.player_monsters {
         for m in monsters {
             if let Some(emoji) = get_emoji_from_filename(&collection, &m.monster_img).await {
-                let entry = format!("{} `{:.2}%`\n", emoji, m.win_rate);
+                let entry = format!("{} `{:.2} %`\n", emoji, m.win_rate);
                 output.push(entry);
             }
         }

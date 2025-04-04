@@ -216,7 +216,7 @@ fn create_player_embed(
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .field(
             "WinRate",
-            format!("{:.2}%", details.win_rate.unwrap_or(0.0) * 100.0),
+            format!("{:.2} %", details.win_rate.unwrap_or(0.0) * 100.0),
             true,
         )
         .field(
@@ -230,7 +230,7 @@ fn create_player_embed(
             true,
         )
         .field("✨ LD Monsters", ld_display, false)
-        .field("🔥 Played Monsters", top_display, false)
+        .field("🔥 Most Used Units", top_display, false)
         .footer(CreateEmbedFooter::new("Please use /send_suggestion to report any issue."))
         .clone()
 }
