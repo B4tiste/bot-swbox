@@ -43,16 +43,13 @@ pub async fn get_player_stats(
     }
 
     if players.len() == 1 {
-        let details = get_user_detail(&token, &players[0].swrt_player_id)
-            .await
-            .map_err(|e| {
-                Error::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Error retrieving player details: {}", e),
-                ))
-            })?;
+        let details = get_user_detail(&token, &players[0].swrt_player_id).await.map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Error retrieving player details: {}", e),
+            ))
+        })?;
 
-        // Embed without emojis first
         let embed = create_player_embed(
             &details,
             vec!["Loading emojis...".to_string()],
@@ -65,11 +62,9 @@ pub async fn get_player_stats(
             })
             .await?;
 
-        // ✅ Then, retrieve emojis
         let ld_emojis = format_player_emojis_only(&details).await;
         let top_monsters = format_player_monsters(&details).await;
 
-        // ✅ And edit the message to update
         let updated_embed = create_player_embed(&details, ld_emojis, top_monsters);
         reply_handle
             .edit(
@@ -96,6 +91,10 @@ pub async fn get_player_stats(
 
     let msg = ctx
         .send(CreateReply {
+            content: Some(
+                "🧙 Multiple players matching the given username, please choose a player:"
+                    .to_string(),
+            ),
             components: Some(vec![action_row]),
             ..Default::default()
         })
@@ -117,11 +116,13 @@ pub async fn get_player_stats(
             )
             .await?;
 
+        // Step 1: update message to show loading
         msg.edit(
             poise::Context::Application(ctx),
             CreateReply {
                 content: Some("⏳ Retrieving data...".to_string()),
                 components: Some(vec![]),
+                embeds: vec![],
                 ..Default::default()
             },
         )
@@ -149,34 +150,36 @@ pub async fn get_player_stats(
             ))
         })?;
 
-        // Embed without emojis first
+        // Embed initial loading state
         let embed = create_player_embed(
             &details,
             vec!["Loading emojis...".to_string()],
             vec!["Loading top monsters...".to_string()],
         );
-        let reply_handle = ctx
-            .send(CreateReply {
+        msg.edit(
+            poise::Context::Application(ctx),
+            CreateReply {
+                content: None,
                 embeds: vec![embed],
                 ..Default::default()
-            })
-            .await?;
+            },
+        )
+        .await?;
 
-        // ✅ Then, retrieve emojis
+        // Step 2: load emojis + monsters
         let ld_emojis = format_player_emojis_only(&details).await;
         let top_monsters = format_player_monsters(&details).await;
 
-        // ✅ And edit the message to update
         let updated_embed = create_player_embed(&details, ld_emojis, top_monsters);
-        reply_handle
-            .edit(
-                poise::Context::Application(ctx),
-                CreateReply {
-                    embeds: vec![updated_embed],
-                    ..Default::default()
-                },
-            )
-            .await?;
+        msg.edit(
+            poise::Context::Application(ctx),
+            CreateReply {
+                content: None,
+                embeds: vec![updated_embed],
+                ..Default::default()
+            },
+        )
+        .await?;
     } else {
         ctx.say("⏰ Time expired or no selection.").await?;
     }
@@ -231,6 +234,8 @@ fn create_player_embed(
         )
         .field("✨ LD Monsters", ld_display, false)
         .field("🔥 Most Used Units Winrate", top_display, false)
-        .footer(CreateEmbedFooter::new("Please use /send_suggestion to report any issue."))
+        .footer(CreateEmbedFooter::new(
+            "Please use /send_suggestion to report any issue.",
+        ))
         .clone()
 }
