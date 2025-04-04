@@ -1,3 +1,4 @@
+use crate::MONGO_URI;
 use poise::{
     serenity_prelude::{self as serenity, CreateEmbed, Error},
     CreateReply, Modal,
@@ -11,6 +12,7 @@ use crate::commands::shared::embed_error_handling::{
 };
 use crate::commands::shared::utils::{get_monster_general_info, get_monster_slug, get_season};
 use crate::{commands::shared::logs::send_log, Data, GUARDIAN_EMOJI_ID};
+use mongodb::{bson::doc, Client, Collection};
 
 /// 📂 Displays the stats of the given monster. (Option: Season)
 ///
@@ -103,6 +105,69 @@ pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, Data, Error>) -> R
     );
     let guardian_emote_str = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
 
+    // Préparation des données pour MongoDB
+    let mongo_uri = {
+        let uri_guard = MONGO_URI.lock().unwrap();
+        uri_guard.clone()
+    };
+
+    println!("before connexion");
+
+    let collection = match get_mongo_collection(&mongo_uri).await {
+        Ok(collection) => collection,
+        Err(e) => {
+            let error_message = format!("Failed to get MongoDB collection: {}", e);
+            ctx.send(create_embed_error(&error_message)).await.ok();
+            return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
+        }
+    };
+
+    println!("MongoDB collection aquired");
+
+    /*
+    Collection :
+    [{
+    "_id": {
+        "$oid": "67efd320dc2929958a512ac4"
+    },
+    "name": "unit_icon_0010_2_1",
+    "id": "1357682699468537896",
+    "url": "https://cdn.discordapp.com/emojis/1357682699468537896.png?v=1"
+    },
+    {
+    "_id": {
+        "$oid": "67efd320dc2929958a512ac5"
+    },
+    "name": "uni
+    */
+
+    // monster_general_info.image_filename = unit_icon_0010_2_1.png
+
+    // Createthe discord emoji string associated with the monster : <:monster_general_info.image_filename:id>
+    // get the id from the MongoDB collection
+    let monster_emoji = collection.find_one(doc! {"name": format!("{}", monster_general_info.image_filename.replace(".png", ""))}).await;
+
+    let monster_emoji = match monster_emoji {
+        Ok(Some(doc)) => {
+            let id = doc.get_str("id").unwrap_or_default();
+            format!("<:{}:{}>", monster_general_info.image_filename.replace(".png", ""), id)
+        }
+        Ok(None) => {
+            let error_message = "Monster emoji not found in MongoDB.";
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            send_log(&ctx, input_data, false, "Monster emoji not found").await?;
+            return Ok(());
+        }
+        Err(e) => {
+            let error_message = format!("Error retrieving emoji from MongoDB: {}", e);
+            ctx.send(create_embed_error(&error_message)).await.ok();
+            return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
+        }
+    };
+
+    println!("Monster emoji: {}", monster_emoji);
+
     let embed = CreateEmbed::default()
         .title(format!(
             "Monster stats {} - Season {}",
@@ -181,6 +246,15 @@ pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, Data, Error>) -> R
             ),
             true,
         )
+        .field("", "", false)
+        .field(
+            "Monster emoji",
+            format!(
+                "Monster emoji : {}",
+                monster_emoji
+            ),
+            false,
+        )
         .footer(CreateEmbedFooter::new(
             "Please use /send_suggestion to report any issue.",
         ));
@@ -201,3 +275,13 @@ pub async fn get_mob_stats(ctx: poise::ApplicationContext<'_, Data, Error>) -> R
 
     Ok(())
 }
+
+async fn get_mongo_collection(
+    mongo_uri: &str,
+) -> Result<Collection<mongodb::bson::Document>, mongodb::error::Error> {
+    let client = Client::with_uri_str(mongo_uri).await?;
+
+    let db = client.database("bot-swbox-db");
+    Ok(db.collection("mob-emoji"))
+}
+
