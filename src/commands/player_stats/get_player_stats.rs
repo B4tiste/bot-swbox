@@ -214,7 +214,7 @@ fn create_player_embed(
 
     let embed = CreateEmbed::default();
     embed
-        .title(format!("Player Statistics {}", details.name))
+        .title(format!("{} Statistics", details.name))
         .thumbnail(details.head_img.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .field(
