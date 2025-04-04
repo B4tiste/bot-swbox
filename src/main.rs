@@ -143,8 +143,6 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
             match login(username.clone(), password.clone()).await {
                 Ok(token) => {
                     *API_TOKEN.lock().unwrap() = Some(token);
-                    println!("Token mis à jour");
-                    println!("Token: {:?}", *API_TOKEN.lock().unwrap());
                 }
                 Err(e) => {
                     eprintln!("Erreur lors du login: {:?}", e);

@@ -231,6 +231,6 @@ fn create_player_embed(
         )
         .field("✨ LD Monsters", ld_display, false)
         .field("🔥 Played Monsters", top_display, false)
-        .footer(CreateEmbedFooter::new("Data from SWRanking.com"))
+        .footer(CreateEmbedFooter::new("Please use /send_suggestion to report any issue."))
         .clone()
 }
