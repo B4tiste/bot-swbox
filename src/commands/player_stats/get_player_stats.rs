@@ -120,7 +120,7 @@ pub async fn get_player_stats(
         msg.edit(
             poise::Context::Application(ctx),
             CreateReply {
-                content: Some("⏳ Retrieving data...".to_string()),
+                content: Some("<:loading:1357827590630670537> Retrieving data...".to_string()),
                 components: Some(vec![]),
                 embeds: vec![],
                 ..Default::default()
