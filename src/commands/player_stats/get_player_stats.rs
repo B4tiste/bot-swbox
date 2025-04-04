@@ -52,8 +52,8 @@ pub async fn get_player_stats(
 
         let embed = create_player_embed(
             &details,
-            vec!["Loading emojis...".to_string()],
-            vec!["Loading top monsters...".to_string()],
+            vec!["Loading emojis... <:loading:1357827590630670537>".to_string()],
+            vec!["Loading top monsters... <:loading:1357827590630670537>".to_string()],
         );
         let reply_handle = ctx
             .send(CreateReply {
@@ -153,13 +153,13 @@ pub async fn get_player_stats(
         // Embed initial loading state
         let embed = create_player_embed(
             &details,
-            vec!["Loading emojis...".to_string()],
-            vec!["Loading top monsters...".to_string()],
+            vec!["Loading emojis... <:loading:1357827590630670537>".to_string()],
+            vec!["Loading top monsters... <:loading:1357827590630670537>".to_string()],
         );
         msg.edit(
             poise::Context::Application(ctx),
             CreateReply {
-                content: None,
+                content: Some("".to_string()),
                 embeds: vec![embed],
                 ..Default::default()
             },
@@ -174,7 +174,7 @@ pub async fn get_player_stats(
         msg.edit(
             poise::Context::Application(ctx),
             CreateReply {
-                content: None,
+                content: Some("".to_string()),
                 embeds: vec![updated_embed],
                 ..Default::default()
             },
