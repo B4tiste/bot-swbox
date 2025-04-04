@@ -6,3 +6,4 @@ pub mod player_names;
 pub mod ranks;
 pub mod shared;
 pub mod suggestion;
+pub mod player_stats;
