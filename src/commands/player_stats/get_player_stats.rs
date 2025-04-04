@@ -16,7 +16,7 @@ use crate::{Data, API_TOKEN};
 #[poise::command(slash_command)]
 pub async fn get_player_stats(
     ctx: poise::ApplicationContext<'_, Data, Error>,
-    #[description = "Nom du joueur"] pseudo: String,
+    #[description = "Player name"] player_name: String,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
@@ -25,41 +25,38 @@ pub async fn get_player_stats(
         guard.clone().ok_or_else(|| {
             Error::from(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                "Token API manquant",
+                "Missing API token",
             ))
         })?
     };
 
-    let joueurs = search_users(&token, &pseudo).await.map_err(|e| {
+    let players = search_users(&token, &player_name).await.map_err(|e| {
         Error::from(std::io::Error::new(
             std::io::ErrorKind::Other,
-            format!("Erreur API: {}", e),
+            format!("API error: {}", e),
         ))
     })?;
 
-    if joueurs.is_empty() {
-        ctx.say("Aucun joueur trouvé.").await?;
+    if players.is_empty() {
+        ctx.say("No players found.").await?;
         return Ok(());
     }
 
-    if joueurs.len() == 1 {
-        let details = get_user_detail(&token, &joueurs[0].swrt_player_id)
+    if players.len() == 1 {
+        let details = get_user_detail(&token, &players[0].swrt_player_id)
             .await
             .map_err(|e| {
                 Error::from(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!(
-                        "Erreur lors de la récupération des détails du joueur: {}",
-                        e
-                    ),
+                    format!("Error retrieving player details: {}", e),
                 ))
             })?;
 
-        // Embed sans emojis d'abord
+        // Embed without emojis first
         let embed = create_player_embed(
             &details,
-            vec!["Chargement des emojis...".to_string()],
-            vec!["Chargement des top monstres...".to_string()],
+            vec!["Loading emojis...".to_string()],
+            vec!["Loading top monsters...".to_string()],
         );
         let reply_handle = ctx
             .send(CreateReply {
@@ -68,11 +65,11 @@ pub async fn get_player_stats(
             })
             .await?;
 
-        // ✅ Ensuite, on récupère les emojis
+        // ✅ Then, retrieve emojis
         let ld_emojis = format_player_emojis_only(&details).await;
         let top_monsters = format_player_monsters(&details).await;
 
-        // ✅ Et on édite le message pour mettre à jour
+        // ✅ And edit the message to update
         let updated_embed = create_player_embed(&details, ld_emojis, top_monsters);
         reply_handle
             .edit(
@@ -87,7 +84,7 @@ pub async fn get_player_stats(
         return Ok(());
     }
 
-    let options: Vec<CreateSelectMenuOption> = joueurs
+    let options: Vec<CreateSelectMenuOption> = players
         .iter()
         .take(25)
         .map(|player| CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string()))
@@ -123,7 +120,7 @@ pub async fn get_player_stats(
         msg.edit(
             poise::Context::Application(ctx),
             CreateReply {
-                content: Some("⏳ Récupération des données...".to_string()),
+                content: Some("⏳ Retrieving data...".to_string()),
                 components: Some(vec![]),
                 ..Default::default()
             },
@@ -148,18 +145,15 @@ pub async fn get_player_stats(
         let details = get_user_detail(&token, &selected_id).await.map_err(|e| {
             Error::from(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!(
-                    "Erreur lors de la récupération des détails du joueur: {}",
-                    e
-                ),
+                format!("Error retrieving player details: {}", e),
             ))
         })?;
 
-        // Embed sans emojis d'abord
+        // Embed without emojis first
         let embed = create_player_embed(
             &details,
-            vec!["Chargement des emojis...".to_string()],
-            vec!["Chargement des top monstres...".to_string()],
+            vec!["Loading emojis...".to_string()],
+            vec!["Loading top monsters...".to_string()],
         );
         let reply_handle = ctx
             .send(CreateReply {
@@ -168,11 +162,11 @@ pub async fn get_player_stats(
             })
             .await?;
 
-        // ✅ Ensuite, on récupère les emojis
+        // ✅ Then, retrieve emojis
         let ld_emojis = format_player_emojis_only(&details).await;
         let top_monsters = format_player_monsters(&details).await;
 
-        // ✅ Et on édite le message pour mettre à jour
+        // ✅ And edit the message to update
         let updated_embed = create_player_embed(&details, ld_emojis, top_monsters);
         reply_handle
             .edit(
@@ -184,13 +178,13 @@ pub async fn get_player_stats(
             )
             .await?;
     } else {
-        ctx.say("⏰ Temps écoulé ou aucune sélection.").await?;
+        ctx.say("⏰ Time expired or no selection.").await?;
     }
 
     Ok(())
 }
 
-/// Crée un embed à partir des infos joueur + emojis
+/// Creates an embed from player info + emojis
 fn create_player_embed(
     details: &crate::commands::player_stats::utils::PlayerDetail,
     ld_emojis: Vec<String>,
@@ -207,7 +201,7 @@ fn create_player_embed(
             result.push_str(" …");
         }
         if result.is_empty() {
-            "Aucun".to_string()
+            "None".to_string()
         } else {
             result
         }
@@ -218,7 +212,7 @@ fn create_player_embed(
 
     let embed = CreateEmbed::default();
     embed
-        .title(format!("Statistiques du joueur {}", details.name))
+        .title(format!("Player Statistics {}", details.name))
         .thumbnail(details.headImg.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .field(
@@ -228,8 +222,8 @@ fn create_player_embed(
         )
         .field("Score", details.playerScore.unwrap_or(0).to_string(), true)
         .field("Rank", details.playerRank.unwrap_or(0).to_string(), true)
-        .field("✨ Monstres LD", ld_display, false)
-        .field("🔥 Monstres Joués", top_display, false)
-        .footer(CreateEmbedFooter::new("Données issues de SWRanking.com"))
+        .field("✨ LD Monsters", ld_display, false)
+        .field("🔥 Played Monsters", top_display, false)
+        .footer(CreateEmbedFooter::new("Data from SWRanking.com"))
         .clone()
 }
