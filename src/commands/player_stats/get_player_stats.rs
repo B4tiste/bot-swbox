@@ -92,7 +92,7 @@ pub async fn get_player_stats(
     let msg = ctx
         .send(CreateReply {
             content: Some(
-                "🧙 Multiple players matching the given username, please choose a player:"
+                "🧙 Several players match the given username, please select a player :"
                     .to_string(),
             ),
             components: Some(vec![action_row]),
@@ -209,12 +209,12 @@ fn create_player_embed(
         }
     };
 
-    let ld_display = format_emojis(ld_emojis);
+    let ld_display = format_emojis(ld_emojis).replace(" ", "");
     let top_display = format_emojis(top_monsters);
 
     let embed = CreateEmbed::default();
     embed
-        .title(format!("{} Statistics", details.name))
+        .title(format!("{} RTA Statistics", details.name))
         .thumbnail(details.head_img.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .field(
