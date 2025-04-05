@@ -243,7 +243,7 @@ fn create_player_embed(
             details.season_count.unwrap_or(0).to_string(),
             true,
         )
-        .field("✨ LD Monsters", ld_display, false)
+        .field("✨ LD Monsters (RTA only)", ld_display, false)
         .field("🔥 Most Used Units Winrate", top_display, false)
         .footer(CreateEmbedFooter::new(
             "Please use /send_suggestion to report any issue.",

@@ -44,7 +44,7 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
     }
 
     // Additional fields for credits and source code links
-    embed = embed.field("Created by", "**b4tiste** & **shaakz**", true);
+    embed = embed.description("Created by **b4tiste** & **shaakz**");
     embed = embed.field(
         "Source code & Project Road Map",
         "[bot-swbox](https://github.com/B4tiste/bot-swbox)",
