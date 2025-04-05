@@ -32,7 +32,8 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
     let mut embed = serenity::CreateEmbed::default()
         .title("Commands")
         .color(serenity::Colour::from_rgb(0, 255, 255))
-        .thumbnail(thumbnail);
+        .thumbnail(thumbnail)
+        .description("Created by **b4tiste** & **shaakz**");
 
     // Add each command's name and description as an embed field
     for command in &ctx.framework().options().commands {
@@ -44,16 +45,15 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
     }
 
     // Additional fields for credits and source code links
-    embed = embed.description("Created by **b4tiste** & **shaakz**");
     embed = embed.field(
         "Source code & Project Road Map",
         "[bot-swbox](https://github.com/B4tiste/bot-swbox)",
-        true,
+        false,
     );
     embed = embed.field(
         "My other project",
         "[BP Archive](https://bp-archive.netlify.app/)",
-        true,
+        false,
     );
 
     embed = embed.footer(CreateEmbedFooter::new(
