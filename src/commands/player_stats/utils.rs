@@ -211,20 +211,13 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     };
 
     if let Some(monsters) = &details.player_monsters {
-        let season_count = details.season_count.unwrap_or(1) as f32;
-
         for (index, m) in monsters.iter().enumerate() {
             if let Some(emoji) = get_emoji_from_filename(&collection, &m.monster_img).await {
-                let pick_total = m.pick_total as f32;
-                let pick_rate = (pick_total / season_count) * 100.0;
-
                 let entry = format!(
-                    "{}. {} Played {}/{} ({:.2} %), WR : **{:.2} %** \n",
+                    "{}. {} Played {} times, WR : **{:.2} %** \n",
                     index + 1,
                     emoji,
                     m.pick_total,
-                    season_count as i32,
-                    pick_rate,
                     m.win_rate
                 );
                 output.push(entry);
@@ -234,4 +227,3 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
 
     output
 }
-
