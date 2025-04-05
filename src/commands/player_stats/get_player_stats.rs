@@ -9,7 +9,7 @@ use serenity::{
 };
 
 use crate::commands::player_stats::utils::{
-    format_player_emojis_only, format_player_monsters, get_user_detail, search_users,
+    format_player_ld_monsters_emojis, format_player_monsters, get_user_detail, search_users,
 };
 use crate::{Data, API_TOKEN};
 
@@ -65,7 +65,7 @@ pub async fn get_player_stats(
             })
             .await?;
 
-        let ld_emojis = format_player_emojis_only(&details).await;
+        let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
 
         let updated_embed = create_player_embed(&details, ld_emojis, top_monsters);
@@ -170,7 +170,7 @@ pub async fn get_player_stats(
         .await?;
 
         // Step 2: load emojis + monsters
-        let ld_emojis = format_player_emojis_only(&details).await;
+        let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
 
         let updated_embed = create_player_embed(&details, ld_emojis, top_monsters);

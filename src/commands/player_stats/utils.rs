@@ -180,7 +180,28 @@ pub async fn get_emoji_from_filename(
     Some(format!("<:{}:{}>", name_no_ext, id))
 }
 
-pub async fn format_player_emojis_only(details: &PlayerDetail) -> Vec<String> {
+pub async fn get_emoji_from_filename_with_stars(
+    collection: &Collection<mongodb::bson::Document>,
+    filename: &str,
+) -> Option<String> {
+    let name_no_ext = filename.replace(".png", "");
+
+    let emoji_doc = collection
+        .find_one(doc! { "name": &name_no_ext })
+        .await
+        .ok()??;
+
+    let natural_stars = emoji_doc.get_i32("natural_stars").unwrap_or(0);
+
+    if natural_stars < 5 {
+        return None;
+    }
+
+    let id = emoji_doc.get_str("id").ok()?;
+    Some(format!("<:{}:{}>", name_no_ext, id))
+}
+
+pub async fn format_player_ld_monsters_emojis(details: &PlayerDetail) -> Vec<String> {
     let mut emojis = vec![];
 
     let mut files = vec![];
@@ -193,7 +214,8 @@ pub async fn format_player_emojis_only(details: &PlayerDetail) -> Vec<String> {
 
     if let Ok(collection) = get_mob_emoji_collection().await {
         for file in files {
-            if let Some(emoji) = get_emoji_from_filename(&collection, &file).await {
+            // ici on utilise la fonction avec filtre sur les étoiles
+            if let Some(emoji) = get_emoji_from_filename_with_stars(&collection, &file).await {
                 emojis.push(emoji);
             }
         }
