@@ -219,7 +219,7 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
                 let pick_rate = (pick_total / season_count) * 100.0;
 
                 let entry = format!(
-                    "**{}.** {} Played {}/{} ({:.2} %), WR : **{:.2} %** \n",
+                    "{}. {} Played {}/{} ({:.2} %), WR : **{:.2} %** \n",
                     index + 1,
                     emoji,
                     m.pick_total,
