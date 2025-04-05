@@ -52,8 +52,8 @@ pub async fn get_player_stats(
 
         let embed = create_player_embed(
             &details,
-            vec!["Loading emojis... <:loading:1357827590630670537>".to_string()],
-            vec!["Loading top monsters... <:loading:1357827590630670537>".to_string()],
+            vec!["<:loading:1357827590630670537> Loading emojis...".to_string()],
+            vec!["<:loading:1357827590630670537> Loading top monsters...".to_string()],
         );
         let reply_handle = ctx
             .send(CreateReply {
@@ -153,8 +153,8 @@ pub async fn get_player_stats(
         // Embed initial loading state
         let embed = create_player_embed(
             &details,
-            vec!["Loading emojis... <:loading:1357827590630670537>".to_string()],
-            vec!["Loading top monsters... <:loading:1357827590630670537>".to_string()],
+            vec!["<:loading:1357827590630670537> Loading emojis...".to_string()],
+            vec!["<:loading:1357827590630670537> Loading top monsters...".to_string()],
         );
         msg.edit(
             poise::Context::Application(ctx),
@@ -230,6 +230,11 @@ fn create_player_embed(
         .field(
             "Rank",
             details.player_rank.unwrap_or(0).to_string(),
+            true,
+        )
+        .field(
+            "Matches Played",
+            details.season_count.unwrap_or(0).to_string(),
             true,
         )
         .field("✨ LD Monsters", ld_display, false)

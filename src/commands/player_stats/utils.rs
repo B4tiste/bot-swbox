@@ -41,6 +41,8 @@ pub struct PlayerDetail {
     // pub monster_simple_imgs: Option<Vec<String>>,
     #[serde(rename = "monsterLDImgs")]
     pub monster_ld_imgs: Option<Vec<String>>,
+    #[serde(rename = "seasonCount")]
+    pub season_count: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,6 +53,8 @@ pub struct PlayerMonster {
     pub monster_img: String,
     #[serde(rename = "winRate")]
     pub win_rate: f32,
+    #[serde(rename = "pickTotal")]
+    pub pick_total: i32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -69,6 +73,8 @@ struct PlayerDetailWrapper {
     // monster_simple_imgs: Option<Vec<String>>,
     #[serde(rename = "monsterLDImgs")]
     monster_ld_imgs: Option<Vec<String>>,
+    #[serde(rename = "seasonCount")]
+    season_count: Option<i32>,
 }
 
 pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetail> {
@@ -107,6 +113,7 @@ pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetai
             player_monsters: d.player_monsters,
             // monster_simple_imgs: d.monster_simple_imgs,
             monster_ld_imgs: d.monster_ld_imgs,
+            season_count: d.season_count,
         })
         .ok_or_else(|| anyhow!("Player details not found"))
 }
@@ -204,9 +211,22 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     };
 
     if let Some(monsters) = &details.player_monsters {
+        let season_count = details.season_count.unwrap_or(1) as f32;
+
         for (index, m) in monsters.iter().enumerate() {
             if let Some(emoji) = get_emoji_from_filename(&collection, &m.monster_img).await {
-                let entry = format!("{}. {} `{:.2} %`\n", index + 1, emoji, m.win_rate);
+                let pick_total = m.pick_total as f32;
+                let pick_rate = (pick_total / season_count) * 100.0;
+
+                let entry = format!(
+                    "{}. {} Played {}/{} ({:.2} %), WinRate : {:.2} % \n",
+                    index + 1,
+                    emoji,
+                    m.pick_total,
+                    season_count as i32,
+                    pick_rate,
+                    m.win_rate
+                );
                 output.push(entry);
             }
         }
@@ -214,3 +234,4 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
 
     output
 }
+
