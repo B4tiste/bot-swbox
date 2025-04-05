@@ -13,6 +13,9 @@ use crate::commands::player_stats::utils::{
 };
 use crate::{Data, API_TOKEN};
 
+/// 📂 Displays the RTA stats of the given player. (LD & most used monsters)
+///
+/// Usage: `/get_player_stats`
 #[poise::command(slash_command)]
 pub async fn get_player_stats(
     ctx: poise::ApplicationContext<'_, Data, Error>,
