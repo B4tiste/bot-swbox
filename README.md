@@ -10,7 +10,8 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 -   **Interactive Commands**: Use a series of slash commands to access the bot's features.
 -   **Ranking Information**: View rankings and their details.
--   **Game Statistics**: Retrieve and display monster statistics for different seasons.
+-   **Player Statistics**: Retrieve and display detailed information about a player's account, including their rank, win rate, LD5 and most played monsters.
+-   **Mob Statistics**: Retrieve and display monster statistics for different seasons.
 -   **Duo Statistics**: Display common win rates of two monsters played together.
 -   **JSON File analysis** : Gives a small breakdown of your account
 -   **Feature Suggestion & BUG Report**: Suggest features or report bugs directly to the developer.
@@ -74,6 +75,18 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 -   Presents ranking data in an easy-to-read format.
 
 ---
+
+### `/get_player_stats`
+
+**Description**: Displays detailed information about a player's account.
+
+**Usage**:
+
+-  `/get_player_stats` => Opens a form to enter the player's name
+
+**Features**:
+-   Displays the player's rank, win rate, and other relevant statistics.
+-   Displays the player's LD5 and Most Played Monsters with their win rates.
 
 ### `/get_mob_stats`
 
