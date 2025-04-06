@@ -78,19 +78,18 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ### `/get_leaderboard`
 
-**Description**: Affiche le classement RTA interactif avec pagination.
+**Description**: Displays the interactive RTA leaderboard with pagination.
 
 **Usage**:
 
--   `/get_leaderboard` => Affiche la première page du classement.
--   `/get_leaderboard page:<numéro>` => Permet d'afficher directement une page spécifique.
+-   `/get_leaderboard` => Displays the first page of the leaderboard.
+-   `/get_leaderboard page:<number>` => Directly displays the specified leaderboard page.
 
 **Features**:
 
--   Classement RTA paginé avec boutons de navigation.
--   Mise en forme propre avec les drapeaux, ELO et noms des joueurs.
--   Boutons interactifs pour naviguer entre les pages du classement.
--   Conseil intégré pour accéder aux détails d’un joueur via la commande `/get_player`.
+-   Paginated RTA leaderboard with navigation buttons.
+-   Clean formatting with flags, ELO, and player names.
+-   Interactive buttons to navigate between leaderboard pages.
 
 ---
 
