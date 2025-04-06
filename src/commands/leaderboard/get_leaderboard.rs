@@ -8,6 +8,9 @@ use serenity::{
 use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlayer};
 use crate::{Data, API_TOKEN};
 
+/// 📂 Displays the RTA leaderboard
+///
+/// Usage: `/get_leaderboard OPTION([page])`
 #[poise::command(slash_command)]
 pub async fn get_leaderboard(
     ctx: poise::ApplicationContext<'_, Data, Error>,
