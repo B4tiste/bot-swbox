@@ -7,3 +7,4 @@ pub mod ranks;
 pub mod shared;
 pub mod suggestion;
 pub mod player_stats;
+pub mod leaderboard;
