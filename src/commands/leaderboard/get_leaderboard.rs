@@ -99,6 +99,11 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
     CreateEmbed::default()
         .title("Leaderboard")
         .description(description)
+        .field(
+            "💡 Tip",
+            "Use `/get_player <player_name>` to get player details.",
+            false,
+        )
         .footer(CreateEmbedFooter::new("Use /send_suggestion to report issues."))
         .color(serenity::Colour::from_rgb(0, 255, 0))
 }

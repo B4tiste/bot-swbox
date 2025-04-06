@@ -19,7 +19,7 @@ pub async fn get_leaderboard_data(token: &str, page: &i32) -> Result<Vec<Leaderb
 
     let body = serde_json::json!({
         "pageNum": page,
-        "pageSize": 15,
+        "pageSize": 10,
         "playerName": "",
         "online": false,
         "level": null,
