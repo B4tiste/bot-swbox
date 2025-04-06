@@ -165,7 +165,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 track_player_names(),
                 upload_json(),
                 get_player_stats(),
-                // get_leaderboard(),
+                get_leaderboard(),
             ],
             ..Default::default()
         })

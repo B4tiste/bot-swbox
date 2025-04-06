@@ -54,7 +54,7 @@ pub async fn get_leaderboard(
             .channel_id(channel_id)
             .message_id(message_id)
             .filter(move |i| i.user.id == user_id)
-            .timeout(std::time::Duration::from_secs(60))
+            .timeout(std::time::Duration::from_secs(600)) // 10 minutes de timeout
             .await
     {
         match interaction.data.custom_id.as_str() {
@@ -83,6 +83,28 @@ pub async fn get_leaderboard(
             .await?;
     }
 
+    // Désactive les boutons à la fin de la boucle (timeout ou exit)
+    response.edit(
+        poise::Context::Application(ctx),
+        CreateReply {
+            embeds: vec![build_leaderboard_embed(&players, page)],
+            components: Some(vec![
+                serenity::CreateActionRow::Buttons(vec![
+                    serenity::CreateButton::new("previous_page")
+                        .label("⬅️ Previous")
+                        .style(serenity::ButtonStyle::Primary)
+                        .disabled(true),
+                    serenity::CreateButton::new("next_page")
+                        .label("➡️ Next")
+                        .style(serenity::ButtonStyle::Primary)
+                        .disabled(true),
+                ]),
+            ]),
+            ..Default::default()
+        },
+    )
+    .await?;
+
     Ok(())
 }
 
@@ -106,6 +128,11 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
         .field(
             "💡 Tip",
             "Use `/get_player <player_name>` to get player details.",
+            false,
+        )
+        .field(
+            "⚠️ Note",
+            "Interaction buttons are disabled after 10 minutes. Please use `/get_leaderboard` again.",
             false,
         )
         .footer(CreateEmbedFooter::new("Use /send_suggestion to report issues."))
