@@ -90,7 +90,7 @@ pub async fn get_leaderboard(
 fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity::CreateEmbed {
     let mut description = String::new();
     for (rank, player) in players.iter().enumerate() {
-        let position = rank + 1 + ((page - 1) * 15) as usize;
+        let position = rank + 1 + ((page - 1) * 10) as usize;
         description.push_str(&format!(
             "{}. :flag_{}: {} - `{}`\n",
             position,
