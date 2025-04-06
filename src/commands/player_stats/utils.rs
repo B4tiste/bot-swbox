@@ -2,6 +2,8 @@ use crate::MONGO_URI;
 use anyhow::{anyhow, Result};
 use mongodb::{bson::doc, Client, Collection};
 use serde::Deserialize;
+use poise::serenity_prelude as serenity;
+use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 
 #[derive(Debug, Deserialize)]
 pub struct Player {
@@ -251,4 +253,70 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     }
 
     output
+}
+
+
+/// Creates an embed from player info + emojis
+pub fn create_player_embed(
+    details: &crate::commands::player_stats::utils::PlayerDetail,
+    ld_emojis: Vec<String>,
+    top_monsters: Vec<String>,
+) -> CreateEmbed {
+    let format_emojis = |mut list: Vec<String>| {
+        let mut result = list.join(" ");
+        while result.len() > 1020 && !list.is_empty() {
+            list.pop();
+            result = list.join(" ");
+        }
+        if result.len() >= 1020 {
+            result.push_str(" …");
+        }
+        if result.is_empty() {
+            "None".to_string()
+        } else {
+            result
+        }
+    };
+
+    let ld_display = format_emojis(ld_emojis);
+    let top_display = format_emojis(top_monsters);
+
+    let embed = CreateEmbed::default();
+    embed
+        .title(format!(
+            ":flag_{}: {} RTA Statistics",
+            details.player_country.to_lowercase(),
+            details.name
+        ))
+        .thumbnail(details.head_img.clone().unwrap_or_default())
+        .color(serenity::Colour::from_rgb(0, 180, 255))
+        .description(
+            "⚠️ Stats are not 100% accurate ➡️ The very last battle is not included in the elo/rank, and people around 1300 elo will have weird stats (missing games, weird winrates) ⚠️",
+        )
+        .field(
+            "WinRate",
+            format!("{:.2} %", details.win_rate.unwrap_or(0.0) * 100.0),
+            true,
+        )
+        .field(
+            "Elo",
+            details.player_score.unwrap_or(0).to_string(),
+            true,
+        )
+        .field(
+            "Rank",
+            details.player_rank.unwrap_or(0).to_string(),
+            true,
+        )
+        .field(
+            "Matches Played",
+            details.season_count.unwrap_or(0).to_string(),
+            true,
+        )
+        .field("✨ LD Monsters (RTA only)", ld_display, false)
+        .field("🔥 Most Used Units Winrate", top_display, false)
+        .footer(CreateEmbedFooter::new(
+            "Please use /send_suggestion to report any issue.",
+        ))
+        .clone()
 }

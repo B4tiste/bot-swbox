@@ -1,12 +1,11 @@
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
-
 #[derive(Debug, Deserialize)]
 pub struct LeaderboardPlayer {
     #[serde(rename = "playerName")]
     pub name: String,
-    // #[serde(rename = "swrtPlayerId")]
-    // pub swrt_player_id: i64,
+    #[serde(rename = "swrtPlayerId")]
+    pub swrt_player_id: i64,
     #[serde(rename = "playerScore")]
     pub player_elo: i64,
     #[serde(rename = "playerCountry")]
