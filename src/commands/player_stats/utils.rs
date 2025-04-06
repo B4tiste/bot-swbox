@@ -43,6 +43,8 @@ pub struct PlayerDetail {
     pub monster_ld_imgs: Option<Vec<String>>,
     #[serde(rename = "seasonCount")]
     pub season_count: Option<i32>,
+    #[serde(rename = "playerCountry")]
+    pub player_country: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -111,6 +113,7 @@ pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetai
             win_rate: d.player.win_rate,
             head_img: d.player.head_img,
             player_monsters: d.player_monsters,
+            player_country: d.player.player_country,
             // monster_simple_imgs: d.monster_simple_imgs,
             monster_ld_imgs: d.monster_ld_imgs,
             season_count: d.season_count,

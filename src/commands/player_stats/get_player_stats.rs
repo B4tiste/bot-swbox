@@ -46,12 +46,14 @@ pub async fn get_player_stats(
     }
 
     if players.len() == 1 {
-        let details = get_user_detail(&token, &players[0].swrt_player_id).await.map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Error retrieving player details: {}", e),
-            ))
-        })?;
+        let details = get_user_detail(&token, &players[0].swrt_player_id)
+            .await
+            .map_err(|e| {
+                Error::from(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Error retrieving player details: {}", e),
+                ))
+            })?;
 
         let embed = create_player_embed(
             &details,
@@ -95,8 +97,7 @@ pub async fn get_player_stats(
     let msg = ctx
         .send(CreateReply {
             content: Some(
-                "🧙 Several players match the given username, please select a player :"
-                    .to_string(),
+                "🧙 Several players match the given username, please select a player :".to_string(),
             ),
             components: Some(vec![action_row]),
             ..Default::default()
@@ -217,7 +218,11 @@ fn create_player_embed(
 
     let embed = CreateEmbed::default();
     embed
-        .title(format!("{} RTA Statistics", details.name))
+        .title(format!(
+            ":flag_{}: {} RTA Statistics",
+            details.player_country.to_lowercase(),
+            details.name
+        ))
         .thumbnail(details.head_img.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .description(
