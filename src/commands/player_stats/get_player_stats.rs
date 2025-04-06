@@ -102,7 +102,15 @@ pub async fn get_player_stats(
     let options: Vec<CreateSelectMenuOption> = players
         .iter()
         .take(25)
-        .map(|player| CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string()))
+        .map(|player| {
+            let emoji =
+                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country));
+            let description = format!("Elo: {}", player.player_score.unwrap_or(0));
+
+            CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string())
+                .description(description)
+                .emoji(emoji)
+        })
         .collect();
 
     let select_menu =
@@ -219,4 +227,13 @@ pub async fn get_player_stats(
     }
 
     Ok(())
+}
+
+fn country_code_to_flag_emoji(country_code: &str) -> String {
+    country_code
+        .to_uppercase()
+        .chars()
+        .filter(|c| c.is_ascii_alphabetic())
+        .map(|c| char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap())
+        .collect()
 }

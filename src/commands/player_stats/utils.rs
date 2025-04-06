@@ -11,6 +11,10 @@ pub struct Player {
     pub name: String,
     #[serde(rename = "swrtPlayerId")]
     pub swrt_player_id: i64,
+    #[serde(rename = "playerCountry")]
+    pub player_country: String,
+    #[serde(rename = "playerScore")]
+    pub player_score: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
