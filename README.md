@@ -78,18 +78,27 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ### `/get_leaderboard`
 
-**Description**: Displays the interactive RTA leaderboard with pagination.
+**Description**: Displays an interactive RTA leaderboard with pagination and player stat selection.
 
 **Usage**:
 
--   `/get_leaderboard` => Displays the first page of the leaderboard.
--   `/get_leaderboard page:<number>` => Directly displays the specified leaderboard page.
+-   `/get_leaderboard` — Displays the first page of the leaderboard.
+-   `/get_leaderboard page:<number>` — Displays the specified leaderboard page directly.
 
 **Features**:
 
--   Paginated RTA leaderboard with navigation buttons.
--   Clean formatting with flags, ELO, and player names.
--   Interactive buttons to navigate between leaderboard pages.
+-   📊 **Paginated leaderboard** showing player name, country, and ELO.
+-   ⬅️➡️ **Navigation buttons** to browse leaderboard pages.
+-   🔍 **Select menu below the leaderboard**: pick a player from the current page to view their RTA stats instantly.
+-   📈 When a player is selected, their RTA performance (rank, ELO, winrate, LD monsters, top units) is shown right away.
+-   ✅ No need to retype `/get_player_stats`, it’s handled automatically.
+
+**Result**:
+
+-   A smooth and interactive experience with Discord components:
+    -   Buttons for navigation.
+    -   Dropdown menu for quick access to player stats.
+    -   Embeds with detailed and dynamic information.
 
 ---
 
