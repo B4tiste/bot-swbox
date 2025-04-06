@@ -248,8 +248,13 @@ fn create_player_select_menu(players: &[LeaderboardPlayer]) -> serenity::CreateA
     let options: Vec<serenity::CreateSelectMenuOption> = players
         .iter()
         .map(|player| {
+            let emoji = serenity::ReactionType::Unicode(country_code_to_flag_emoji(
+                &player.player_country,
+            ));
+
             serenity::CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string())
                 .description(format!("Elo: {}", player.player_elo))
+                .emoji(emoji)
         })
         .collect();
 
@@ -260,4 +265,13 @@ fn create_player_select_menu(players: &[LeaderboardPlayer]) -> serenity::CreateA
     .placeholder("📊 Select a player to view stats");
 
     serenity::CreateActionRow::SelectMenu(select_menu)
+}
+
+fn country_code_to_flag_emoji(country_code: &str) -> String {
+    country_code
+        .to_uppercase()
+        .chars()
+        .filter(|c| c.is_ascii_alphabetic())
+        .map(|c| char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap())
+        .collect()
 }
