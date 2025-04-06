@@ -11,10 +11,11 @@ use crate::{Data, API_TOKEN};
 #[poise::command(slash_command)]
 pub async fn get_leaderboard(
     ctx: poise::ApplicationContext<'_, Data, Error>,
+    #[description = "Page number to start from"] page: Option<i32>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
     let user_id = ctx.author().id;
-    let mut page = 1;
+    let mut page = page.unwrap_or(1).max(1); // Assure que la page est au moins 1
 
     // Récupération du token
     let token = {
@@ -97,7 +98,7 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
     }
 
     CreateEmbed::default()
-        .title("Leaderboard")
+        .title(format!("Leaderboard - Page {}", page))
         .description(description)
         .field(
             "💡 Tip",
