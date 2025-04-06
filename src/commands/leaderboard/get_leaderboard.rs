@@ -17,7 +17,10 @@ pub async fn get_leaderboard(ctx: poise::ApplicationContext<'_, Data, Error>) ->
     let token = {
         let guard = API_TOKEN.lock().unwrap();
         guard.clone().ok_or_else(|| {
-            Error::from(std::io::Error::new(std::io::ErrorKind::Other, "Missing API token"))
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Missing API token",
+            ))
         })?
     };
 
@@ -45,22 +48,35 @@ pub async fn get_leaderboard(ctx: poise::ApplicationContext<'_, Data, Error>) ->
             .color(serenity::Colour::from_rgb(0, 255, 0))
     };
 
-    let players = get_leaderboard_data(&token, &(page as i32)).await.map_err(|e| {
-        Error::from(std::io::Error::new(std::io::ErrorKind::Other, format!("API error: {}", e)))
-    })?;
+    let players = get_leaderboard_data(&token, &(page as i32))
+        .await
+        .map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("API error: {}", e),
+            ))
+        })?;
 
-    ctx.send(CreateReply {
-        embeds: vec![build_embed(&players, page)],
-        components: Some(create_pagination_buttons(page as i32)),
-        ..Default::default()
-    })
-    .await?;
+    // Envoie initial du message et sauvegarde du message ID
+    let response = ctx
+        .send(CreateReply {
+            embeds: vec![build_embed(&players, page)],
+            components: Some(create_pagination_buttons(page as i32)),
+            ..Default::default()
+        })
+        .await?;
+
+    let message_id = response.message().await?.id;
+    let channel_id = ctx.channel_id();
 
     // Interaction loop
-    while let Some(interaction) = serenity::ComponentInteractionCollector::new(&ctx.serenity_context.shard)
-        .filter(move |i| i.user.id == user_id)
-        .timeout(std::time::Duration::from_secs(60))
-        .await
+    while let Some(interaction) =
+        serenity::ComponentInteractionCollector::new(&ctx.serenity_context.shard)
+            .channel_id(channel_id)
+            .message_id(message_id)
+            .filter(move |i| i.user.id == user_id)
+            .timeout(std::time::Duration::from_secs(60))
+            .await
     {
         match interaction.data.custom_id.as_str() {
             "previous_page" if page > 1 => page -= 1,
@@ -71,24 +87,26 @@ pub async fn get_leaderboard(ctx: poise::ApplicationContext<'_, Data, Error>) ->
         let players = match get_leaderboard_data(&token, &(page as i32)).await {
             Ok(p) => p,
             Err(e) => {
-                ctx.say(format!("Failed to load page {}: {}", page, e)).await?;
+                ctx.say(format!("Failed to load page {}: {}", page, e))
+                    .await?;
                 break;
             }
         };
 
-        interaction.create_response(
-            &ctx.serenity_context,
-            serenity::CreateInteractionResponse::UpdateMessage(
-                serenity::CreateInteractionResponseMessage::new()
-                    .add_embed(build_embed(&players, page))
-                    .components(create_pagination_buttons(page as i32)),
-            ),
-        ).await?;
+        interaction
+            .create_response(
+                &ctx.serenity_context,
+                serenity::CreateInteractionResponse::UpdateMessage(
+                    serenity::CreateInteractionResponseMessage::new()
+                        .add_embed(build_embed(&players, page))
+                        .components(create_pagination_buttons(page as i32)),
+                ),
+            )
+            .await?;
     }
 
     Ok(())
 }
-
 
 fn create_pagination_buttons(page: i32) -> Vec<serenity::CreateActionRow> {
     let previous_button = serenity::CreateButton::new("previous_page")
