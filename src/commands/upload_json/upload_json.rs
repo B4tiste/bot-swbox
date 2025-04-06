@@ -246,7 +246,6 @@ pub async fn upload_json(
 
     // Ajouter l'image du JSON
     let pp_base_url = "https://swex.oss-cn-hangzhou.aliyuncs.com/playerImage/";
-
     let pp_url = format!("{}{}.jpg", pp_base_url, hive_id);
 
     // Télécharger l'image
@@ -258,12 +257,11 @@ pub async fn upload_json(
         .await
         .map_err(|_| serenity::Error::Other("Failed to read pp image bytes"))?;
 
-    let embed = CreateEmbed::default()
+    let mut embed = CreateEmbed::default();
+    embed = embed
         .title("JSON Report")
         .description(format!(
             "**Account**: {} (ID: {})\n**JSON Date**: {}-{}-{}\n",
-            // if mode_id == 2 || mode_id == 3  => wizard_name = "Hidden" & wizard_id = 0
-            // wizard_name, wizard_id, day, month, year
             if mode_id == 2 || mode_id == 3 {
                 "HIDDEN"
             } else {
@@ -278,7 +276,6 @@ pub async fn upload_json(
             month,
             year
         ))
-        .thumbnail("attachment://pp.jpg")
         .field(
             "Amount of runes per set and efficiency",
             format!("```autohotkey\n{}\n```", eff_table),
@@ -296,7 +293,6 @@ pub async fn upload_json(
             "Amount of runes per set and speed",
             format!(
                 "```autohotkey\n{}\n```",
-                // spd_table if mode_id != 2 or 3
                 if mode_id == 1 || mode_id == 3 {
                     "HIDDEN"
                 } else {
@@ -328,12 +324,24 @@ pub async fn upload_json(
             "Please use /send_suggestion to report any issue.",
         ));
 
-    let attachements = serenity::CreateAttachment::bytes(image_bytes.to_vec(), "pp.jpg");
+    // Ajouter le thumbnail uniquement si ce n'est pas anonymisé
+    if mode_id != 2 && mode_id != 3 {
+        embed = embed.thumbnail("attachment://pp.jpg");
+    }
 
-    let reply = CreateReply {
-        embeds: vec![embed],
-        attachments: vec![attachements],
-        ..Default::default()
+    let reply = if mode_id == 2 || mode_id == 3 {
+        CreateReply {
+            embeds: vec![embed],
+            ..Default::default()
+        }
+    } else {
+        let attachements = serenity::CreateAttachment::bytes(image_bytes.to_vec(), "pp.jpg");
+
+        CreateReply {
+            embeds: vec![embed],
+            attachments: vec![attachements],
+            ..Default::default()
+        }
     };
 
     ctx.send(reply).await?;
