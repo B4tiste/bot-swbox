@@ -1,6 +1,7 @@
 use crate::commands::shared::models::{DuoStatsInfosData, MonsterGeneralInfoData, SlugData};
 use image::{GenericImage, ImageBuffer};
 use reqwest::Client;
+use urlencoding::encode;
 
 pub async fn get_monsters_duo_stats(
     mob_a_info: MonsterGeneralInfoData,
@@ -8,7 +9,13 @@ pub async fn get_monsters_duo_stats(
     mob_b_info: MonsterGeneralInfoData,
     season: i64,
 ) -> Result<DuoStatsInfosData, String> {
-    let monster_duo_stats_url = format!("https://api.swarena.gg/monster/{}/pairs?season={}&isG3=false&searchPairName={}&orderBy=win_against_rate&orderDirection=DESC&minPlayedAgainst=0&minPlayedTogether=0&limit=5&offset=0", mob_a_info.id, season, mob_b_slug.slug.to_lowercase());
+    let monster_duo_stats_url = format!(
+        "https://api.swarena.gg/monster/{}/pairs?season={}&isG3=false&searchPairName={}&orderBy=win_against_rate&orderDirection=DESC&minPlayedAgainst=0&minPlayedTogether=0&limit=5&offset=0",
+        mob_a_info.id,
+        season,
+        encode(&mob_b_slug.name)
+    );
+
     let response = reqwest::get(monster_duo_stats_url)
         .await
         .map_err(|_| "Failed to send request".to_string())?;
