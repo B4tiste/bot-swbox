@@ -2,15 +2,15 @@ use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::CreateSelectMenuKind;
 use poise::CreateReply;
 use serenity::{
-    builder::{
-        CreateActionRow, CreateSelectMenu, CreateSelectMenuOption,
-    },
+    builder::{CreateActionRow, CreateSelectMenu, CreateSelectMenuOption},
     Error,
 };
 
 use crate::commands::player_stats::utils::{
-    format_player_ld_monsters_emojis, format_player_monsters, get_user_detail, search_users, create_player_embed,
+    create_player_embed, format_player_ld_monsters_emojis, format_player_monsters, get_user_detail,
+    search_users,
 };
+use crate::commands::shared::logs::send_log;
 use crate::{Data, API_TOKEN};
 
 /// 📂 Displays the RTA stats of the given player. (LD & most used monsters)
@@ -42,6 +42,13 @@ pub async fn get_player_stats(
 
     if players.is_empty() {
         ctx.say("No players found.").await?;
+        send_log(
+            &ctx,
+            "Command: /get_player_stats".to_string(),
+            false,
+            format!("No players found for '{}'", player_name),
+        )
+        .await?;
         return Ok(());
     }
 
@@ -80,6 +87,14 @@ pub async fn get_player_stats(
                 },
             )
             .await?;
+
+        send_log(
+            &ctx,
+            "Command: /get_player_stats".to_string(),
+            true,
+            format!("Displayed stats for '{}'", players[0].name),
+        )
+        .await?;
 
         return Ok(());
     }
@@ -184,8 +199,23 @@ pub async fn get_player_stats(
             },
         )
         .await?;
+
+        send_log(
+            &ctx,
+            "Command: /get_player_stats".to_string(),
+            true,
+            format!("Displayed stats after selection for '{}'", player_name),
+        )
+        .await?;
     } else {
         ctx.say("⏰ Time expired or no selection.").await?;
+        send_log(
+            &ctx,
+            "Command: /get_player_stats".to_string(),
+            false,
+            format!("Timeout or no selection for '{}'", player_name),
+        )
+        .await?;
     }
 
     Ok(())

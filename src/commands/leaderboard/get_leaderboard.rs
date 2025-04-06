@@ -9,6 +9,7 @@ use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlaye
 use crate::commands::player_stats::utils::{
     create_player_embed, format_player_ld_monsters_emojis, format_player_monsters, get_user_detail,
 };
+use crate::commands::shared::logs::send_log;
 use crate::{Data, API_TOKEN};
 
 /// 📂 Displays the RTA leaderboard
@@ -196,6 +197,14 @@ pub async fn get_leaderboard(
         )
         .await?;
 
+    send_log(
+        &ctx,
+        "Command: /get_leaderboard".to_string(),
+        true,
+        format!("Displayed leaderboard page {}", page),
+    )
+    .await?;
+
     Ok(())
 }
 
@@ -248,9 +257,8 @@ fn create_player_select_menu(players: &[LeaderboardPlayer]) -> serenity::CreateA
     let options: Vec<serenity::CreateSelectMenuOption> = players
         .iter()
         .map(|player| {
-            let emoji = serenity::ReactionType::Unicode(country_code_to_flag_emoji(
-                &player.player_country,
-            ));
+            let emoji =
+                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country));
 
             serenity::CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string())
                 .description(format!("Elo: {}", player.player_elo))
