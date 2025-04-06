@@ -13,18 +13,19 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
     let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
 
     // Print the list of guilds (servers) the bot is in to the console
-    {
-        // Access the cache from the serenity client
-        let cache = &ctx.serenity_context().cache;
-        println!("Bot is in the following servers:");
+    // Access the cache from the serenity client
+    let cache = &ctx.serenity_context().cache;
+    let guild_ids = cache.guilds(); // récupère tous les IDs de serveurs
+    println!(
+        "Bot is in the following servers ({} total):",
+        guild_ids.len()
+    );
 
-        // Iterate over all guild IDs from the cache
-        for guild_id in cache.guilds().iter() {
-            // Retrieve the full guild from the cache using the guild ID.
-            // Note: `cache.guild(guild_id)` returns an Option<Guild>
-            if let Some(guild) = cache.guild(guild_id) {
-                println!("{} (ID: {})", guild.name, guild_id);
-            }
+    // Iterate over all guild IDs from the cache
+    for guild_id in guild_ids.iter() {
+        // Retrieve the full guild from the cache using the guild ID.
+        if let Some(guild) = cache.guild(guild_id) {
+            println!("{} (ID: {})", guild.name, guild_id);
         }
     }
 
