@@ -282,7 +282,7 @@ pub fn create_player_embed(
         }
     };
 
-    let ld_display = format_emojis(ld_emojis);
+    let ld_display = format_emojis(ld_emojis.clone());
     let top_display = format_emojis(top_monsters);
 
     let embed = CreateEmbed::default();
@@ -317,7 +317,11 @@ pub fn create_player_embed(
             details.season_count.unwrap_or(0).to_string(),
             true,
         )
-        .field("✨ LD Monsters (RTA only)", ld_display, false)
+        .field(
+            format!("✨ LD Monsters (RTA only) [{}]", ld_emojis.len()),
+            ld_display,
+            false,
+        )
         .field("🔥 Most Used Units Winrate", top_display, false)
         .footer(CreateEmbedFooter::new(
             "Please use /send_suggestion to report any issue.",
