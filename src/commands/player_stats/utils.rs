@@ -318,7 +318,7 @@ pub fn create_player_embed(
             true,
         )
         .field(
-            format!("✨ LD Monsters (RTA only) [{}]", ld_emojis.len()),
+            "✨ LD Monsters (RTA only)",
             ld_display,
             false,
         )
