@@ -280,6 +280,8 @@ fn country_code_to_flag_emoji(country_code: &str) -> String {
         .to_uppercase()
         .chars()
         .filter(|c| c.is_ascii_alphabetic())
-        .map(|c| char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap())
+        .map(|c| {
+            char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap_or('∅')
+        })
         .collect()
 }
