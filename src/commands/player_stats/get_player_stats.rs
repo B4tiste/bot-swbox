@@ -103,8 +103,11 @@ pub async fn get_player_stats(
         .iter()
         .take(25)
         .map(|player| {
-            let emoji =
-                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country));
+            let emoji = if player.player_country.to_uppercase() == "UNKNOWN" {
+                serenity::ReactionType::Unicode("❌".to_string())
+            } else {
+                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country))
+            };
             let description = format!("Elo: {}", player.player_score.unwrap_or(0));
 
             CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string())

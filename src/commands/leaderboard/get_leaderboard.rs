@@ -257,8 +257,11 @@ fn create_player_select_menu(players: &[LeaderboardPlayer]) -> serenity::CreateA
     let options: Vec<serenity::CreateSelectMenuOption> = players
         .iter()
         .map(|player| {
-            let emoji =
-                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country));
+            let emoji = if player.player_country.to_uppercase() == "UNKNOWN" {
+                serenity::ReactionType::Unicode("❌".to_string())
+            } else {
+                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country))
+            };
 
             serenity::CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string())
                 .description(format!("Elo: {}", player.player_elo))
@@ -280,8 +283,6 @@ fn country_code_to_flag_emoji(country_code: &str) -> String {
         .to_uppercase()
         .chars()
         .filter(|c| c.is_ascii_alphabetic())
-        .map(|c| {
-            char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap_or('∅')
-        })
+        .map(|c| char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap_or('∅'))
         .collect()
 }
