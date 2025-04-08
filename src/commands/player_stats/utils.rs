@@ -244,11 +244,19 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     if let Some(monsters) = &details.player_monsters {
         for (index, m) in monsters.iter().enumerate() {
             if let Some(emoji) = get_emoji_from_filename(&collection, &m.monster_img).await {
+                let pick_display = if m.pick_total >= 1000 {
+                    let k = m.pick_total / 1000;
+                    let remainder = (m.pick_total % 1000) / 100;
+                    format!("{}k{}", k, remainder)
+                } else {
+                    m.pick_total.to_string()
+                };
+
                 let entry = format!(
-                    "{}. {} {}, **{:.2}%**WR\n",
+                    "{}. {} {} picks, **{:.2} %** WR\n",
                     index + 1,
                     emoji,
-                    m.pick_total,
+                    pick_display,
                     m.win_rate
                 );
                 output.push(entry);
@@ -258,7 +266,6 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
 
     output
 }
-
 
 /// Creates an embed from player info + emojis
 pub fn create_player_embed(
