@@ -245,7 +245,7 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
         for (index, m) in monsters.iter().enumerate() {
             if let Some(emoji) = get_emoji_from_filename(&collection, &m.monster_img).await {
                 let entry = format!(
-                    "{}. {} {} played, **{:.2} %** WR\n",
+                    "{}. {} {} played, **{:.2}%** WR\n",
                     index + 1,
                     emoji,
                     m.pick_total,
