@@ -11,6 +11,7 @@ use crate::commands::player_stats::utils::{
     search_users,
 };
 use crate::commands::shared::logs::send_log;
+use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
 use crate::{Data, API_TOKEN};
 
 /// 📂 Displays the RTA stats of the given player. (LD & most used monsters)
@@ -33,6 +34,54 @@ pub async fn get_player_stats(
         })?
     };
 
+    // Si c’est un alias connu, on utilise directement l’ID
+    if let Some(swrt_id) = ALIAS_LOOKUP_MAP.get(&player_name.to_lowercase()) {
+        let details = get_user_detail(&token, swrt_id).await.map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Error retrieving player details: {}", e),
+            ))
+        })?;
+
+        let embed = create_player_embed(
+            &details,
+            vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
+            vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
+        );
+
+        let reply_handle = ctx
+            .send(CreateReply {
+                embeds: vec![embed],
+                ..Default::default()
+            })
+            .await?;
+
+        let ld_emojis = format_player_ld_monsters_emojis(&details).await;
+        let top_monsters = format_player_monsters(&details).await;
+
+        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters);
+        reply_handle
+            .edit(
+                poise::Context::Application(ctx),
+                CreateReply {
+                    embeds: vec![updated_embed],
+                    ..Default::default()
+                },
+            )
+            .await?;
+
+        send_log(
+            &ctx,
+            "Command: /get_player_stats".to_string(),
+            true,
+            format!("Displayed stats for alias '{}'", player_name),
+        )
+        .await?;
+
+        return Ok(());
+    }
+
+    // Si c’est pas un alias connu, on fait une recherche par nom
     let players = search_users(&token, &player_name).await.map_err(|e| {
         Error::from(std::io::Error::new(
             std::io::ErrorKind::Other,

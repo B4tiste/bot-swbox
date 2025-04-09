@@ -5,6 +5,8 @@ use serde::Deserialize;
 use poise::serenity_prelude as serenity;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 
+use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
+
 #[derive(Debug, Deserialize)]
 pub struct Player {
     #[serde(rename = "playerName")]
@@ -51,6 +53,8 @@ pub struct PlayerDetail {
     pub season_count: Option<i32>,
     #[serde(rename = "playerCountry")]
     pub player_country: String,
+    #[serde(rename = "swrtPlayerId")]
+    pub swrt_player_id: i64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -120,6 +124,7 @@ pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetai
             head_img: d.player.head_img,
             player_monsters: d.player_monsters,
             player_country: d.player.player_country,
+            swrt_player_id: d.player.swrt_player_id,
             // monster_simple_imgs: d.monster_simple_imgs,
             monster_ld_imgs: d.monster_ld_imgs,
             season_count: d.season_count,
@@ -303,9 +308,13 @@ pub fn create_player_embed(
     let embed = CreateEmbed::default();
     embed
         .title(format!(
-            ":flag_{}: {} RTA Statistics (Regular Season only)",
+            ":flag_{}: {}{} RTA Statistics (Regular Season only)",
             details.player_country.to_lowercase(),
-            details.name
+            details.name,
+            PLAYER_ALIAS_MAP
+                .get(&details.swrt_player_id)
+                .map(|alias| format!(" ({})", alias))
+                .unwrap_or_default()
         ))
         .thumbnail(details.head_img.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
