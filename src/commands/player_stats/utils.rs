@@ -295,7 +295,7 @@ pub fn create_player_embed(
     let embed = CreateEmbed::default();
     embed
         .title(format!(
-            ":flag_{}: {} RTA Statistics",
+            ":flag_{}: {} RTA Statistics (Regular Season only)",
             details.player_country.to_lowercase(),
             details.name
         ))
