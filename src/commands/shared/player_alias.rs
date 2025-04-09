@@ -33,7 +33,7 @@ lazy_static! {
         "players": [
             {
                 "og_name": "沙比版本策划",
-                "en_names": ["Kelianbao", "kelian bao"],
+                "en_names": ["kelianbao", "kelian bao"],
                 "swarena_id": 28964534,
                 "swrt_id": 54175
             },
@@ -45,7 +45,7 @@ lazy_static! {
             },
             {
                 "og_name": "鮭  　　　 ",
-                "en_names": ["Lest"],
+                "en_names": ["lest"],
                 "swarena_id": 6489096,
                 "swrt_id": 30389
             },
