@@ -264,7 +264,7 @@ fn create_player_select_menu(players: &[LeaderboardPlayer]) -> serenity::CreateA
             };
 
             let label = if let Some(alias) = PLAYER_ALIAS_MAP.get(&player.swrt_player_id) {
-                format!("{} ({})", player.name, alias)
+                format!("{} aka **{}**", player.name, alias)
             } else {
                 player.name.clone()
             };
