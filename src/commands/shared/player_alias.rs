@@ -60,6 +60,12 @@ lazy_static! {
                 "en_names": ["cabrera"],
                 "swarena_id": 1176597,
                 "swrt_id": 11026
+            },
+            {
+                "og_name": "ᴅᴀᴍ~",
+                "en_names": ["Le débilos"],
+                "swarena_id": 2419842,
+                "swrt_id": 17817
             }
         ]
     });
