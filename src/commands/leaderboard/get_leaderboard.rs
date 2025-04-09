@@ -217,7 +217,7 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
 
         let alias_str = PLAYER_ALIAS_MAP
             .get(&player.swrt_player_id)
-            .map(|alias| format!(" ({})", alias))
+            .map(|alias| format!("aka **{}**", alias))
             .unwrap_or_default();
 
         description.push_str(&format!(
@@ -264,7 +264,7 @@ fn create_player_select_menu(players: &[LeaderboardPlayer]) -> serenity::CreateA
             };
 
             let label = if let Some(alias) = PLAYER_ALIAS_MAP.get(&player.swrt_player_id) {
-                format!("{} aka **{}**", player.name, alias)
+                format!("{} aka {}", player.name, alias)
             } else {
                 player.name.clone()
             };
