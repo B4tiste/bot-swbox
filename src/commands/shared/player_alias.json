@@ -3,15 +3,16 @@
     [
         {
             "og_name" : "沙比版本策划",
-            "en_name" : [
-                "kelianbao"
+            "en_names" : [
+                "Kelianbao",
+                "kelian bao"
             ],
             "swarena_id" : 28964534,
             "swrt_id": 54175
         },
         {
             "og_name" : "未生",
-            "en_name" : [
+            "en_names" : [
                 "tars"
             ],
             "swarena_id" : 19979062,
@@ -19,7 +20,7 @@
         },
         {
             "og_name" : "鮭  　　　 ",
-            "en_name" : [
+            "en_names" : [
                 "Lest"
             ],
             "swarena_id" : 6489096,
@@ -27,12 +28,21 @@
         },
         {
             "og_name" : "스킷:)",
-            "en_name" : [
+            "en_names" : [
                 "sk!t",
-                "skit"
+                "skit",
+                "skit!"
             ],
             "swarena_id" : 647538,
             "swrt_id": 8123
+        },
+        {
+            "og_name" : "XカブレラX",
+            "en_names" : [
+                "cabrera"
+            ],
+            "swarena_id" : 1176597,
+            "swrt_id": 11026
         }
     ]
 

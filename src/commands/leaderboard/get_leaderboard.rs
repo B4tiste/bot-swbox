@@ -10,6 +10,7 @@ use crate::commands::player_stats::utils::{
     create_player_embed, format_player_ld_monsters_emojis, format_player_monsters, get_user_detail,
 };
 use crate::commands::shared::logs::send_log;
+use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
 use crate::{Data, API_TOKEN};
 
 /// 📂 Displays the RTA leaderboard
@@ -210,35 +211,34 @@ pub async fn get_leaderboard(
 
 fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity::CreateEmbed {
     let mut description = String::new();
+
     for (rank, player) in players.iter().enumerate() {
         let position = rank + 1 + ((page - 1) * 10) as usize;
+
+        let alias_str = PLAYER_ALIAS_MAP
+            .get(&player.swrt_player_id)
+            .map(|alias| format!(" ({})", alias))
+            .unwrap_or_default();
+
         description.push_str(&format!(
-            "{}. :flag_{}: {} - `{}`\n",
+            "{}. :flag_{}: {} - `{}`{}\n",
             position,
             player.player_country.to_lowercase(),
             player.player_elo,
-            player.name
+            player.name,
+            alias_str,
         ));
     }
 
     CreateEmbed::default()
         .title(format!("Leaderboard - Page {}", page))
         .description(description)
-        .field(
-            "💡 Tip",
-            "Use the menu below to view a player's stats.",
-            false,
-        )
-        .field(
-            "⚠️ Note",
-            "Interaction buttons are disabled after 10 minutes.",
-            false,
-        )
-        .footer(CreateEmbedFooter::new(
-            "Use /send_suggestion to report issues.",
-        ))
+        .field("💡 Tip", "Use the menu below to view a player's stats.", false)
+        .field("⚠️ Note", "Interaction buttons are disabled after 10 minutes.", false)
+        .footer(CreateEmbedFooter::new("Use /send_suggestion to report issues."))
         .color(serenity::Colour::from_rgb(0, 255, 0))
 }
+
 
 fn create_pagination_buttons(page: i32) -> serenity::CreateActionRow {
     let previous_button = serenity::CreateButton::new("previous_page")
