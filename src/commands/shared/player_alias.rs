@@ -62,6 +62,12 @@ lazy_static! {
                 "swrt_id": 11026
             },
             {
+                "og_name": "Salvandar~",
+                "en_names": ["salvodar"],
+                "swarena_id": 1148532,
+                "swrt_id": 10871
+            },
+            {
                 "og_name": "ᴅᴀᴍ~",
                 "en_names": ["Le débilos"],
                 "swarena_id": 2419842,
