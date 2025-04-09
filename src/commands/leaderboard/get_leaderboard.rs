@@ -263,7 +263,13 @@ fn create_player_select_menu(players: &[LeaderboardPlayer]) -> serenity::CreateA
                 serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country))
             };
 
-            serenity::CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string())
+            let label = if let Some(alias) = PLAYER_ALIAS_MAP.get(&player.swrt_player_id) {
+                format!("{} ({})", player.name, alias)
+            } else {
+                player.name.clone()
+            };
+
+            serenity::CreateSelectMenuOption::new(label, player.swrt_player_id.to_string())
                 .description(format!("Elo: {}", player.player_elo))
                 .emoji(emoji)
         })
