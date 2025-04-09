@@ -1,0 +1,39 @@
+{
+    "players" :
+    [
+        {
+            "og_name" : "沙比版本策划",
+            "en_name" : [
+                "kelianbao"
+            ],
+            "swarena_id" : 28964534,
+            "swrt_id": 54175
+        },
+        {
+            "og_name" : "未生",
+            "en_name" : [
+                "tars"
+            ],
+            "swarena_id" : 19979062,
+            "swrt_id": 48169
+        },
+        {
+            "og_name" : "鮭  　　　 ",
+            "en_name" : [
+                "Lest"
+            ],
+            "swarena_id" : 6489096,
+            "swrt_id": 30389
+        },
+        {
+            "og_name" : "스킷:)",
+            "en_name" : [
+                "sk!t",
+                "skit"
+            ],
+            "swarena_id" : 647538,
+            "swrt_id": 8123
+        }
+    ]
+
+}
