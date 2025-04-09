@@ -247,7 +247,15 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
                 let pick_display = if m.pick_total >= 1000 {
                     let k = m.pick_total / 1000;
                     let remainder = (m.pick_total % 1000) / 100;
-                    format!("{}k{}", k, remainder)
+                    // if remainder == 0 {
+                    //     format!("{}k", k)
+                    // } else {
+                    //     format!("{}k.{:02}", k, remainder)
+                    if remainder == 0 {
+                        format!("{}k", k)
+                    } else {
+                        format!("{}k{}", k, remainder)
+                    }
                 } else {
                     m.pick_total.to_string()
                 };
