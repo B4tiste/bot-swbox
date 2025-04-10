@@ -68,6 +68,12 @@ lazy_static! {
                 "swrt_id": 10871
             },
             {
+                "og_name": "Chiikoup~",
+                "en_names": ["autowin"],
+                "swarena_id": 17461686,
+                "swrt_id": 11401858
+            },
+            {
                 "og_name": "ᴅᴀᴍ~",
                 "en_names": ["Le débilos"],
                 "swarena_id": 2419842,
