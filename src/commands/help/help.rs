@@ -10,7 +10,7 @@ use serenity::builder::CreateEmbedFooter;
 /// Usage: `/help`
 #[poise::command(slash_command)]
 pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
-    let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
+    // let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
 
     // Print the list of guilds (servers) the bot is in to the console
     // Access the cache from the serenity client
@@ -33,8 +33,8 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
     let mut embed = serenity::CreateEmbed::default()
         .title("Commands")
         .color(serenity::Colour::from_rgb(0, 255, 255))
-        .thumbnail(thumbnail)
         .description("Created by **b4tiste** & **shaakz**");
+    // .thumbnail(thumbnail)
 
     // Add each command's name and description as an embed field
     for command in &ctx.framework().options().commands {
