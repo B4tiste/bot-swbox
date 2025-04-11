@@ -347,3 +347,38 @@ pub fn create_level_buttons(
             .style(style_for(3)),
     ])
 }
+
+pub async fn build_loading_monster_stats_embed(
+    monster_name: &str,
+    image_filename: &str,
+    season: i64,
+    level: i32,
+) -> serenity::CreateEmbed {
+    let level_str = match level {
+        0 => "C1-C3",
+        1 => "G1-G2",
+        3 => "G3",
+        4 => "P1-P3",
+        _ => "Unknown",
+    };
+
+    let thumbnail = format!(
+        "https://swarfarm.com/static/herders/images/monsters/{}",
+        image_filename
+    );
+
+    serenity::CreateEmbed::default()
+        .title(format!("Monster stats - {} - Season {}", monster_name, season))
+        .description(format!("**Level**: {}", level_str))
+        .color(serenity::Colour::from_rgb(0, 255, 128))
+        .thumbnail(thumbnail)
+        .field("Play Rate", "<a:loading:1358029412716515418> Loading...", true)
+        .field("Win Rate", "<a:loading:1358029412716515418> Loading...", true)
+        .field("Ban Rate", "<a:loading:1358029412716515418> Loading...", true)
+        .field("First Pick Rate", "<a:loading:1358029412716515418> Loading...", true)
+        .field("📈 Best Teammates", "<a:loading:1358029412716515418> Loading...", false)
+        .field("📉 Worst Matchups", "<a:loading:1358029412716515418> Loading...", false)
+        .footer(serenity::builder::CreateEmbedFooter::new(
+            "Use /send_suggestion to report issues.",
+        ))
+}

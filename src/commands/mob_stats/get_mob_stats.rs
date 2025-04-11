@@ -5,7 +5,7 @@ use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Erro
 
 use crate::commands::mob_stats::utils::{
     build_monster_stats_embed, create_level_buttons, format_bad_matchups, format_good_matchups,
-    get_monster_matchups_swrt, get_monster_stats_swrt, get_swrt_settings,
+    get_monster_matchups_swrt, get_monster_stats_swrt, get_swrt_settings, build_loading_monster_stats_embed,
 };
 use crate::commands::player_stats::utils::{get_emoji_from_filename, get_mob_emoji_collection};
 use crate::commands::shared::embed_error_handling::{
@@ -76,12 +76,18 @@ pub async fn get_mob_stats(
         .await
         .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
-    let loading_text = "<a:loading:1358029412716515418> Loading...";
-
     let initial_embed = build_monster_stats_embed(&stats, season, current_level)
         .await
-        .field("📈 Best Teammates", loading_text, false)
-        .field("📉 Worst Matchups", loading_text, false);
+        .field(
+            "📈 Best Teammates",
+            "<a:loading:1358029412716515418> Loading...",
+            false,
+        )
+        .field(
+            "📉 Worst Matchups",
+            "<a:loading:1358029412716515418> Loading...",
+            false,
+        );
 
     let conqueror_id: u64 = CONQUEROR_EMOJI_ID.lock().unwrap().parse().unwrap();
     let guardian_id: u64 = GUARDIAN_EMOJI_ID.lock().unwrap().parse().unwrap();
@@ -104,7 +110,6 @@ pub async fn get_mob_stats(
     let message_id = reply.message().await?.id;
     let channel_id = ctx.channel_id();
 
-    // Chargement et update de l'embed initial
     let (high_matchups, low_matchups) =
         get_monster_matchups_swrt(monster_info.id, season, &version, current_level, &token)
             .await
@@ -143,7 +148,6 @@ pub async fn get_mob_stats(
         )
         .await?;
 
-    // Gestion des interactions
     while let Some(interaction) =
         serenity::ComponentInteractionCollector::new(&ctx.serenity_context.shard)
             .channel_id(channel_id)
@@ -166,19 +170,13 @@ pub async fn get_mob_stats(
 
         current_level = selected_level;
 
-        // 1. Embed temporaire avec chargement
-        let loading_embed = build_monster_stats_embed(&stats, season, current_level)
-            .await
-            .field(
-                "📈 Best Teammates",
-                "<a:loading:1358029412716515418> Loading...",
-                false,
-            )
-            .field(
-                "📉 Worst Matchups",
-                "<a:loading:1358029412716515418> Loading...",
-                false,
-            );
+        let loading_embed = build_loading_monster_stats_embed(
+            &stats.monster_name,
+            &stats.image_filename,
+            season,
+            current_level,
+        )
+        .await;
 
         interaction
             .create_response(
@@ -191,13 +189,12 @@ pub async fn get_mob_stats(
                             guardian_id,
                             punisher_id,
                             current_level,
-                            true, // Boutons désactivés
+                            true,
                         )]),
                 ),
             )
             .await?;
 
-        // 2. Récupération des données
         let new_stats =
             match get_monster_stats_swrt(monster_info.id, season, &version, &token, current_level)
                 .await
@@ -229,7 +226,6 @@ pub async fn get_mob_stats(
         let good = format_good_matchups(&monster_emoji, &high_matchups);
         let bad = format_bad_matchups(&monster_emoji, &low_matchups);
 
-        // 3. Embed final + réactivation des boutons
         let final_embed = build_monster_stats_embed(&new_stats, season, current_level)
             .await
             .field("📈 Dream Teams", good, false)
@@ -245,7 +241,7 @@ pub async fn get_mob_stats(
                         guardian_id,
                         punisher_id,
                         current_level,
-                        false, // Boutons activés
+                        false,
                     )]),
             )
             .await?;
