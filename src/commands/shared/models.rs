@@ -12,17 +12,17 @@ pub struct MonsterGeneralInfoData {
     pub image_filename: String,
 }
 
-#[derive(Deserialize, Default)]
-pub struct MonsterRtaInfoData {
-    pub played: i32,
-    pub winner: i32,
-    pub banned: i32,
-    pub leader: i32,
-    pub play_rate: f32,
-    pub win_rate: f32,
-    pub ban_rate: f32,
-    pub lead_rate: f32,
-}
+// #[derive(Deserialize, Default)]
+// pub struct MonsterRtaInfoData {
+//     pub played: i32,
+//     pub winner: i32,
+//     pub banned: i32,
+//     pub leader: i32,
+//     pub play_rate: f32,
+//     pub win_rate: f32,
+//     pub ban_rate: f32,
+//     pub lead_rate: f32,
+// }
 
 #[derive(Deserialize, Default)]
 pub struct DuoStatsInfosData {
