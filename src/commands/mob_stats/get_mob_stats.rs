@@ -138,7 +138,7 @@ pub async fn get_mob_stats(
         .field("📉 Worst Matchups", bad, false)
         .field(
             "ℹ️ Tip",
-            "Use the buttons below to view stats for different arena ranks (C1-C3, G1-G2, G3, P1-P3).",
+            "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",
             false,
         );
 
@@ -243,7 +243,7 @@ pub async fn get_mob_stats(
             .field("📉 Worst Matchups", bad, false)
             .field(
                 "ℹ️ Tip",
-                "Use the buttons below to view stats for different arena ranks (C1-C3, G1-G2, G3, P1-P3).",
+                "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",
                 false,
             );
 
