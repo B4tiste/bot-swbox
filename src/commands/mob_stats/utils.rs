@@ -287,11 +287,6 @@ pub async fn build_monster_stats_embed(
             format!("{:.1}%", monster_stats.first_pick_rate * 100.0),
             true,
         )
-        .field(
-            "ℹ️ Tip",
-            "Use the buttons below to view stats for different arena ranks (C1-C3, G1-G2, G3, P1-P3).",
-            false,
-        )
         .footer(serenity::builder::CreateEmbedFooter::new(
             "Use /send_suggestion to report issues.",
         ))
@@ -352,11 +347,6 @@ pub async fn build_loading_monster_stats_embed(
         .field(
             "📉 Worst Matchups",
             "<a:loading:1358029412716515418> Loading...",
-            false,
-        )
-        .field(
-            "ℹ️ Tip",
-            "Use the buttons below to view stats for different arena ranks (C1-C3, G1-G2, G3, P1-P3).",
             false,
         )
         .footer(serenity::builder::CreateEmbedFooter::new(

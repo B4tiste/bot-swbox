@@ -4,8 +4,9 @@ use serenity::builder::EditInteractionResponse;
 use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
 use crate::commands::mob_stats::utils::{
-    build_monster_stats_embed, create_level_buttons, format_bad_matchups, format_good_matchups,
-    get_monster_matchups_swrt, get_monster_stats_swrt, get_swrt_settings, build_loading_monster_stats_embed,
+    build_loading_monster_stats_embed, build_monster_stats_embed, create_level_buttons,
+    format_bad_matchups, format_good_matchups, get_monster_matchups_swrt, get_monster_stats_swrt,
+    get_swrt_settings,
 };
 use crate::commands::player_stats::utils::{get_emoji_from_filename, get_mob_emoji_collection};
 use crate::commands::shared::embed_error_handling::{
@@ -87,6 +88,11 @@ pub async fn get_mob_stats(
             "📉 Worst Matchups",
             "<a:loading:1358029412716515418> Loading...",
             false,
+        )
+        .field(
+            "ℹ️ Tip",
+            "Use the buttons below to view stats for different arena ranks (C1-C3, G1-G2, G3, P1-P3).",
+            false,
         );
 
     let conqueror_id: u64 = CONQUEROR_EMOJI_ID.lock().unwrap().parse().unwrap();
@@ -129,7 +135,12 @@ pub async fn get_mob_stats(
     let updated_embed = build_monster_stats_embed(&stats, season, current_level)
         .await
         .field("📈 Best Teammates", good, false)
-        .field("📉 Worst Matchups", bad, false);
+        .field("📉 Worst Matchups", bad, false)
+        .field(
+            "ℹ️ Tip",
+            "Use the buttons below to view stats for different arena ranks (C1-C3, G1-G2, G3, P1-P3).",
+            false,
+        );
 
     reply
         .edit(
@@ -229,7 +240,12 @@ pub async fn get_mob_stats(
         let final_embed = build_monster_stats_embed(&new_stats, season, current_level)
             .await
             .field("📈 Dream Teams", good, false)
-            .field("📉 Worst Matchups", bad, false);
+            .field("📉 Worst Matchups", bad, false)
+            .field(
+                "ℹ️ Tip",
+                "Use the buttons below to view stats for different arena ranks (C1-C3, G1-G2, G3, P1-P3).",
+                false,
+            );
 
         interaction
             .edit_response(
