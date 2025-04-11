@@ -191,7 +191,7 @@ pub async fn get_emoji_from_filename(
         .ok()??;
 
     let id = emoji_doc.get_str("id").ok()?;
-    Some(format!("<:{}:{}>", name_no_ext, id))
+    Some(format!("<:unit_icon_{}:{}>", name_no_ext, id))
 }
 
 pub async fn get_emoji_from_filename_with_stars(
@@ -212,7 +212,7 @@ pub async fn get_emoji_from_filename_with_stars(
     }
 
     let id = emoji_doc.get_str("id").ok()?;
-    Some(format!("<:{}:{}>", name_no_ext, id))
+    Some(format!("<:unit_icon_{}:{}>", name_no_ext, id))
 }
 
 pub async fn format_player_ld_monsters_emojis(details: &PlayerDetail) -> Vec<String> {
