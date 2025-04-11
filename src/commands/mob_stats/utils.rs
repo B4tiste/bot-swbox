@@ -173,15 +173,24 @@ pub async fn extract_matchups_from_json(
     result
 }
 
-fn truncate_field(s: String, max_len: usize) -> String {
-    if s.len() > max_len {
-        let mut truncated = s.chars().take(max_len - 3).collect::<String>();
-        truncated.push_str("...");
-        truncated
-    } else {
-        s
+fn truncate_entries_safely(entries: Vec<String>, max_len: usize) -> String {
+    let mut result = String::new();
+
+    for entry in entries {
+        // +1 pour le \n à ajouter après la ligne
+        if result.len() + entry.len() + 1 > max_len {
+            break;
+        }
+
+        if !result.is_empty() {
+            result.push('\n');
+        }
+        result.push_str(&entry);
     }
+
+    result
 }
+
 
 pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
     if matchups.is_empty() {
@@ -193,7 +202,7 @@ pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) ->
         .enumerate()
         .map(|(i, m)| {
             format!(
-                "{}. {} {} {} **{:.1} %** WR",
+                "{}. {} {} {} **{:.2}%WR**",
                 i + 1,
                 monster_emoji,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
@@ -203,7 +212,7 @@ pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) ->
         })
         .collect();
 
-    truncate_field(entries.join("\n"), 1024)
+    truncate_entries_safely(entries, 1024)
 }
 
 pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
@@ -216,7 +225,7 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
         .enumerate()
         .map(|(i, m)| {
             format!(
-                "{}. {} {} → {} **{:.1} %** WR",
+                "{}. {} {} 🆚 {} **{:.2}%WR**",
                 i + 1,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
@@ -226,7 +235,7 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
         })
         .collect();
 
-    truncate_field(entries.join("\n"), 1024)
+    truncate_entries_safely(entries, 1024)
 }
 
 pub async fn build_monster_stats_embed(
