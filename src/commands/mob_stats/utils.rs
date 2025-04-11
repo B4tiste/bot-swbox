@@ -165,7 +165,7 @@ pub async fn extract_matchups_from_json(
             result.push(MonsterMatchup {
                 emoji1,
                 emoji2,
-                win_rate
+                win_rate,
             });
         }
     }
@@ -190,7 +190,6 @@ fn truncate_entries_safely(entries: Vec<String>, max_len: usize) -> String {
 
     result
 }
-
 
 pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
     if matchups.is_empty() {
@@ -288,6 +287,78 @@ pub async fn build_monster_stats_embed(
             format!("{:.1}%", monster_stats.first_pick_rate * 100.0),
             true,
         )
+        .field(
+            "ℹ️ Tip",
+            "Use the buttons below to view stats for different arena ranks (C1-C3, G1-G2, G3, P1-P3).",
+            false,
+        )
+        .footer(serenity::builder::CreateEmbedFooter::new(
+            "Use /send_suggestion to report issues.",
+        ))
+}
+
+pub async fn build_loading_monster_stats_embed(
+    monster_name: &str,
+    image_filename: &str,
+    season: i64,
+    level: i32,
+) -> serenity::CreateEmbed {
+    let level_str = match level {
+        0 => "C1-C3",
+        1 => "G1-G2",
+        3 => "G3",
+        4 => "P1-P3",
+        _ => "Unknown",
+    };
+
+    let thumbnail = format!(
+        "https://swarfarm.com/static/herders/images/monsters/{}",
+        image_filename
+    );
+
+    serenity::CreateEmbed::default()
+        .title(format!(
+            "Monster stats - {} - Season {}",
+            monster_name, season
+        ))
+        .description(format!("**Level**: {}", level_str))
+        .color(serenity::Colour::from_rgb(0, 255, 128))
+        .thumbnail(thumbnail)
+        .field(
+            "Play Rate",
+            "<a:loading:1358029412716515418> Loading...",
+            true,
+        )
+        .field(
+            "Win Rate",
+            "<a:loading:1358029412716515418> Loading...",
+            true,
+        )
+        .field(
+            "Ban Rate",
+            "<a:loading:1358029412716515418> Loading...",
+            true,
+        )
+        .field(
+            "First Pick Rate",
+            "<a:loading:1358029412716515418> Loading...",
+            true,
+        )
+        .field(
+            "📈 Best Teammates",
+            "<a:loading:1358029412716515418> Loading...",
+            false,
+        )
+        .field(
+            "📉 Worst Matchups",
+            "<a:loading:1358029412716515418> Loading...",
+            false,
+        )
+        .field(
+            "ℹ️ Tip",
+            "Use the buttons below to view stats for different arena ranks (C1-C3, G1-G2, G3, P1-P3).",
+            false,
+        )
         .footer(serenity::builder::CreateEmbedFooter::new(
             "Use /send_suggestion to report issues.",
         ))
@@ -346,39 +417,4 @@ pub fn create_level_buttons(
             })
             .style(style_for(3)),
     ])
-}
-
-pub async fn build_loading_monster_stats_embed(
-    monster_name: &str,
-    image_filename: &str,
-    season: i64,
-    level: i32,
-) -> serenity::CreateEmbed {
-    let level_str = match level {
-        0 => "C1-C3",
-        1 => "G1-G2",
-        3 => "G3",
-        4 => "P1-P3",
-        _ => "Unknown",
-    };
-
-    let thumbnail = format!(
-        "https://swarfarm.com/static/herders/images/monsters/{}",
-        image_filename
-    );
-
-    serenity::CreateEmbed::default()
-        .title(format!("Monster stats - {} - Season {}", monster_name, season))
-        .description(format!("**Level**: {}", level_str))
-        .color(serenity::Colour::from_rgb(0, 255, 128))
-        .thumbnail(thumbnail)
-        .field("Play Rate", "<a:loading:1358029412716515418> Loading...", true)
-        .field("Win Rate", "<a:loading:1358029412716515418> Loading...", true)
-        .field("Ban Rate", "<a:loading:1358029412716515418> Loading...", true)
-        .field("First Pick Rate", "<a:loading:1358029412716515418> Loading...", true)
-        .field("📈 Best Teammates", "<a:loading:1358029412716515418> Loading...", false)
-        .field("📉 Worst Matchups", "<a:loading:1358029412716515418> Loading...", false)
-        .footer(serenity::builder::CreateEmbedFooter::new(
-            "Use /send_suggestion to report issues.",
-        ))
 }
