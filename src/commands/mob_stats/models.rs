@@ -14,6 +14,5 @@ pub struct MonsterRtaInfoData {
 pub struct MonsterMatchup {
     pub emoji1: Option<String>,
     pub emoji2: Option<String>,
-    pub pick_total: i32,
     pub win_rate: f32,
 }
