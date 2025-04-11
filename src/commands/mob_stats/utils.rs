@@ -202,7 +202,7 @@ pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) ->
         .enumerate()
         .map(|(i, m)| {
             format!(
-                "{}. {} {} {} **{:.2}%WR**",
+                "{}. {} + {} {} **{:.1} %** WR",
                 i + 1,
                 monster_emoji,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
@@ -225,7 +225,7 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
         .enumerate()
         .map(|(i, m)| {
             format!(
-                "{}. {} {} 🆚 {} **{:.2}%WR**",
+                "{}. {} {} → {} **{:.1} %** WR",
                 i + 1,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
