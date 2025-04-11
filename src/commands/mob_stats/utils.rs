@@ -155,6 +155,10 @@ pub async fn extract_matchups_from_json(
             )
             .await;
 
+            let pick_total = item
+                .get("pickTotal")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0) as i32;
             let win_rate = item
                 .get("winRate")
                 .and_then(|v| v.as_str())
@@ -165,6 +169,7 @@ pub async fn extract_matchups_from_json(
             result.push(MonsterMatchup {
                 emoji1,
                 emoji2,
+                pick_total,
                 win_rate,
             });
         }
@@ -201,12 +206,13 @@ pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) ->
         .enumerate()
         .map(|(i, m)| {
             format!(
-                "{}. {} + {} {} **{:.1} %** WR",
+                "{}. {} + {} {} **{:.1} %** WR /{}",
                 i + 1,
                 monster_emoji,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
-                m.win_rate
+                m.win_rate,
+                m.pick_total
             )
         })
         .collect();
@@ -224,12 +230,13 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
         .enumerate()
         .map(|(i, m)| {
             format!(
-                "{}. {} {} → {} **{:.1} %** WR",
+                "{}. {} {} → {} **{:.1} %** WR /{}",
                 i + 1,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
                 monster_emoji,
-                100.0 - m.win_rate
+                100.0 - m.win_rate,
+                m.pick_total
             )
         })
         .collect();
