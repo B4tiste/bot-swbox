@@ -1,13 +1,13 @@
 use poise::serenity_prelude as serenity;
 use poise::CreateReply;
-use serenity::{
-    CreateInteractionResponse, CreateInteractionResponseMessage,
-    Error,
-};
+use serenity::builder::EditInteractionResponse;
+use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
 use crate::commands::mob_stats::utils::{
-    build_monster_stats_embed, create_level_buttons, get_monster_stats_swrt, get_swrt_settings,
+    build_monster_stats_embed, create_level_buttons, format_bad_matchups, format_good_matchups,
+    get_monster_matchups_swrt, get_monster_stats_swrt, get_swrt_settings,
 };
+use crate::commands::player_stats::utils::{get_emoji_from_filename, get_mob_emoji_collection};
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
@@ -75,7 +75,13 @@ pub async fn get_mob_stats(
     let stats = get_monster_stats_swrt(monster_info.id, season, &version, &token, current_level)
         .await
         .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
-    let embed = build_monster_stats_embed(&stats, season, current_level).await;
+
+    let loading_text = "<a:loading:1358029412716515418> Loading...";
+
+    let initial_embed = build_monster_stats_embed(&stats, season, current_level)
+        .await
+        .field("📈 Best Teammates", loading_text, false)
+        .field("📉 Worst Matchups", loading_text, false);
 
     let conqueror_id: u64 = CONQUEROR_EMOJI_ID.lock().unwrap().parse().unwrap();
     let guardian_id: u64 = GUARDIAN_EMOJI_ID.lock().unwrap().parse().unwrap();
@@ -83,12 +89,13 @@ pub async fn get_mob_stats(
 
     let reply = ctx
         .send(CreateReply {
-            embeds: vec![embed],
+            embeds: vec![initial_embed],
             components: Some(vec![create_level_buttons(
                 conqueror_id,
                 guardian_id,
                 punisher_id,
                 current_level,
+                true,
             )]),
             ..Default::default()
         })
@@ -97,6 +104,46 @@ pub async fn get_mob_stats(
     let message_id = reply.message().await?.id;
     let channel_id = ctx.channel_id();
 
+    // Chargement et update de l'embed initial
+    let (high_matchups, low_matchups) =
+        get_monster_matchups_swrt(monster_info.id, season, &version, current_level, &token)
+            .await
+            .unwrap_or((vec![], vec![]));
+
+    let collection = get_mob_emoji_collection()
+        .await
+        .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+
+    let monster_emoji = get_emoji_from_filename(&collection, &stats.image_filename)
+        .await
+        .unwrap_or("❓".to_string());
+
+    let good = format_good_matchups(&monster_emoji, &high_matchups);
+    let bad = format_bad_matchups(&monster_emoji, &low_matchups);
+
+    let updated_embed = build_monster_stats_embed(&stats, season, current_level)
+        .await
+        .field("📈 Best Teammates", good, false)
+        .field("📉 Worst Matchups", bad, false);
+
+    reply
+        .edit(
+            poise::Context::Application(ctx),
+            CreateReply {
+                embeds: vec![updated_embed],
+                components: Some(vec![create_level_buttons(
+                    conqueror_id,
+                    guardian_id,
+                    punisher_id,
+                    current_level,
+                    false,
+                )]),
+                ..Default::default()
+            },
+        )
+        .await?;
+
+    // Gestion des interactions
     while let Some(interaction) =
         serenity::ComponentInteractionCollector::new(&ctx.serenity_context.shard)
             .channel_id(channel_id)
@@ -113,14 +160,44 @@ pub async fn get_mob_stats(
             _ => continue,
         };
 
-        // Ne fais rien si c’est le même niveau qu’actuellement
         if selected_level == current_level {
-            // Répond simplement "déjà sélectionné" silencieusement ou ignore
             continue;
         }
 
         current_level = selected_level;
 
+        // 1. Embed temporaire avec chargement
+        let loading_embed = build_monster_stats_embed(&stats, season, current_level)
+            .await
+            .field(
+                "📈 Best Teammates",
+                "<a:loading:1358029412716515418> Loading...",
+                false,
+            )
+            .field(
+                "📉 Worst Matchups",
+                "<a:loading:1358029412716515418> Loading...",
+                false,
+            );
+
+        interaction
+            .create_response(
+                &ctx.serenity_context,
+                CreateInteractionResponse::UpdateMessage(
+                    CreateInteractionResponseMessage::new()
+                        .embed(loading_embed)
+                        .components(vec![create_level_buttons(
+                            conqueror_id,
+                            guardian_id,
+                            punisher_id,
+                            current_level,
+                            true, // Boutons désactivés
+                        )]),
+                ),
+            )
+            .await?;
+
+        // 2. Récupération des données
         let new_stats =
             match get_monster_stats_swrt(monster_info.id, season, &version, &token, current_level)
                 .await
@@ -128,34 +205,48 @@ pub async fn get_mob_stats(
                 Ok(data) => data,
                 Err(e) => {
                     interaction
-                        .create_response(
-                            &ctx.serenity_context,
-                            CreateInteractionResponse::Message(
-                                CreateInteractionResponseMessage::new()
-                                    .content(format!("❌ Error: {}", e))
-                                    .ephemeral(true),
-                            ),
+                        .edit_response(
+                            &ctx.serenity_context.http,
+                            EditInteractionResponse::new()
+                                .content(format!("❌ Error fetching data: {}", e))
+                                .components(vec![])
+                                .embeds(vec![]),
                         )
                         .await?;
                     continue;
                 }
             };
 
-        let new_embed = build_monster_stats_embed(&new_stats, season, current_level).await;
+        let (high_matchups, low_matchups) =
+            get_monster_matchups_swrt(monster_info.id, season, &version, current_level, &token)
+                .await
+                .unwrap_or((vec![], vec![]));
+
+        let monster_emoji = get_emoji_from_filename(&collection, &new_stats.image_filename)
+            .await
+            .unwrap_or("❓".to_string());
+
+        let good = format_good_matchups(&monster_emoji, &high_matchups);
+        let bad = format_bad_matchups(&monster_emoji, &low_matchups);
+
+        // 3. Embed final + réactivation des boutons
+        let final_embed = build_monster_stats_embed(&new_stats, season, current_level)
+            .await
+            .field("📈 Best Teammates", good, false)
+            .field("📉 Worst Matchups", bad, false);
 
         interaction
-            .create_response(
-                &ctx.serenity_context,
-                CreateInteractionResponse::UpdateMessage(
-                    CreateInteractionResponseMessage::new()
-                        .embed(new_embed)
-                        .components(vec![create_level_buttons(
-                            conqueror_id,
-                            guardian_id,
-                            punisher_id,
-                            current_level,
-                        )]),
-                ),
+            .edit_response(
+                &ctx.serenity_context.http,
+                EditInteractionResponse::new()
+                    .embeds(vec![final_embed])
+                    .components(vec![create_level_buttons(
+                        conqueror_id,
+                        guardian_id,
+                        punisher_id,
+                        current_level,
+                        false, // Boutons activés
+                    )]),
             )
             .await?;
     }

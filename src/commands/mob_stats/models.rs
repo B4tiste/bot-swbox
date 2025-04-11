@@ -9,3 +9,11 @@ pub struct MonsterRtaInfoData {
     pub ban_rate: f32,
     pub first_pick_rate: f32,
 }
+
+#[derive(Debug)]
+pub struct MonsterMatchup {
+    pub emoji1: Option<String>,
+    pub emoji2: Option<String>,
+    pub pick_total: i32,
+    pub win_rate: f32,
+}

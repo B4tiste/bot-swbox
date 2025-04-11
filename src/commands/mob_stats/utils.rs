@@ -1,4 +1,5 @@
-use crate::commands::mob_stats::models::MonsterRtaInfoData;
+use crate::commands::mob_stats::models::{MonsterMatchup, MonsterRtaInfoData};
+use crate::commands::player_stats::utils::{get_emoji_from_filename, get_mob_emoji_collection};
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
 
@@ -88,6 +89,150 @@ pub async fn get_swrt_settings(token: &str) -> Result<(i64, String), String> {
     Ok((season, version))
 }
 
+pub async fn get_monster_matchups_swrt(
+    monster_id: i32,
+    season: i64,
+    version: &str,
+    level: i32,
+    token: &str,
+) -> Result<(Vec<MonsterMatchup>, Vec<MonsterMatchup>), String> {
+    let url = format!(
+        "https://m.swranking.com/api/monster/highdata?pageNum=1&pageSize=10&monsterId={}&season={}&version={}&level={}&factor=0.01&real=0",
+        monster_id, season, version, level
+    );
+
+    let client = Client::new();
+    let res = client
+        .get(&url)
+        .header("Authentication", token)
+        .header("Referer", "https://m.swranking.com/")
+        .header("User-Agent", "Mozilla/5.0")
+        .send()
+        .await
+        .map_err(|_| "Failed to fetch matchup data".to_string())?;
+
+    let json = res
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|_| "Invalid matchup JSON".to_string())?;
+
+    let collection = get_mob_emoji_collection()
+        .await
+        .map_err(|_| "DB error".to_string())?;
+
+    let high =
+        extract_matchups_from_json(&json["data"]["highOneWithTwoList"], &collection, true).await;
+    let low =
+        extract_matchups_from_json(&json["data"]["lowOneVsTwoList"], &collection, false).await;
+
+    Ok((high, low))
+}
+
+pub async fn extract_matchups_from_json(
+    arr: &serde_json::Value,
+    collection: &mongodb::Collection<mongodb::bson::Document>,
+    is_high: bool, // ✅ ajoute ce bool pour différencier les structures
+) -> Vec<MonsterMatchup> {
+    let mut result = vec![];
+
+    if let Some(list) = arr.as_array() {
+        for item in list {
+            let (img1_field, img2_field) = if is_high {
+                ("teamOneImgFilename", "teamTwoImgFilename")
+            } else {
+                ("oppoOneImgFilename", "oppoTwoImgFilename")
+            };
+
+            let emoji1 = get_emoji_from_filename(
+                collection,
+                item.get(img1_field).and_then(|v| v.as_str()).unwrap_or(""),
+            )
+            .await;
+
+            let emoji2 = get_emoji_from_filename(
+                collection,
+                item.get(img2_field).and_then(|v| v.as_str()).unwrap_or(""),
+            )
+            .await;
+
+            let pick_total = item.get("pickTotal").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+            let win_rate = item
+                .get("winRate")
+                .and_then(|v| v.as_str())
+                .and_then(|s| s.parse::<f32>().ok())
+                .unwrap_or(0.0)
+                * 100.0;
+
+            result.push(MonsterMatchup {
+                emoji1,
+                emoji2,
+                pick_total,
+                win_rate,
+            });
+        }
+    }
+
+    result
+}
+
+fn truncate_field(s: String, max_len: usize) -> String {
+    if s.len() > max_len {
+        let mut truncated = s.chars().take(max_len - 3).collect::<String>();
+        truncated.push_str("...");
+        truncated
+    } else {
+        s
+    }
+}
+
+pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
+    if matchups.is_empty() {
+        return "No good teammates data.".to_string();
+    }
+
+    let entries: Vec<String> = matchups
+        .iter()
+        .enumerate()
+        .map(|(i, m)| {
+            format!(
+                "{}. {} + {} + {} : **{:.2}% WR** ({} played)",
+                i + 1,
+                monster_emoji,
+                m.emoji1.clone().unwrap_or("❓".to_string()),
+                m.emoji2.clone().unwrap_or("❓".to_string()),
+                m.win_rate,
+                m.pick_total
+            )
+        })
+        .collect();
+
+    truncate_field(entries.join("\n"), 1024)
+}
+
+pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
+    if matchups.is_empty() {
+        return "No bad matchup data.".to_string();
+    }
+
+    let entries: Vec<String> = matchups
+        .iter()
+        .enumerate()
+        .map(|(i, m)| {
+            format!(
+                "{}. {} + {} VS {} : **{:.2}% WR** ({} played)",
+                i + 1,
+                m.emoji1.clone().unwrap_or("❓".to_string()),
+                m.emoji2.clone().unwrap_or("❓".to_string()),
+                monster_emoji,
+                m.win_rate,
+                m.pick_total
+            )
+        })
+        .collect();
+
+    truncate_field(entries.join("\n"), 1024)
+}
+
 pub async fn build_monster_stats_embed(
     monster_stats: &MonsterRtaInfoData,
     season: i64,
@@ -148,6 +293,7 @@ pub fn create_level_buttons(
     guardian_id: u64,
     punisher_id: u64,
     selected_level: i32,
+    disabled: bool,
 ) -> serenity::CreateActionRow {
     let style_for = |level| {
         if level == selected_level {
@@ -160,33 +306,34 @@ pub fn create_level_buttons(
     serenity::CreateActionRow::Buttons(vec![
         serenity::CreateButton::new("level_c1c3")
             .label("C1-C3")
+            .disabled(disabled)
             .emoji(serenity::ReactionType::Custom {
                 animated: false,
                 id: conqueror_id.into(),
                 name: Some("conqueror".to_string()),
             })
             .style(style_for(0)),
-
         serenity::CreateButton::new("level_p1p3")
             .label("P1-P3")
+            .disabled(disabled)
             .emoji(serenity::ReactionType::Custom {
                 animated: false,
                 id: punisher_id.into(),
                 name: Some("punisher".to_string()),
             })
             .style(style_for(4)),
-
         serenity::CreateButton::new("level_g1g2")
             .label("G1-G2")
+            .disabled(disabled)
             .emoji(serenity::ReactionType::Custom {
                 animated: false,
                 id: guardian_id.into(),
                 name: Some("guardian".to_string()),
             })
             .style(style_for(1)),
-
         serenity::CreateButton::new("level_g3")
             .label("G3")
+            .disabled(disabled)
             .emoji(serenity::ReactionType::Custom {
                 animated: false,
                 id: guardian_id.into(),
