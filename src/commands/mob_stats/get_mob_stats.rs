@@ -232,7 +232,7 @@ pub async fn get_mob_stats(
         // 3. Embed final + réactivation des boutons
         let final_embed = build_monster_stats_embed(&new_stats, season, current_level)
             .await
-            .field("📈 Best Teammates", good, false)
+            .field("📈 Dream Teams", good, false)
             .field("📉 Worst Matchups", bad, false);
 
         interaction
