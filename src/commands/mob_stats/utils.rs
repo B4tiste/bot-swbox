@@ -249,10 +249,10 @@ pub async fn build_monster_stats_embed(
 
     serenity::CreateEmbed::default()
         .title(format!(
-            "Monster stats {} - Season {}",
+            "Monster stats - {} - Season {}",
             monster_stats.monster_name, season
         ))
-        .description(format!("Level: {}", level_str))
+        .description(format!("**Level**: {}", level_str))
         .color(serenity::Colour::from_rgb(0, 255, 128))
         .thumbnail(thumbnail)
         .field(
