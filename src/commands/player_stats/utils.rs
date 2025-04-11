@@ -183,7 +183,7 @@ pub async fn get_emoji_from_filename(
     collection: &Collection<mongodb::bson::Document>,
     filename: &str,
 ) -> Option<String> {
-    let name_no_ext = filename.replace(".png", "");
+    let name_no_ext = filename.replace(".png", "").replace("unit_icon_", "");
 
     let emoji_doc = collection
         .find_one(doc! { "name": &name_no_ext })
@@ -191,14 +191,14 @@ pub async fn get_emoji_from_filename(
         .ok()??;
 
     let id = emoji_doc.get_str("id").ok()?;
-    Some(format!("<:unit_icon_{}:{}>", name_no_ext, id))
+    Some(format!("<:{}:{}>", name_no_ext, id))
 }
 
 pub async fn get_emoji_from_filename_with_stars(
     collection: &Collection<mongodb::bson::Document>,
     filename: &str,
 ) -> Option<String> {
-    let name_no_ext = filename.replace(".png", "");
+    let name_no_ext = filename.replace(".png", "").replace("unit_icon_", "");
 
     let emoji_doc = collection
         .find_one(doc! { "name": &name_no_ext })
@@ -212,7 +212,7 @@ pub async fn get_emoji_from_filename_with_stars(
     }
 
     let id = emoji_doc.get_str("id").ok()?;
-    Some(format!("<:unit_icon_{}:{}>", name_no_ext, id))
+    Some(format!("<:{}:{}>", name_no_ext, id))
 }
 
 pub async fn format_player_ld_monsters_emojis(details: &PlayerDetail) -> Vec<String> {
