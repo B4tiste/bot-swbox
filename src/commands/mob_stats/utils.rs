@@ -221,7 +221,7 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
                 monster_emoji,
-                m.win_rate
+                100.0 - m.win_rate
             )
         })
         .collect();
