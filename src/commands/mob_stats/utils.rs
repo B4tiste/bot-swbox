@@ -193,7 +193,7 @@ pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) ->
         .enumerate()
         .map(|(i, m)| {
             format!(
-                "{}. {} {} {} **{:.2}%WR**",
+                "{}. {} {} {} **{:.1} %** WR",
                 i + 1,
                 monster_emoji,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
@@ -216,7 +216,7 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
         .enumerate()
         .map(|(i, m)| {
             format!(
-                "{}. {} {} 🆚 {} **{:.2}%WR**",
+                "{}. {} {} → {} **{:.1} %** WR",
                 i + 1,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
@@ -258,7 +258,7 @@ pub async fn build_monster_stats_embed(
         .field(
             "Play Rate",
             format!(
-                "{:.2}% ({})",
+                "{:.1}% ({})",
                 monster_stats.play_rate * 100.0,
                 monster_stats.pick_total
             ),
@@ -266,17 +266,17 @@ pub async fn build_monster_stats_embed(
         )
         .field(
             "Win Rate",
-            format!("{:.2}%", monster_stats.win_rate * 100.0),
+            format!("{:.1}%", monster_stats.win_rate * 100.0),
             true,
         )
         .field(
             "Ban Rate",
-            format!("{:.2}%", monster_stats.ban_rate * 100.0),
+            format!("{:.1}%", monster_stats.ban_rate * 100.0),
             true,
         )
         .field(
             "First Pick Rate",
-            format!("{:.2}%", monster_stats.first_pick_rate * 100.0),
+            format!("{:.1}%", monster_stats.first_pick_rate * 100.0),
             true,
         )
         .footer(serenity::builder::CreateEmbedFooter::new(

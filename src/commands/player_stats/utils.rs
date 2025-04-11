@@ -266,7 +266,7 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
                 };
 
                 let entry = format!(
-                    "{}. {} {} picks, **{:.2} %** WR\n",
+                    "{}. {} {} picks, **{:.1} %** WR\n",
                     index + 1,
                     emoji,
                     pick_display,
@@ -323,7 +323,7 @@ pub fn create_player_embed(
         )
         .field(
             "WinRate",
-            format!("{:.2} %", details.win_rate.unwrap_or(0.0) * 100.0),
+            format!("{:.1} %", details.win_rate.unwrap_or(0.0) * 100.0),
             true,
         )
         .field(
