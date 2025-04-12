@@ -16,7 +16,7 @@ use crate::commands::ranks::get_ranks::get_ranks;
 use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::upload_json::upload_json::upload_json;
 use crate::commands::player_stats::get_player_stats::get_player_stats;
-use crate::commands::leaderboard::get_leaderboard::get_leaderboard;
+use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -165,7 +165,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 track_player_names(),
                 upload_json(),
                 get_player_stats(),
-                get_leaderboard(),
+                get_rta_leaderboard(),
             ],
             ..Default::default()
         })

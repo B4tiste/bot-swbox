@@ -1,10 +1,11 @@
 use crate::MONGO_URI;
 use anyhow::{anyhow, Result};
 use mongodb::{bson::doc, Client, Collection};
-use serde::Deserialize;
 use poise::serenity_prelude as serenity;
+use serde::Deserialize;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 
+use crate::commands::ranks::utils::get_rank_info;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
 
 #[derive(Debug, Deserialize)]
@@ -285,6 +286,7 @@ pub fn create_player_embed(
     details: &crate::commands::player_stats::utils::PlayerDetail,
     ld_emojis: Vec<String>,
     top_monsters: Vec<String>,
+    rank_emojis: String,
 ) -> CreateEmbed {
     let format_emojis = |mut list: Vec<String>| {
         let mut result = list.join(" ");
@@ -336,6 +338,7 @@ pub fn create_player_embed(
             details.player_rank.unwrap_or(0).to_string(),
             true,
         )
+        .field("🏆 Rank Tier", rank_emojis, true)
         .field(
             "Matches Played",
             details.season_count.unwrap_or(0).to_string(),
@@ -351,4 +354,16 @@ pub fn create_player_embed(
             "Please use /send_suggestion to report any issue.",
         ))
         .clone()
+}
+
+pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
+    let rank_data = get_rank_info().await.map_err(|e| anyhow!(e))?;
+
+    for (emoji, threshold) in rank_data.iter().rev() {
+        if score >= *threshold {
+            return Ok(emoji.clone());
+        }
+    }
+
+    Ok("Unranked".to_string())
 }

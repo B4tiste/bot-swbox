@@ -15,7 +15,7 @@ use crate::{Data, API_TOKEN};
 
 /// 📂 Displays the RTA leaderboard
 #[poise::command(slash_command)]
-pub async fn get_leaderboard(
+pub async fn get_rta_leaderboard(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     #[description = "Page number to start from"] page: Option<i32>,
 ) -> Result<(), Error> {

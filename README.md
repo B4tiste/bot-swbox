@@ -76,14 +76,14 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ---
 
-### `/get_leaderboard`
+### `/get_rta_leaderboard`
 
 **Description**: Displays an interactive RTA leaderboard with pagination and player stat selection.
 
 **Usage**:
 
--   `/get_leaderboard` — Displays the first page of the leaderboard.
--   `/get_leaderboard page:<number>` — Displays the specified leaderboard page directly.
+-   `/get_rta_leaderboard` — Displays the first page of the leaderboard.
+-   `/get_rta_leaderboard page:<number>` — Displays the specified leaderboard page directly.
 
 **Features**:
 
