@@ -338,7 +338,11 @@ pub fn create_player_embed(
             details.player_rank.unwrap_or(0).to_string(),
             true,
         )
-        .field("🏆 Rank Tier", rank_emojis, true)
+        .field(
+            "🏆 Estimation",
+            rank_emojis,
+            true
+        )
         .field(
             "Matches Played",
             details.season_count.unwrap_or(0).to_string(),
