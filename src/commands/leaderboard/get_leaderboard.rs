@@ -7,7 +7,8 @@ use serenity::{
 
 use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlayer};
 use crate::commands::player_stats::utils::{
-    create_player_embed, format_player_ld_monsters_emojis, format_player_monsters, get_user_detail,
+    create_player_embed, format_player_ld_monsters_emojis, format_player_monsters,
+    get_rank_emojis_for_score, get_user_detail,
 };
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
@@ -114,7 +115,16 @@ pub async fn get_rta_leaderboard(
                         Ok(details) => {
                             let ld_emojis = format_player_ld_monsters_emojis(&details).await;
                             let top_monsters = format_player_monsters(&details).await;
-                            let embed = create_player_embed(&details, ld_emojis, top_monsters);
+                            let rank_emojis =
+                                get_rank_emojis_for_score(details.player_score.unwrap_or(0))
+                                    .await
+                                    .unwrap_or_else(|_| "❓".to_string());
+                            let embed = create_player_embed(
+                                &details,
+                                ld_emojis,
+                                top_monsters,
+                                rank_emojis.clone(),
+                            );
 
                             followup
                                 .edit(
@@ -233,12 +243,21 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
     CreateEmbed::default()
         .title(format!("Leaderboard - Page {}", page))
         .description(description)
-        .field("💡 Tip", "Use the menu below to view a player's stats.", false)
-        .field("⚠️ Note", "Interaction buttons are disabled after 10 minutes.", false)
-        .footer(CreateEmbedFooter::new("Use /send_suggestion to report issues."))
+        .field(
+            "💡 Tip",
+            "Use the menu below to view a player's stats.",
+            false,
+        )
+        .field(
+            "⚠️ Note",
+            "Interaction buttons are disabled after 10 minutes.",
+            false,
+        )
+        .footer(CreateEmbedFooter::new(
+            "Use /send_suggestion to report issues.",
+        ))
         .color(serenity::Colour::from_rgb(0, 255, 0))
 }
-
 
 fn create_pagination_buttons(page: i32) -> serenity::CreateActionRow {
     let previous_button = serenity::CreateButton::new("previous_page")
