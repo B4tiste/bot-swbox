@@ -116,7 +116,7 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ### `/get_mob_stats`
 
-**Description**: Retrieves monster statistics, with an option to specify the season.
+**Description**: Retrieves monster statistics, with an option to specify the season. It also displays some great combo and counter to that monster.
 
 **Usage**:
 
