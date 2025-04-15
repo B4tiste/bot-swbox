@@ -227,7 +227,7 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
 
         let alias_str = PLAYER_ALIAS_MAP
             .get(&player.swrt_player_id)
-            .map(|alias| format!("aka **{}**", alias))
+            .map(|alias| format!(" aka **{}**", alias))
             .unwrap_or_default();
 
         description.push_str(&format!(
