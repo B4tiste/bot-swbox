@@ -7,8 +7,8 @@ use serenity::{
 
 use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlayer};
 use crate::commands::player_stats::utils::{
-    create_player_embed, format_player_ld_monsters_emojis, format_player_monsters,
-    get_rank_emojis_for_score, get_user_detail, format_replays_with_emojis,
+    create_player_embed_without_replays, format_player_ld_monsters_emojis, format_player_monsters,
+    get_rank_emojis_for_score, get_user_detail,
 };
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
@@ -115,17 +115,15 @@ pub async fn get_rta_leaderboard(
                         Ok(details) => {
                             let ld_emojis = format_player_ld_monsters_emojis(&details).await;
                             let top_monsters = format_player_monsters(&details).await;
-                            let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
                             let rank_emojis =
                                 get_rank_emojis_for_score(details.player_score.unwrap_or(0))
                                     .await
                                     .unwrap_or_else(|_| "❓".to_string());
-                            let embed = create_player_embed(
+                            let embed = create_player_embed_without_replays(
                                 &details,
                                 ld_emojis,
                                 top_monsters,
                                 rank_emojis.clone(),
-                                recent_replays,
                             );
 
                             followup

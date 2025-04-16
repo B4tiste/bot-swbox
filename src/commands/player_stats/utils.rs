@@ -334,13 +334,12 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     output
 }
 
-/// Creates an embed from player info + emojis
-pub fn create_player_embed(
+/// Creates an embed for player info without the replay list
+pub fn create_player_embed_without_replays(
     details: &PlayerDetail,
     ld_emojis: Vec<String>,
     top_monsters: Vec<String>,
     rank_emojis: String,
-    recent_replays: Vec<(String, String)>,
 ) -> CreateEmbed {
     let format_emojis = |mut list: Vec<String>| {
         let mut result = list.join(" ");
@@ -361,7 +360,7 @@ pub fn create_player_embed(
     let ld_display = format_emojis(ld_emojis.clone());
     let top_display = format_emojis(top_monsters);
 
-    let mut embed = CreateEmbed::default()
+    CreateEmbed::default()
         .title(format!(
             ":flag_{}: {}{} RTA Statistics (Regular Season only)",
             details.player_country.to_lowercase(),
@@ -380,10 +379,20 @@ pub fn create_player_embed(
         .field("🏆 Estimation", rank_emojis, true)
         .field("Matches Played", details.season_count.unwrap_or(0).to_string(), true)
         .field("✨ LD Monsters (RTA only)", ld_display, false)
-        .field("🔥 Most Used Units Winrate", top_display, false);
+        .field("🔥 Most Used Units Winrate", top_display, false)
+        .footer(CreateEmbedFooter::new(
+            "Please use /send_suggestion to report any issue.",
+        ))
+}
+
+/// Creates an embed for the replay list
+pub fn create_replay_embed(recent_replays: Vec<(String, String)>) -> CreateEmbed {
+    let mut embed = CreateEmbed::default()
+        .title("📽️ Recent Replays")
+        .color(serenity::Colour::from_rgb(0, 180, 255));
 
     if recent_replays.is_empty() {
-        embed = embed.field("📽️ Last Replays", "No recent replays found.", false);
+        embed = embed.description("No recent replays found.");
     } else {
         for (title, value) in recent_replays {
             embed = embed.field(title, value, false);
