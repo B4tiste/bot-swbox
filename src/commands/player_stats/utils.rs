@@ -106,6 +106,8 @@ pub struct ReplayPlayer {
     pub player_country: String,
     #[serde(rename = "playerName")]
     pub name: String,
+    #[serde(rename = "leaderMonsterId")]
+    pub leader_monster_id: i32,
     #[serde(rename = "banMonsterId")]
     pub ban_monster_id: Option<i32>,
     #[serde(rename = "playerId")]
@@ -484,6 +486,11 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(St
             get_ban_emoji(opponent_player.ban_monster_id, &collection)
         );
 
+        let (leader_current, leader_opponent) = tokio::join!(
+            get_leader_emoji(current_player.leader_monster_id, &collection),
+            get_leader_emoji(opponent_player.leader_monster_id, &collection),
+        );
+
         let title = format!(
             "{}. {} vs {} ({})",
             i + 1,
@@ -493,11 +500,13 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(St
         );
 
         let draft_line = format!(
-            "{}\n{} \n🚫 {} | {} 🚫",
+            "{}\n{} \n🚫 {} | {} 🚫\n Leaders : {} | {}",
             current_emojis,
             opponent_emojis,
             ban_current.unwrap_or_else(|| "None".to_string()),
-            ban_opponent.unwrap_or_else(|| "None".to_string())
+            ban_opponent.unwrap_or_else(|| "None".to_string()),
+            leader_current.unwrap_or_else(|| "None".to_string()),
+            leader_opponent.unwrap_or_else(|| "None".to_string())
         );
 
         let value = format!("Win : {}\n{}", outcome, draft_line);
@@ -525,6 +534,21 @@ async fn get_ban_emoji(
 
     let doc = collection
         .find_one(doc! { "com2us_id": ban_id })
+        .await
+        .ok()??;
+
+    let name = doc.get_str("name").ok()?;
+    let emoji_id = doc.get_str("id").ok()?;
+
+    Some(format!("<:{}:{}>", name, emoji_id))
+}
+
+async fn get_leader_emoji(
+    leader_id: i32,
+    collection: &Collection<mongodb::bson::Document>,
+) -> Option<String> {
+    let doc = collection
+        .find_one(doc! { "com2us_id": leader_id })
         .await
         .ok()??;
 
