@@ -500,10 +500,10 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(St
         );
 
         let draft_line = format!(
-            "{}\n{} \n🚫 {} | {} 🚫\n Leaders : {} | {}",
+            "{}  🚫{}\n{}  🚫{}\n\n Leaders : {} | {}",
             current_emojis,
-            opponent_emojis,
             ban_current.unwrap_or_else(|| "None".to_string()),
+            opponent_emojis,
             ban_opponent.unwrap_or_else(|| "None".to_string()),
             leader_current.unwrap_or_else(|| "None".to_string()),
             leader_opponent.unwrap_or_else(|| "None".to_string())
