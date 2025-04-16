@@ -8,7 +8,7 @@ use serenity::{
 
 use crate::commands::player_stats::utils::{
     create_player_embed, format_player_ld_monsters_emojis, format_player_monsters,
-    get_rank_emojis_for_score, get_user_detail, search_users,
+    get_rank_emojis_for_score, get_user_detail, search_users, format_replays_with_emojis,
 };
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
@@ -47,11 +47,14 @@ pub async fn get_player_stats(
             .await
             .unwrap_or_else(|_| "❓".to_string());
 
+        let recent_replays = vec!["<a:loading:1358029412716515418> Loading replays...".to_string()];
+
         let embed = create_player_embed(
             &details,
             vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
             vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
             rank_emojis.clone(),
+            recent_replays,
         );
 
         let reply_handle = ctx
@@ -63,8 +66,9 @@ pub async fn get_player_stats(
 
         let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
+        let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
 
-        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis);
+        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, recent_replays);
 
         reply_handle
             .edit(
@@ -121,11 +125,14 @@ pub async fn get_player_stats(
             .await
             .unwrap_or_else(|_| "❓".to_string());
 
+        let recent_replays = vec!["<a:loading:1358029412716515418> Loading replays...".to_string()];
+
         let embed = create_player_embed(
             &details,
             vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
             vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
             rank_emojis.clone(),
+            recent_replays,
         );
 
         let reply_handle = ctx
@@ -137,8 +144,9 @@ pub async fn get_player_stats(
 
         let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
+        let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
 
-        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis);
+        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, recent_replays);
 
         reply_handle
             .edit(
@@ -247,11 +255,14 @@ pub async fn get_player_stats(
             .await
             .unwrap_or_else(|_| "❓".to_string());
 
+        let recent_replays = vec!["<a:loading:1358029412716515418> Loading replays...".to_string()];
+
         let embed = create_player_embed(
             &details,
             vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
             vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
             rank_emojis.clone(),
+            recent_replays,
         );
 
         msg.edit(
@@ -267,8 +278,9 @@ pub async fn get_player_stats(
         // Step 2: load emojis + monsters
         let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
+        let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
 
-        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis);
+        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, recent_replays);
 
         msg.edit(
             poise::Context::Application(ctx),

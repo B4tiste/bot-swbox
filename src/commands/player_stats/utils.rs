@@ -90,6 +90,49 @@ struct PlayerDetailWrapper {
     season_count: Option<i32>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ReplayMonster {
+    #[serde(rename = "imageFilename")]
+    pub image_filename: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReplayPlayer {
+    #[serde(rename = "swrtPlayerId")]
+    pub swrt_player_id: i64,
+    #[serde(rename = "monsterInfoList")]
+    pub monster_info_list: Vec<ReplayMonster>,
+    #[serde(rename = "playerCountry")]
+    pub player_country: String,
+    #[serde(rename = "playerName")]
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Replay {
+    #[serde(rename = "playerOne")]
+    pub player_one: ReplayPlayer,
+    #[serde(rename = "playerTwo")]
+    pub player_two: ReplayPlayer,
+    #[serde(rename = "type")]
+    pub replay_type: i32, // <-- add this
+}
+
+#[derive(Debug, Deserialize)]
+struct ReplayListData {
+    list: Vec<Replay>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ReplayListWrapper {
+    page: ReplayListData,
+}
+
+#[derive(Debug, Deserialize)]
+struct ReplayListResponse {
+    data: Option<ReplayListWrapper>,
+}
+
 pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetail> {
     let url = format!(
         "https://m.swranking.com/api/player/detail?swrtPlayerId={}",
@@ -283,10 +326,11 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
 
 /// Creates an embed from player info + emojis
 pub fn create_player_embed(
-    details: &crate::commands::player_stats::utils::PlayerDetail,
+    details: &PlayerDetail,
     ld_emojis: Vec<String>,
     top_monsters: Vec<String>,
     rank_emojis: String,
+    recent_replays: Vec<String>,
 ) -> CreateEmbed {
     let format_emojis = |mut list: Vec<String>| {
         let mut result = list.join(" ");
@@ -354,6 +398,17 @@ pub fn create_player_embed(
             false,
         )
         .field("🔥 Most Used Units Winrate", top_display, false)
+        .field(
+            "📽️ Last Replays",
+            {
+                let mut joined = recent_replays.join("\n");
+                if joined.is_empty() {
+                    joined = "No recent replays found.".to_string();
+                }
+                joined
+            },
+            false,
+        )
         .footer(CreateEmbedFooter::new(
             "Please use /send_suggestion to report any issue.",
         ))
@@ -370,4 +425,140 @@ pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
     }
 
     Ok("Unranked".to_string())
+}
+
+pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Replay>> {
+    let url = "https://m.swranking.com/api/player/replaylist";
+    let client = reqwest::Client::new();
+
+    let body = serde_json::json!({
+        "swrtPlayerId": player_id.to_string(),
+        "result": 2,
+        "pageNum": 1,
+        "pageSize": 5
+    });
+
+    let res = client
+        .post(url)
+        .json(&body)
+        .header("Authentication", token)
+        .header("Content-Type", "application/json")
+        .send()
+        .await?;
+
+    let status = res.status();
+    let json: ReplayListResponse = res.json().await?;
+
+    if !status.is_success() {
+        return Err(anyhow!(
+            "Replay fetch failed (status {}): {:?}",
+            status,
+            json.data
+                .as_ref()
+                .map(|_| "Invalid response")
+                .unwrap_or("No data")
+        ));
+    }
+
+    Ok(json.data.map(|d| d.page.list).unwrap_or_default())
+}
+
+pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<String> {
+    let replays = match get_recent_replays(token, player_id).await {
+        Ok(r) => r,
+        Err(_) => return vec!["Replay fetch failed".into()],
+    };
+
+    let collection = match get_mob_emoji_collection().await {
+        Ok(c) => c,
+        Err(_) => return vec!["Emoji DB error".into()],
+    };
+
+    let mut output = vec![];
+
+    for (i, replay) in replays.iter().enumerate() {
+        let (player_a, player_b) = (&replay.player_one, &replay.player_two);
+
+        // Determine who's the command target
+        let is_a_current = player_a.swrt_player_id == *player_id;
+        let (current_player, opponent_player) = if is_a_current {
+            (player_a, player_b)
+        } else {
+            (player_b, player_a)
+        };
+
+        // Victory logic
+        let outcome = if replay.player_one.swrt_player_id == *player_id
+            && replay_type_is_victory(&replay)
+        {
+            "✅"
+        } else if replay.player_two.swrt_player_id == *player_id && replay_type_is_defeat(&replay) {
+            "✅"
+        } else {
+            "❌"
+        };
+
+        // Emojis for both teams
+        let (current_emojis, opponent_emojis) = tokio::join!(
+            get_emojis_for_replay(current_player, &collection),
+            get_emojis_for_replay(opponent_player, &collection)
+        );
+
+        let flag = |country: &str| {
+            country
+                .to_uppercase()
+                .chars()
+                .filter(|c| c.is_ascii_alphabetic())
+                .map(|c| char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap_or(' '))
+                .collect::<String>()
+        };
+
+        let current_display = format!(
+            "`{}` {} {}",
+            flag(&current_player.player_country),
+            current_player.name,
+            current_emojis.join(" ")
+        );
+        let opponent_display = format!(
+            "{} `{}` {}",
+            opponent_emojis.join(" "),
+            flag(&opponent_player.player_country),
+            opponent_player.name,
+        );
+
+        output.push(format!(
+            "{}. {} {} VS {}",
+            i + 1,
+            outcome,
+            current_display,
+            opponent_display
+        ));
+    }
+
+    output
+}
+
+fn replay_type_is_victory(replay: &Replay) -> bool {
+    // Type = 1 = playerOne wins
+    replay.replay_type == 1
+}
+
+fn replay_type_is_defeat(replay: &Replay) -> bool {
+    // Type = 2 = playerTwo wins
+    replay.replay_type == 2
+}
+
+async fn get_emojis_for_replay(
+    player: &ReplayPlayer,
+    collection: &Collection<mongodb::bson::Document>,
+) -> Vec<String> {
+    let mut emojis = vec![];
+
+    for m in &player.monster_info_list {
+        if let Some(emoji) = get_emoji_from_filename(collection, &m.image_filename).await {
+            emojis.push(emoji);
+        }
+    }
+
+    emojis
 }
