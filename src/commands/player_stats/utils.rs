@@ -94,6 +94,8 @@ struct PlayerDetailWrapper {
 pub struct ReplayMonster {
     #[serde(rename = "imageFilename")]
     pub image_filename: String,
+    #[serde(rename = "monsterId")]
+    pub monster_id: i32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -492,19 +494,24 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(St
         );
 
         let title = format!(
-            "{}. {} vs {} ({})",
+            "{}. {} vs {} (:flag_{}:)",
             i + 1,
             current_player.name,
             opponent_player.name,
-            opponent_player.player_country
+            opponent_player.player_country.to_lowercase()
         );
 
+        let current_remaining = get_remaining_emojis(current_player, &collection).await;
+        let opponent_remaining = get_remaining_emojis(opponent_player, &collection).await;
+
         let draft_line = format!(
-            "{}  🚫{}\n{}  🚫{}\n\n Leaders : {} | {}",
+            "{}  🚫{}→{}\n{}  🚫{}→{}\n\n Leaders : {} | {}",
             current_emojis,
-            ban_current.unwrap_or_else(|| "None".to_string()),
+            ban_current.clone().unwrap_or_else(|| "None".to_string()),
+            current_remaining,
             opponent_emojis,
-            ban_opponent.unwrap_or_else(|| "None".to_string()),
+            ban_opponent.clone().unwrap_or_else(|| "None".to_string()),
+            opponent_remaining,
             leader_current.unwrap_or_else(|| "None".to_string()),
             leader_opponent.unwrap_or_else(|| "None".to_string())
         );
@@ -594,4 +601,31 @@ async fn get_emojis_for_replay(
     }
 
     result.join(" ")
+}
+
+async fn get_remaining_emojis(
+    player: &ReplayPlayer,
+    collection: &Collection<mongodb::bson::Document>,
+) -> String {
+    let ban_id = player.ban_monster_id;
+
+    let filtered_monsters: Vec<_> = player
+        .monster_info_list
+        .iter()
+        .filter(|m| Some(m.monster_id) != ban_id)
+        .take(4)
+        .collect();
+
+    let mut emojis = vec![];
+    for m in filtered_monsters {
+        if let Some(emoji) = get_emoji_from_filename(collection, &m.image_filename).await {
+            emojis.push(emoji);
+        }
+    }
+
+    if emojis.is_empty() {
+        "None".to_string()
+    } else {
+        emojis.join(" ")
+    }
 }
