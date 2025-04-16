@@ -591,6 +591,7 @@ async fn get_emojis_for_replay(
         result.push(format!("{} {}", picks[1], picks[2])); // (3)
         result.push("→".into());
         result.push(format!("{} {}", picks[3], picks[4])); // (5)
+        result.push("<:blank:1360319527828590752>".repeat(2).into());
     } else {
         // :loading:1358029412716515418>
         result.push("<:blank:1360319527828590752>".repeat(2).into());
