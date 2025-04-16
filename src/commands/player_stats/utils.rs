@@ -554,7 +554,7 @@ async fn get_ban_emoji(
     let ban_id = ban_id?;
 
     let doc = collection
-        .find_one(doc! { "monster_id": ban_id })
+        .find_one(doc! { "com2us_id": ban_id })
         .await
         .ok()??;
 
