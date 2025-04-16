@@ -505,7 +505,7 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(St
         let opponent_remaining = get_remaining_emojis(opponent_player, &collection).await;
 
         let draft_line = format!(
-            "{}  🚫{}→{}\n{}  🚫{}→{}\n\n Leaders : {} | {}",
+            "{}  🚫{}→{}\n{}  🚫{} ➡️ {}\n\n Leaders : {} | {}",
             current_emojis,
             ban_current.clone().unwrap_or_else(|| "None".to_string()),
             current_remaining,
