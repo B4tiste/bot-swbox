@@ -106,6 +106,8 @@ pub struct ReplayPlayer {
     pub player_country: String,
     #[serde(rename = "playerName")]
     pub name: String,
+    #[serde(rename = "banMonsterId")]
+    pub ban_monster_id: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -504,26 +506,23 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<Str
             get_emojis_for_replay(opponent_player, &collection)
         );
 
-        let flag = |country: &str| {
-            country
-                .to_uppercase()
-                .chars()
-                .filter(|c| c.is_ascii_alphabetic())
-                .map(|c| char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap_or(' '))
-                .collect::<String>()
-        };
+        // 👉 Récupération des emojis des bans
+        let (ban_current, ban_opponent) = tokio::join!(
+            get_ban_emoji(current_player.ban_monster_id, &collection),
+            get_ban_emoji(opponent_player.ban_monster_id, &collection)
+        );
 
         let current_display = format!(
-            "`{}` {} {}",
-            flag(&current_player.player_country),
-            current_player.name,
-            current_emojis.join(" ")
+            "{} (🚫{})",
+            current_emojis.join(" "),
+            ban_current.unwrap_or_else(|| "None".to_string())
         );
         let opponent_display = format!(
-            "{} `{}` {}",
+            "{} (🚫{}) `{}` :flag_{}:",
             opponent_emojis.join(" "),
-            flag(&opponent_player.player_country),
+            ban_opponent.unwrap_or_else(|| "None".to_string()),
             opponent_player.name,
+            opponent_player.player_country.to_lowercase()
         );
 
         output.push(format!(
@@ -546,6 +545,23 @@ fn replay_type_is_victory(replay: &Replay) -> bool {
 fn replay_type_is_defeat(replay: &Replay) -> bool {
     // Type = 2 = playerTwo wins
     replay.replay_type == 2
+}
+
+async fn get_ban_emoji(
+    ban_id: Option<i32>,
+    collection: &Collection<mongodb::bson::Document>,
+) -> Option<String> {
+    let ban_id = ban_id?;
+
+    let doc = collection
+        .find_one(doc! { "monster_id": ban_id })
+        .await
+        .ok()??;
+
+    let name = doc.get_str("name").ok()?;
+    let emoji_id = doc.get_str("id").ok()?;
+
+    Some(format!("<:{}:{}>", name, emoji_id))
 }
 
 async fn get_emojis_for_replay(
