@@ -505,7 +505,7 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(St
         let opponent_remaining = get_remaining_emojis(opponent_player, &collection).await;
 
         let draft_line = format!(
-            "{}  🚫{}→{}\n{}  🚫{} ➡️ {}\n\n Leaders : {} | {}",
+            "{}  🚫{} ➡️ {}\n{}  🚫{} ➡️ {}\n\n Leaders : {} | {}",
             current_emojis,
             ban_current.clone().unwrap_or_else(|| "None".to_string()),
             current_remaining,
@@ -592,7 +592,8 @@ async fn get_emojis_for_replay(
         result.push("→".into());
         result.push(format!("{} {}", picks[3], picks[4])); // (5)
     } else {
-        result.push("".into());
+        // :loading:1358029412716515418>
+        result.push("<:blank:1360319527828590752>".repeat(2).into());
         result.push(format!("{} {}", picks[0], picks[1])); // (2)
         result.push("→".into());
         result.push(format!("{} {}", picks[2], picks[3])); // (4)
