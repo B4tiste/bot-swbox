@@ -90,58 +90,58 @@ struct PlayerDetailWrapper {
     season_count: Option<i32>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct ReplayMonster {
-    #[serde(rename = "imageFilename")]
-    pub image_filename: String,
-    #[serde(rename = "monsterId")]
-    pub monster_id: i32,
-}
+// #[derive(Debug, Deserialize)]
+// pub struct ReplayMonster {
+//     #[serde(rename = "imageFilename")]
+//     pub image_filename: String,
+//     #[serde(rename = "monsterId")]
+//     pub monster_id: i32,
+// }
 
-#[derive(Debug, Deserialize)]
-pub struct ReplayPlayer {
-    #[serde(rename = "swrtPlayerId")]
-    pub swrt_player_id: i64,
-    #[serde(rename = "monsterInfoList")]
-    pub monster_info_list: Vec<ReplayMonster>,
-    #[serde(rename = "playerCountry")]
-    pub player_country: String,
-    #[serde(rename = "playerName")]
-    pub name: String,
-    #[serde(rename = "leaderMonsterId")]
-    pub leader_monster_id: i32,
-    #[serde(rename = "banMonsterId")]
-    pub ban_monster_id: Option<i32>,
-    #[serde(rename = "playerId")]
-    pub player_id: i64,
-}
+// #[derive(Debug, Deserialize)]
+// pub struct ReplayPlayer {
+//     #[serde(rename = "swrtPlayerId")]
+//     pub swrt_player_id: i64,
+//     #[serde(rename = "monsterInfoList")]
+//     pub monster_info_list: Vec<ReplayMonster>,
+//     #[serde(rename = "playerCountry")]
+//     pub player_country: String,
+//     #[serde(rename = "playerName")]
+//     pub name: String,
+//     #[serde(rename = "leaderMonsterId")]
+//     pub leader_monster_id: i32,
+//     #[serde(rename = "banMonsterId")]
+//     pub ban_monster_id: Option<i32>,
+//     #[serde(rename = "playerId")]
+//     pub player_id: i64,
+// }
 
-#[derive(Debug, Deserialize)]
-pub struct Replay {
-    #[serde(rename = "playerOne")]
-    pub player_one: ReplayPlayer,
-    #[serde(rename = "playerTwo")]
-    pub player_two: ReplayPlayer,
-    #[serde(rename = "status")]
-    pub replay_type: i32,
-    #[serde(rename = "firstPick")]
-    pub first_pick: i64,
-}
+// #[derive(Debug, Deserialize)]
+// pub struct Replay {
+//     #[serde(rename = "playerOne")]
+//     pub player_one: ReplayPlayer,
+//     #[serde(rename = "playerTwo")]
+//     pub player_two: ReplayPlayer,
+//     #[serde(rename = "status")]
+//     pub replay_type: i32,
+//     #[serde(rename = "firstPick")]
+//     pub first_pick: i64,
+// }
 
-#[derive(Debug, Deserialize)]
-struct ReplayListData {
-    list: Vec<Replay>,
-}
+// #[derive(Debug, Deserialize)]
+// struct ReplayListData {
+//     list: Vec<Replay>,
+// }
 
-#[derive(Debug, Deserialize)]
-struct ReplayListWrapper {
-    page: ReplayListData,
-}
+// #[derive(Debug, Deserialize)]
+// struct ReplayListWrapper {
+//     page: ReplayListData,
+// }
 
-#[derive(Debug, Deserialize)]
-struct ReplayListResponse {
-    data: Option<ReplayListWrapper>,
-}
+// #[derive(Debug, Deserialize)]
+// struct ReplayListResponse {
+//     data: Option<ReplayListWrapper>,
+// }
 
 pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetail> {
     let url = format!(
@@ -386,23 +386,23 @@ pub fn create_player_embed_without_replays(
 }
 
 /// Creates an embed for the replay list
-pub fn create_replay_embed(recent_replays: Vec<(String, String)>) -> CreateEmbed {
-    let mut embed = CreateEmbed::default()
-        .title("⚔️ Recent Replays")
-        .color(serenity::Colour::from_rgb(0, 180, 255));
+// pub fn create_replay_embed(recent_replays: Vec<(String, String)>) -> CreateEmbed {
+//     let mut embed = CreateEmbed::default()
+//         .title("⚔️ Recent Replays")
+//         .color(serenity::Colour::from_rgb(0, 180, 255));
 
-    if recent_replays.is_empty() {
-        embed = embed.description("No recent replays found.");
-    } else {
-        for (title, value) in recent_replays {
-            embed = embed.field(title, value, false);
-        }
-    }
+//     if recent_replays.is_empty() {
+//         embed = embed.description("No recent replays found.");
+//     } else {
+//         for (title, value) in recent_replays {
+//             embed = embed.field(title, value, false);
+//         }
+//     }
 
-    embed.footer(CreateEmbedFooter::new(
-        "Please use /send_suggestion to report any issue.",
-    ))
-}
+//     embed.footer(CreateEmbedFooter::new(
+//         "Please use /send_suggestion to report any issue.",
+//     ))
+// }
 
 pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
     let rank_data = get_rank_info().await.map_err(|e| anyhow!(e))?;
@@ -416,227 +416,227 @@ pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
     Ok("Unranked".to_string())
 }
 
-pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Replay>> {
-    let url = "https://m.swranking.com/api/player/replaylist";
-    let client = reqwest::Client::new();
+// pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Replay>> {
+//     let url = "https://m.swranking.com/api/player/replaylist";
+//     let client = reqwest::Client::new();
 
-    let body = serde_json::json!({
-        "swrtPlayerId": player_id.to_string(),
-        "result": 2,
-        "pageNum": 1,
-        "pageSize": 5
-    });
+//     let body = serde_json::json!({
+//         "swrtPlayerId": player_id.to_string(),
+//         "result": 2,
+//         "pageNum": 1,
+//         "pageSize": 5
+//     });
 
-    let res = client
-        .post(url)
-        .json(&body)
-        .header("Authentication", token)
-        .header("Content-Type", "application/json")
-        .send()
-        .await?;
+//     let res = client
+//         .post(url)
+//         .json(&body)
+//         .header("Authentication", token)
+//         .header("Content-Type", "application/json")
+//         .send()
+//         .await?;
 
-    let status = res.status();
-    let json: ReplayListResponse = res.json().await?;
+//     let status = res.status();
+//     let json: ReplayListResponse = res.json().await?;
 
-    if !status.is_success() {
-        return Err(anyhow!(
-            "Replay fetch failed (status {}): {:?}",
-            status,
-            json.data
-                .as_ref()
-                .map(|_| "Invalid response")
-                .unwrap_or("No data")
-        ));
-    }
+//     if !status.is_success() {
+//         return Err(anyhow!(
+//             "Replay fetch failed (status {}): {:?}",
+//             status,
+//             json.data
+//                 .as_ref()
+//                 .map(|_| "Invalid response")
+//                 .unwrap_or("No data")
+//         ));
+//     }
 
-    Ok(json.data.map(|d| d.page.list).unwrap_or_default())
-}
+//     Ok(json.data.map(|d| d.page.list).unwrap_or_default())
+// }
 
-pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(String, String)> {
-    let replays = match get_recent_replays(token, player_id).await {
-        Ok(r) => r,
-        Err(_) => return vec![("Error".into(), "Replay fetch failed".into())],
-    };
+// pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(String, String)> {
+//     let replays = match get_recent_replays(token, player_id).await {
+//         Ok(r) => r,
+//         Err(_) => return vec![("Error".into(), "Replay fetch failed".into())],
+//     };
 
-    let collection = match get_mob_emoji_collection().await {
-        Ok(c) => c,
-        Err(_) => return vec![("Error".into(), "Emoji DB error".into())],
-    };
+//     let collection = match get_mob_emoji_collection().await {
+//         Ok(c) => c,
+//         Err(_) => return vec![("Error".into(), "Emoji DB error".into())],
+//     };
 
-    let mut output = vec![];
+//     let mut output = vec![];
 
-    for (i, replay) in replays.iter().enumerate() {
-        let (player_a, player_b) = (&replay.player_one, &replay.player_two);
+//     for (i, replay) in replays.iter().enumerate() {
+//         let (player_a, player_b) = (&replay.player_one, &replay.player_two);
 
-        let is_a_current = player_a.swrt_player_id == *player_id;
-        let (current_player, opponent_player) = if is_a_current {
-            (player_a, player_b)
-        } else {
-            (player_b, player_a)
-        };
+//         let is_a_current = player_a.swrt_player_id == *player_id;
+//         let (current_player, opponent_player) = if is_a_current {
+//             (player_a, player_b)
+//         } else {
+//             (player_b, player_a)
+//         };
 
-        let outcome = if replay.player_one.swrt_player_id == *player_id
-            && replay_type_is_victory(&replay)
-        {
-            "✅"
-        } else if replay.player_two.swrt_player_id == *player_id && replay_type_is_defeat(&replay) {
-            "✅"
-        } else {
-            "❌"
-        };
+//         let outcome = if replay.player_one.swrt_player_id == *player_id
+//             && replay_type_is_victory(&replay)
+//         {
+//             "✅"
+//         } else if replay.player_two.swrt_player_id == *player_id && replay_type_is_defeat(&replay) {
+//             "✅"
+//         } else {
+//             "❌"
+//         };
 
-        let first_pick = replay.first_pick;
+//         let first_pick = replay.first_pick;
 
-        let (current_emojis, opponent_emojis) = tokio::join!(
-            get_emojis_for_replay(current_player, first_pick, &collection),
-            get_emojis_for_replay(opponent_player, first_pick, &collection)
-        );
+//         let (current_emojis, opponent_emojis) = tokio::join!(
+//             get_emojis_for_replay(current_player, first_pick, &collection),
+//             get_emojis_for_replay(opponent_player, first_pick, &collection)
+//         );
 
-        let (ban_current, ban_opponent) = tokio::join!(
-            get_ban_emoji(current_player.ban_monster_id, &collection),
-            get_ban_emoji(opponent_player.ban_monster_id, &collection)
-        );
+//         let (ban_current, ban_opponent) = tokio::join!(
+//             get_ban_emoji(current_player.ban_monster_id, &collection),
+//             get_ban_emoji(opponent_player.ban_monster_id, &collection)
+//         );
 
-        let (leader_current, leader_opponent) = tokio::join!(
-            get_leader_emoji(current_player.leader_monster_id, &collection),
-            get_leader_emoji(opponent_player.leader_monster_id, &collection),
-        );
+//         let (leader_current, leader_opponent) = tokio::join!(
+//             get_leader_emoji(current_player.leader_monster_id, &collection),
+//             get_leader_emoji(opponent_player.leader_monster_id, &collection),
+//         );
 
-        let title = format!(
-            "{}. {} vs {} (:flag_{}:)",
-            i + 1,
-            current_player.name,
-            opponent_player.name,
-            opponent_player.player_country.to_lowercase()
-        );
+//         let title = format!(
+//             "{}. {} vs {} (:flag_{}:)",
+//             i + 1,
+//             current_player.name,
+//             opponent_player.name,
+//             opponent_player.player_country.to_lowercase()
+//         );
 
-        let current_remaining = get_remaining_emojis(current_player, &collection).await;
-        let opponent_remaining = get_remaining_emojis(opponent_player, &collection).await;
+//         let current_remaining = get_remaining_emojis(current_player, &collection).await;
+//         let opponent_remaining = get_remaining_emojis(opponent_player, &collection).await;
 
-        let draft_line = format!(
-            "{} 🚫{} ➡️ {}\n{} 🚫{} ➡️ {}\n\n Leaders : {} <:blank:1360319527828590752> {}",
-            current_emojis,
-            ban_current.clone().unwrap_or_else(|| "None".to_string()),
-            current_remaining,
-            opponent_emojis,
-            ban_opponent.clone().unwrap_or_else(|| "None".to_string()),
-            opponent_remaining,
-            leader_current.unwrap_or_else(|| "None".to_string()),
-            leader_opponent.unwrap_or_else(|| "None".to_string())
-        );
+//         let draft_line = format!(
+//             "{} 🚫{} ➡️ {}\n{} 🚫{} ➡️ {}\n\n Leaders : {} <:blank:1360319527828590752> {}",
+//             current_emojis,
+//             ban_current.clone().unwrap_or_else(|| "None".to_string()),
+//             current_remaining,
+//             opponent_emojis,
+//             ban_opponent.clone().unwrap_or_else(|| "None".to_string()),
+//             opponent_remaining,
+//             leader_current.unwrap_or_else(|| "None".to_string()),
+//             leader_opponent.unwrap_or_else(|| "None".to_string())
+//         );
 
-        let value = format!("Win : {}\n{}", outcome, draft_line);
-        output.push((title, value));
-    }
+//         let value = format!("Win : {}\n{}", outcome, draft_line);
+//         output.push((title, value));
+//     }
 
-    output
-}
+//     output
+// }
 
-fn replay_type_is_victory(replay: &Replay) -> bool {
-    // Type = 1 = playerOne wins
-    replay.replay_type == 1
-}
+// fn replay_type_is_victory(replay: &Replay) -> bool {
+//     // Type = 1 = playerOne wins
+//     replay.replay_type == 1
+// }
 
-fn replay_type_is_defeat(replay: &Replay) -> bool {
-    // Type = 2 = playerTwo wins
-    replay.replay_type == 2
-}
+// fn replay_type_is_defeat(replay: &Replay) -> bool {
+//     // Type = 2 = playerTwo wins
+//     replay.replay_type == 2
+// }
 
-async fn get_ban_emoji(
-    ban_id: Option<i32>,
-    collection: &Collection<mongodb::bson::Document>,
-) -> Option<String> {
-    let ban_id = ban_id?;
+// async fn get_ban_emoji(
+//     ban_id: Option<i32>,
+//     collection: &Collection<mongodb::bson::Document>,
+// ) -> Option<String> {
+//     let ban_id = ban_id?;
 
-    let doc = collection
-        .find_one(doc! { "com2us_id": ban_id })
-        .await
-        .ok()??;
+//     let doc = collection
+//         .find_one(doc! { "com2us_id": ban_id })
+//         .await
+//         .ok()??;
 
-    let name = doc.get_str("name").ok()?;
-    let emoji_id = doc.get_str("id").ok()?;
+//     let name = doc.get_str("name").ok()?;
+//     let emoji_id = doc.get_str("id").ok()?;
 
-    Some(format!("<:{}:{}>", name, emoji_id))
-}
+//     Some(format!("<:{}:{}>", name, emoji_id))
+// }
 
-async fn get_leader_emoji(
-    leader_id: i32,
-    collection: &Collection<mongodb::bson::Document>,
-) -> Option<String> {
-    let doc = collection
-        .find_one(doc! { "com2us_id": leader_id })
-        .await
-        .ok()??;
+// async fn get_leader_emoji(
+//     leader_id: i32,
+//     collection: &Collection<mongodb::bson::Document>,
+// ) -> Option<String> {
+//     let doc = collection
+//         .find_one(doc! { "com2us_id": leader_id })
+//         .await
+//         .ok()??;
 
-    let name = doc.get_str("name").ok()?;
-    let emoji_id = doc.get_str("id").ok()?;
+//     let name = doc.get_str("name").ok()?;
+//     let emoji_id = doc.get_str("id").ok()?;
 
-    Some(format!("<:{}:{}>", name, emoji_id))
-}
+//     Some(format!("<:{}:{}>", name, emoji_id))
+// }
 
-async fn get_emojis_for_replay(
-    player: &ReplayPlayer,
-    first_pick_id: i64,
-    collection: &Collection<mongodb::bson::Document>,
-) -> String {
-    let mut picks = vec![];
+// async fn get_emojis_for_replay(
+//     player: &ReplayPlayer,
+//     first_pick_id: i64,
+//     collection: &Collection<mongodb::bson::Document>,
+// ) -> String {
+//     let mut picks = vec![];
 
-    for m in &player.monster_info_list {
-        if let Some(emoji) = get_emoji_from_filename(collection, &m.image_filename).await {
-            picks.push(emoji);
-        }
-    }
+//     for m in &player.monster_info_list {
+//         if let Some(emoji) = get_emoji_from_filename(collection, &m.image_filename).await {
+//             picks.push(emoji);
+//         }
+//     }
 
-    if picks.len() != 5 {
-        return picks.join(" "); // fallback sécu
-    }
+//     if picks.len() != 5 {
+//         return picks.join(" "); // fallback sécu
+//     }
 
-    let mut result = vec![];
-    let is_first = player.player_id == first_pick_id;
+//     let mut result = vec![];
+//     let is_first = player.player_id == first_pick_id;
 
-    if is_first {
-        result.push(picks[0].clone()); // (1)
-        result.push("→".into());
-        result.push(format!("{} {}", picks[1], picks[2])); // (3)
-        result.push("→".into());
-        result.push(format!("{} {}", picks[3], picks[4])); // (5)
-        result.push("<:blank:1360319527828590752>".repeat(1).into());
-    } else {
-        // :loading:1358029412716515418>
-        result.push("<:blank:1360319527828590752>".repeat(1).into());
-        result.push(format!("{} {}", picks[0], picks[1])); // (2)
-        result.push("→".into());
-        result.push(format!("{} {}", picks[2], picks[3])); // (4)
-        result.push("→".into());
-        result.push(picks[4].clone()); // (6)
-    }
+//     if is_first {
+//         result.push(picks[0].clone()); // (1)
+//         result.push("→".into());
+//         result.push(format!("{} {}", picks[1], picks[2])); // (3)
+//         result.push("→".into());
+//         result.push(format!("{} {}", picks[3], picks[4])); // (5)
+//         result.push("<:blank:1360319527828590752>".repeat(1).into());
+//     } else {
+//         // :loading:1358029412716515418>
+//         result.push("<:blank:1360319527828590752>".repeat(1).into());
+//         result.push(format!("{} {}", picks[0], picks[1])); // (2)
+//         result.push("→".into());
+//         result.push(format!("{} {}", picks[2], picks[3])); // (4)
+//         result.push("→".into());
+//         result.push(picks[4].clone()); // (6)
+//     }
 
-    result.join(" ")
-}
+//     result.join(" ")
+// }
 
-async fn get_remaining_emojis(
-    player: &ReplayPlayer,
-    collection: &Collection<mongodb::bson::Document>,
-) -> String {
-    let ban_id = player.ban_monster_id;
+// async fn get_remaining_emojis(
+//     player: &ReplayPlayer,
+//     collection: &Collection<mongodb::bson::Document>,
+// ) -> String {
+//     let ban_id = player.ban_monster_id;
 
-    let filtered_monsters: Vec<_> = player
-        .monster_info_list
-        .iter()
-        .filter(|m| Some(m.monster_id) != ban_id)
-        .take(4)
-        .collect();
+//     let filtered_monsters: Vec<_> = player
+//         .monster_info_list
+//         .iter()
+//         .filter(|m| Some(m.monster_id) != ban_id)
+//         .take(4)
+//         .collect();
 
-    let mut emojis = vec![];
-    for m in filtered_monsters {
-        if let Some(emoji) = get_emoji_from_filename(collection, &m.image_filename).await {
-            emojis.push(emoji);
-        }
-    }
+//     let mut emojis = vec![];
+//     for m in filtered_monsters {
+//         if let Some(emoji) = get_emoji_from_filename(collection, &m.image_filename).await {
+//             emojis.push(emoji);
+//         }
+//     }
 
-    if emojis.is_empty() {
-        "None".to_string()
-    } else {
-        emojis.join(" ")
-    }
-}
+//     if emojis.is_empty() {
+//         "None".to_string()
+//     } else {
+//         emojis.join(" ")
+//     }
+// }

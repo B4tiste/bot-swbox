@@ -7,9 +7,8 @@ use serenity::{
 };
 
 use crate::commands::player_stats::utils::{
-    create_player_embed_without_replays, create_replay_embed, format_player_ld_monsters_emojis,
-    format_player_monsters, format_replays_with_emojis, get_rank_emojis_for_score, get_user_detail,
-    search_users,
+    create_player_embed_without_replays, format_player_ld_monsters_emojis, format_player_monsters,
+    get_rank_emojis_for_score, get_user_detail, search_users,
 };
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
@@ -64,12 +63,12 @@ pub async fn get_player_stats(
 
         let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
-        let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
+        // let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
 
         let updated_embed =
             create_player_embed_without_replays(&details, ld_emojis, top_monsters, rank_emojis);
 
-        let replay_embed = create_replay_embed(recent_replays);
+        // let replay_embed = create_replay_embed(recent_replays);
 
         // Edit the message to include loaded data
         reply_handle
@@ -83,11 +82,11 @@ pub async fn get_player_stats(
             .await?;
 
         // Send the second message with the replay embed
-        ctx.send(CreateReply {
-            embeds: vec![replay_embed],
-            ..Default::default()
-        })
-        .await?;
+        // ctx.send(CreateReply {
+        //     embeds: vec![replay_embed],
+        //     ..Default::default()
+        // })
+        // .await?;
 
         send_log(
             &ctx,
@@ -148,32 +147,32 @@ pub async fn get_player_stats(
             })
             .await?;
 
-            let ld_emojis = format_player_ld_monsters_emojis(&details).await;
-            let top_monsters = format_player_monsters(&details).await;
-            let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
-    
-            let updated_embed =
-                create_player_embed_without_replays(&details, ld_emojis, top_monsters, rank_emojis);
-    
-            let replay_embed = create_replay_embed(recent_replays);
-    
-            // Edit the message to include loaded data
-            reply_handle
-                .edit(
-                    poise::Context::Application(ctx),
-                    CreateReply {
-                        embeds: vec![updated_embed],
-                        ..Default::default()
-                    },
-                )
-                .await?;
-    
-            // Send the second message with the replay embed
-            ctx.send(CreateReply {
-                embeds: vec![replay_embed],
-                ..Default::default()
-            })
+        let ld_emojis = format_player_ld_monsters_emojis(&details).await;
+        let top_monsters = format_player_monsters(&details).await;
+        // let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
+
+        let updated_embed =
+            create_player_embed_without_replays(&details, ld_emojis, top_monsters, rank_emojis);
+
+        // let replay_embed = create_replay_embed(recent_replays);
+
+        // Edit the message to include loaded data
+        reply_handle
+            .edit(
+                poise::Context::Application(ctx),
+                CreateReply {
+                    embeds: vec![updated_embed],
+                    ..Default::default()
+                },
+            )
             .await?;
+
+        // Send the second message with the replay embed
+        // ctx.send(CreateReply {
+        //     embeds: vec![replay_embed],
+        //     ..Default::default()
+        // })
+        // .await?;
 
         send_log(
             &ctx,
@@ -292,12 +291,12 @@ pub async fn get_player_stats(
         // Step 2: load emojis + monsters
         let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
-        let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
+        // let recent_replays = format_replays_with_emojis(&token, &details.swrt_player_id).await;
 
         let updated_embed =
             create_player_embed_without_replays(&details, ld_emojis, top_monsters, rank_emojis);
 
-        let replay_embed = create_replay_embed(recent_replays);
+        // let replay_embed = create_replay_embed(recent_replays);
 
         msg.edit(
             poise::Context::Application(ctx),
@@ -310,12 +309,12 @@ pub async fn get_player_stats(
         .await?;
 
         // Step 3: send replay embed
-        ctx.send(CreateReply {
-            content: Some("".to_string()),
-            embeds: vec![replay_embed],
-            ..Default::default()
-        })
-        .await?;
+        // ctx.send(CreateReply {
+        //     content: Some("".to_string()),
+        //     embeds: vec![replay_embed],
+        //     ..Default::default()
+        // })
+        // .await?;
 
         send_log(
             &ctx,
