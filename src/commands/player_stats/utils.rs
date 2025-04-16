@@ -120,7 +120,7 @@ pub struct Replay {
     pub player_one: ReplayPlayer,
     #[serde(rename = "playerTwo")]
     pub player_two: ReplayPlayer,
-    #[serde(rename = "type")]
+    #[serde(rename = "status")]
     pub replay_type: i32,
     #[serde(rename = "firstPick")]
     pub first_pick: i64,
