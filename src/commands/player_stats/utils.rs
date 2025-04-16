@@ -108,6 +108,8 @@ pub struct ReplayPlayer {
     pub name: String,
     #[serde(rename = "banMonsterId")]
     pub ban_monster_id: Option<i32>,
+    #[serde(rename = "playerId")]
+    pub player_id: i64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -491,7 +493,7 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(St
         );
 
         let draft_line = format!(
-            "{} 🆚 {} \n🚫 {} | {} 🚫",
+            "{}\n{} \n🚫 {} | {} 🚫",
             current_emojis,
             opponent_emojis,
             ban_current.unwrap_or_else(|| "None".to_string()),
@@ -550,16 +552,16 @@ async fn get_emojis_for_replay(
     }
 
     let mut result = vec![];
-    let is_first = player.swrt_player_id == first_pick_id;
+    let is_first = player.player_id == first_pick_id;
 
     if is_first {
-        // 1 → 2 → 2 → 2
         result.push(picks[0].clone()); // (1)
         result.push("→".into());
         result.push(format!("{} {}", picks[1], picks[2])); // (3)
         result.push("→".into());
         result.push(format!("{} {}", picks[3], picks[4])); // (5)
     } else {
+        result.push("".into());
         result.push(format!("{} {}", picks[0], picks[1])); // (2)
         result.push("→".into());
         result.push(format!("{} {}", picks[2], picks[3])); // (4)
