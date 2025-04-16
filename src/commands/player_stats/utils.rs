@@ -388,7 +388,7 @@ pub fn create_player_embed_without_replays(
 /// Creates an embed for the replay list
 pub fn create_replay_embed(recent_replays: Vec<(String, String)>) -> CreateEmbed {
     let mut embed = CreateEmbed::default()
-        .title("📽️ Recent Replays")
+        .title("⚔️ Recent Replays")
         .color(serenity::Colour::from_rgb(0, 180, 255));
 
     if recent_replays.is_empty() {
