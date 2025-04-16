@@ -117,7 +117,9 @@ pub struct Replay {
     #[serde(rename = "playerTwo")]
     pub player_two: ReplayPlayer,
     #[serde(rename = "type")]
-    pub replay_type: i32, // <-- add this
+    pub replay_type: i32,
+    #[serde(rename = "firstPick")]
+    pub first_pick: i64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -332,7 +334,7 @@ pub fn create_player_embed(
     ld_emojis: Vec<String>,
     top_monsters: Vec<String>,
     rank_emojis: String,
-    recent_replays: Vec<String>,
+    recent_replays: Vec<(String, String)>,
 ) -> CreateEmbed {
     let format_emojis = |mut list: Vec<String>| {
         let mut result = list.join(" ");
@@ -353,8 +355,7 @@ pub fn create_player_embed(
     let ld_display = format_emojis(ld_emojis.clone());
     let top_display = format_emojis(top_monsters);
 
-    let embed = CreateEmbed::default();
-    embed
+    let mut embed = CreateEmbed::default()
         .title(format!(
             ":flag_{}: {}{} RTA Statistics (Regular Season only)",
             details.player_country.to_lowercase(),
@@ -366,55 +367,26 @@ pub fn create_player_embed(
         ))
         .thumbnail(details.head_img.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
-        .description(
-            "⚠️ Stats are not 100% accurate ➡️ The very last battle is not included in the elo/rank, and people around 1300 elo will have weird stats (missing games, weird winrates) ⚠️",
-        )
-        .field(
-            "WinRate",
-            format!("{:.1} %", details.win_rate.unwrap_or(0.0) * 100.0),
-            true,
-        )
-        .field(
-            "Elo",
-            details.player_score.unwrap_or(0).to_string(),
-            true,
-        )
-        .field(
-            "Rank",
-            details.player_rank.unwrap_or(0).to_string(),
-            true,
-        )
-        .field(
-            "🏆 Estimation",
-            rank_emojis,
-            true
-        )
-        .field(
-            "Matches Played",
-            details.season_count.unwrap_or(0).to_string(),
-            true,
-        )
-        .field(
-            "✨ LD Monsters (RTA only)",
-            ld_display,
-            false,
-        )
-        .field("🔥 Most Used Units Winrate", top_display, false)
-        .field(
-            "📽️ Last Replays",
-            {
-                let mut joined = recent_replays.join("\n");
-                if joined.is_empty() {
-                    joined = "No recent replays found.".to_string();
-                }
-                joined
-            },
-            false,
-        )
-        .footer(CreateEmbedFooter::new(
-            "Please use /send_suggestion to report any issue.",
-        ))
-        .clone()
+        .description("⚠️ Stats are not 100% accurate ➡️ The very last battle is not included in the elo/rank, and people around 1300 elo will have weird stats (missing games, weird winrates) ⚠️")
+        .field("WinRate", format!("{:.1} %", details.win_rate.unwrap_or(0.0) * 100.0), true)
+        .field("Elo", details.player_score.unwrap_or(0).to_string(), true)
+        .field("Rank", details.player_rank.unwrap_or(0).to_string(), true)
+        .field("🏆 Estimation", rank_emojis, true)
+        .field("Matches Played", details.season_count.unwrap_or(0).to_string(), true)
+        .field("✨ LD Monsters (RTA only)", ld_display, false)
+        .field("🔥 Most Used Units Winrate", top_display, false);
+
+    if recent_replays.is_empty() {
+        embed = embed.field("📽️ Last Replays", "No recent replays found.", false);
+    } else {
+        for (title, value) in recent_replays {
+            embed = embed.field(title, value, false);
+        }
+    }
+
+    embed.footer(CreateEmbedFooter::new(
+        "Please use /send_suggestion to report any issue.",
+    ))
 }
 
 pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
@@ -465,15 +437,15 @@ pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Repl
     Ok(json.data.map(|d| d.page.list).unwrap_or_default())
 }
 
-pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<String> {
+pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(String, String)> {
     let replays = match get_recent_replays(token, player_id).await {
         Ok(r) => r,
-        Err(_) => return vec!["Replay fetch failed".into()],
+        Err(_) => return vec![("Error".into(), "Replay fetch failed".into())],
     };
 
     let collection = match get_mob_emoji_collection().await {
         Ok(c) => c,
-        Err(_) => return vec!["Emoji DB error".into()],
+        Err(_) => return vec![("Error".into(), "Emoji DB error".into())],
     };
 
     let mut output = vec![];
@@ -481,7 +453,6 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<Str
     for (i, replay) in replays.iter().enumerate() {
         let (player_a, player_b) = (&replay.player_one, &replay.player_two);
 
-        // Determine who's the command target
         let is_a_current = player_a.swrt_player_id == *player_id;
         let (current_player, opponent_player) = if is_a_current {
             (player_a, player_b)
@@ -489,7 +460,6 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<Str
             (player_b, player_a)
         };
 
-        // Victory logic
         let outcome = if replay.player_one.swrt_player_id == *player_id
             && replay_type_is_victory(&replay)
         {
@@ -500,38 +470,36 @@ pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<Str
             "❌"
         };
 
-        // Emojis for both teams
+        let first_pick = replay.first_pick;
+
         let (current_emojis, opponent_emojis) = tokio::join!(
-            get_emojis_for_replay(current_player, &collection),
-            get_emojis_for_replay(opponent_player, &collection)
+            get_emojis_for_replay(current_player, first_pick, &collection),
+            get_emojis_for_replay(opponent_player, first_pick, &collection)
         );
 
-        // 👉 Récupération des emojis des bans
         let (ban_current, ban_opponent) = tokio::join!(
             get_ban_emoji(current_player.ban_monster_id, &collection),
             get_ban_emoji(opponent_player.ban_monster_id, &collection)
         );
 
-        let current_display = format!(
-            "{} (🚫{})",
-            current_emojis.join(" "),
-            ban_current.unwrap_or_else(|| "None".to_string())
-        );
-        let opponent_display = format!(
-            "{} (🚫{}) `{}` :flag_{}:",
-            opponent_emojis.join(" "),
-            ban_opponent.unwrap_or_else(|| "None".to_string()),
+        let title = format!(
+            "{}. {} vs {} ({})",
+            i + 1,
+            current_player.name,
             opponent_player.name,
-            opponent_player.player_country.to_lowercase()
+            opponent_player.player_country
         );
 
-        output.push(format!(
-            "{}. {} {} VS {}",
-            i + 1,
-            outcome,
-            current_display,
-            opponent_display
-        ));
+        let draft_line = format!(
+            "{} 🆚 {} \n🚫 {} | {} 🚫",
+            current_emojis,
+            opponent_emojis,
+            ban_current.unwrap_or_else(|| "None".to_string()),
+            ban_opponent.unwrap_or_else(|| "None".to_string())
+        );
+
+        let value = format!("Win : {}\n{}", outcome, draft_line);
+        output.push((title, value));
     }
 
     output
@@ -566,15 +534,38 @@ async fn get_ban_emoji(
 
 async fn get_emojis_for_replay(
     player: &ReplayPlayer,
+    first_pick_id: i64,
     collection: &Collection<mongodb::bson::Document>,
-) -> Vec<String> {
-    let mut emojis = vec![];
+) -> String {
+    let mut picks = vec![];
 
     for m in &player.monster_info_list {
         if let Some(emoji) = get_emoji_from_filename(collection, &m.image_filename).await {
-            emojis.push(emoji);
+            picks.push(emoji);
         }
     }
 
-    emojis
+    if picks.len() != 5 {
+        return picks.join(" "); // fallback sécu
+    }
+
+    let mut result = vec![];
+    let is_first = player.swrt_player_id == first_pick_id;
+
+    if is_first {
+        // 1 → 2 → 2 → 2
+        result.push(picks[0].clone()); // (1)
+        result.push("→".into());
+        result.push(format!("{} {}", picks[1], picks[2])); // (3)
+        result.push("→".into());
+        result.push(format!("{} {}", picks[3], picks[4])); // (5)
+    } else {
+        result.push(format!("{} {}", picks[0], picks[1])); // (2)
+        result.push("→".into());
+        result.push(format!("{} {}", picks[2], picks[3])); // (4)
+        result.push("→".into());
+        result.push(picks[4].clone()); // (6)
+    }
+
+    result.join(" ")
 }
