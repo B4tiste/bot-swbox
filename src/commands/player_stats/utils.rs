@@ -1,12 +1,17 @@
+use crate::commands::ranks::utils::get_rank_info;
+use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
 use crate::MONGO_URI;
+use ab_glyph::{FontArc, PxScale};
 use anyhow::{anyhow, Result};
+use image::GenericImage;
+use image::{DynamicImage, ImageBuffer, Rgba, RgbaImage};
+use imageproc::drawing::draw_text_mut;
 use mongodb::{bson::doc, Client, Collection};
 use poise::serenity_prelude as serenity;
 use serde::Deserialize;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
-
-use crate::commands::ranks::utils::get_rank_info;
-use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 #[derive(Debug, Deserialize)]
 pub struct Player {
@@ -88,6 +93,63 @@ struct PlayerDetailWrapper {
     monster_ld_imgs: Option<Vec<String>>,
     #[serde(rename = "seasonCount")]
     season_count: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Root {
+    data: DataWrapper,
+}
+
+#[derive(Debug, Deserialize)]
+struct DataWrapper {
+    page: PageData,
+}
+
+#[derive(Debug, Deserialize)]
+struct PageData {
+    list: Vec<Replay>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Replay {
+    #[serde(rename = "playerOne")]
+    player_one: ReplayPlayer,
+
+    #[serde(rename = "playerTwo")]
+    player_two: ReplayPlayer,
+
+    #[serde(rename = "firstPick")]
+    first_pick: u32,
+
+    #[serde(rename = "status")]
+    status: u32,
+}
+
+#[derive(Debug, Deserialize)]
+struct ReplayPlayer {
+    #[serde(rename = "monsterInfoList")]
+    monster_info_list: Vec<ReplayMonster>,
+
+    #[serde(rename = "banMonsterId")]
+    ban_monster_id: u32,
+
+    #[serde(rename = "leaderMonsterId")]
+    leader_monster_id: u32,
+
+    #[serde(rename = "playerId")]
+    player_id: u32,
+
+    #[serde(rename = "playerName")]
+    player_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ReplayMonster {
+    #[serde(rename = "imageFilename")]
+    image_filename: String,
+
+    #[serde(rename = "monsterId")]
+    monster_id: u32,
 }
 
 // #[derive(Debug, Deserialize)]
@@ -385,25 +447,6 @@ pub fn create_player_embed_without_replays(
         ))
 }
 
-/// Creates an embed for the replay list
-// pub fn create_replay_embed(recent_replays: Vec<(String, String)>) -> CreateEmbed {
-//     let mut embed = CreateEmbed::default()
-//         .title("⚔️ Recent Replays")
-//         .color(serenity::Colour::from_rgb(0, 180, 255));
-
-//     if recent_replays.is_empty() {
-//         embed = embed.description("No recent replays found.");
-//     } else {
-//         for (title, value) in recent_replays {
-//             embed = embed.field(title, value, false);
-//         }
-//     }
-
-//     embed.footer(CreateEmbedFooter::new(
-//         "Please use /send_suggestion to report any issue.",
-//     ))
-// }
-
 pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
     let rank_data = get_rank_info().await.map_err(|e| anyhow!(e))?;
 
@@ -416,227 +459,343 @@ pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
     Ok("Unranked".to_string())
 }
 
-// pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Replay>> {
-//     let url = "https://m.swranking.com/api/player/replaylist";
-//     let client = reqwest::Client::new();
+pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Replay>> {
+    let url = "https://m.swranking.com/api/player/replaylist";
+    let client = reqwest::Client::new();
 
-//     let body = serde_json::json!({
-//         "swrtPlayerId": player_id.to_string(),
-//         "result": 2,
-//         "pageNum": 1,
-//         "pageSize": 5
-//     });
+    let body = serde_json::json!({
+        "swrtPlayerId": player_id.to_string(),
+        "result": 2,
+        "pageNum": 1,
+        "pageSize": 4,
+    });
 
-//     let res = client
-//         .post(url)
-//         .json(&body)
-//         .header("Authentication", token)
-//         .header("Content-Type", "application/json")
-//         .send()
-//         .await?;
+    let res = client
+        .post(url)
+        .json(&body)
+        .header("Authentication", token)
+        .header("Content-Type", "application/json")
+        .send()
+        .await?;
 
-//     let status = res.status();
-//     let json: ReplayListResponse = res.json().await?;
+    let status = res.status();
+    let json: Root = res.json().await?;
 
-//     if !status.is_success() {
-//         return Err(anyhow!(
-//             "Replay fetch failed (status {}): {:?}",
-//             status,
-//             json.data
-//                 .as_ref()
-//                 .map(|_| "Invalid response")
-//                 .unwrap_or("No data")
-//         ));
-//     }
+    if !status.is_success() {
+        return Err(anyhow!(
+            "Error status {}: {:?}",
+            status,
+            json.data.page.list
+        ));
+    }
 
-//     Ok(json.data.map(|d| d.page.list).unwrap_or_default())
-// }
+    Ok(json.data.page.list)
+}
 
-// pub async fn format_replays_with_emojis(token: &str, player_id: &i64) -> Vec<(String, String)> {
-//     let replays = match get_recent_replays(token, player_id).await {
-//         Ok(r) => r,
-//         Err(_) => return vec![("Error".into(), "Replay fetch failed".into())],
-//     };
+pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf> {
+    let base_url = "https://swarfarm.com/static/herders/images/monsters/";
 
-//     let collection = match get_mob_emoji_collection().await {
-//         Ok(c) => c,
-//         Err(_) => return vec![("Error".into(), "Emoji DB error".into())],
-//     };
+    let nb_battles = recent_replays.len();
 
-//     let mut output = vec![];
+    let mut sections: Vec<RgbaImage> = Vec::new();
+    let mut max_width = 0;
 
-//     for (i, replay) in replays.iter().enumerate() {
-//         let (player_a, player_b) = (&replay.player_one, &replay.player_two);
+    let mut image_cache: HashMap<String, DynamicImage> = HashMap::new();
 
-//         let is_a_current = player_a.swrt_player_id == *player_id;
-//         let (current_player, opponent_player) = if is_a_current {
-//             (player_a, player_b)
-//         } else {
-//             (player_b, player_a)
-//         };
+    for battle in recent_replays.iter().take(nb_battles) {
+        let actual_first_pick_id = battle.first_pick;
 
-//         let outcome = if replay.player_one.swrt_player_id == *player_id
-//             && replay_type_is_victory(&replay)
-//         {
-//             "✅"
-//         } else if replay.player_two.swrt_player_id == *player_id && replay_type_is_defeat(&replay) {
-//             "✅"
-//         } else {
-//             "❌"
-//         };
+        let urls_player_one: Vec<String> = battle
+            .player_one
+            .monster_info_list
+            .iter()
+            .map(|m| format!("{}{}", base_url, m.image_filename))
+            .collect();
 
-//         let first_pick = replay.first_pick;
+        let urls_player_two: Vec<String> = battle
+            .player_two
+            .monster_info_list
+            .iter()
+            .map(|m| format!("{}{}", base_url, m.image_filename))
+            .collect();
 
-//         let (current_emojis, opponent_emojis) = tokio::join!(
-//             get_emojis_for_replay(current_player, first_pick, &collection),
-//             get_emojis_for_replay(opponent_player, first_pick, &collection)
-//         );
+        let monster_ids_one: Vec<u32> = battle
+            .player_one
+            .monster_info_list
+            .iter()
+            .map(|m| m.monster_id)
+            .collect();
 
-//         let (ban_current, ban_opponent) = tokio::join!(
-//             get_ban_emoji(current_player.ban_monster_id, &collection),
-//             get_ban_emoji(opponent_player.ban_monster_id, &collection)
-//         );
+        let monster_ids_two: Vec<u32> = battle
+            .player_two
+            .monster_info_list
+            .iter()
+            .map(|m| m.monster_id)
+            .collect();
 
-//         let (leader_current, leader_opponent) = tokio::join!(
-//             get_leader_emoji(current_player.leader_monster_id, &collection),
-//             get_leader_emoji(opponent_player.leader_monster_id, &collection),
-//         );
+        let is_p1_first_pick = actual_first_pick_id == battle.player_one.player_id;
 
-//         let title = format!(
-//             "{}. {} vs {} (:flag_{}:)",
-//             i + 1,
-//             current_player.name,
-//             opponent_player.name,
-//             opponent_player.player_country.to_lowercase()
-//         );
+        let img1 = create_team_collage_custom_layout(
+            &urls_player_one,
+            &monster_ids_one,
+            battle.player_one.ban_monster_id,
+            battle.player_one.leader_monster_id,
+            is_p1_first_pick,
+            &mut image_cache,
+        ).await?;
 
-//         let current_remaining = get_remaining_emojis(current_player, &collection).await;
-//         let opponent_remaining = get_remaining_emojis(opponent_player, &collection).await;
+        let img2 = create_team_collage_custom_layout(
+            &urls_player_two,
+            &monster_ids_two,
+            battle.player_two.ban_monster_id,
+            battle.player_two.leader_monster_id,
+            !is_p1_first_pick,
+            &mut image_cache,
+        ).await?;
 
-//         let draft_line = format!(
-//             "{} 🚫{} ➡️ {}\n{} 🚫{} ➡️ {}\n\n Leaders : {} <:blank:1360319527828590752> {}",
-//             current_emojis,
-//             ban_current.clone().unwrap_or_else(|| "None".to_string()),
-//             current_remaining,
-//             opponent_emojis,
-//             ban_opponent.clone().unwrap_or_else(|| "None".to_string()),
-//             opponent_remaining,
-//             leader_current.unwrap_or_else(|| "None".to_string()),
-//             leader_opponent.unwrap_or_else(|| "None".to_string())
-//         );
+        let image_width = img1.width() / 3;
+        let spacing = image_width / 2;
+        let combined_width = img1.width() + img2.width() + spacing;
+        let height = img1.height().max(img2.height());
 
-//         let value = format!("Win : {}\n{}", outcome, draft_line);
-//         output.push((title, value));
-//     }
+        let mut final_image = ImageBuffer::new(combined_width, height);
+        final_image.copy_from(&img1, 0, 0).unwrap();
+        final_image
+            .copy_from(&img2, img1.width() + spacing, 0)
+            .unwrap();
 
-//     output
-// }
+        let p1_banner = create_name_banner(
+            &battle.player_one.player_name,
+            img1.width(),
+            "NotoSansCJK-Regular.otf",
+            Rgba([0, 0, 0, 0]),
+        );
+        let p2_banner = create_name_banner(
+            &battle.player_two.player_name,
+            img2.width(),
+            "NotoSansCJK-Regular.otf",
+            Rgba([0, 0, 0, 0]),
+        );
 
-// fn replay_type_is_victory(replay: &Replay) -> bool {
-//     // Type = 1 = playerOne wins
-//     replay.replay_type == 1
-// }
+        let banner_height = p1_banner.height().max(p2_banner.height());
+        let section_inner_height = banner_height + final_image.height();
+        let section_inner_width = combined_width;
 
-// fn replay_type_is_defeat(replay: &Replay) -> bool {
-//     // Type = 2 = playerTwo wins
-//     replay.replay_type == 2
-// }
+        let border_thickness = 10;
+        let section_total_width = section_inner_width + 2 * border_thickness;
+        let section_total_height = section_inner_height + 2 * border_thickness;
 
-// async fn get_ban_emoji(
-//     ban_id: Option<i32>,
-//     collection: &Collection<mongodb::bson::Document>,
-// ) -> Option<String> {
-//     let ban_id = ban_id?;
+        let bg_color = match battle.status {
+            1 => Rgba([0, 255, 0, 100]), // win
+            2 => Rgba([255, 0, 0, 100]), // lose
+            _ => Rgba([0, 0, 0, 100]),   // unknown
+        };
 
-//     let doc = collection
-//         .find_one(doc! { "com2us_id": ban_id })
-//         .await
-//         .ok()??;
+        let mut section =
+            ImageBuffer::from_pixel(section_total_width, section_total_height, bg_color);
 
-//     let name = doc.get_str("name").ok()?;
-//     let emoji_id = doc.get_str("id").ok()?;
+        // Créer zone intérieure transparente
+        let mut inner = ImageBuffer::from_pixel(
+            section_inner_width,
+            section_inner_height,
+            Rgba([0, 0, 0, 0]),
+        );
 
-//     Some(format!("<:{}:{}>", name, emoji_id))
-// }
+        inner.copy_from(&p1_banner, 0, 0).unwrap();
+        inner
+            .copy_from(&p2_banner, img1.width() + spacing, 0)
+            .unwrap();
+        inner.copy_from(&final_image, 0, banner_height).unwrap();
 
-// async fn get_leader_emoji(
-//     leader_id: i32,
-//     collection: &Collection<mongodb::bson::Document>,
-// ) -> Option<String> {
-//     let doc = collection
-//         .find_one(doc! { "com2us_id": leader_id })
-//         .await
-//         .ok()??;
+        // Intégrer zone intérieure centrée dans la bordure
+        section
+            .copy_from(&inner, border_thickness, border_thickness)
+            .unwrap();
 
-//     let name = doc.get_str("name").ok()?;
-//     let emoji_id = doc.get_str("id").ok()?;
+        max_width = max_width.max(section_total_width);
+        sections.push(section);
+    }
 
-//     Some(format!("<:{}:{}>", name, emoji_id))
-// }
+    // Créer l'image finale verticale avec un padding entre chaque section
+    let padding_between_sections = 10;
+    let total_height: u32 = sections
+        .iter()
+        .map(|img| img.height() + padding_between_sections)
+        .sum::<u32>()
+        - padding_between_sections;
 
-// async fn get_emojis_for_replay(
-//     player: &ReplayPlayer,
-//     first_pick_id: i64,
-//     collection: &Collection<mongodb::bson::Document>,
-// ) -> String {
-//     let mut picks = vec![];
+    let mut output = ImageBuffer::new(max_width, total_height);
 
-//     for m in &player.monster_info_list {
-//         if let Some(emoji) = get_emoji_from_filename(collection, &m.image_filename).await {
-//             picks.push(emoji);
-//         }
-//     }
+    let mut y_offset = 0;
+    for section in sections {
+        output.copy_from(&section, 0, y_offset).unwrap();
+        y_offset += section.height() + padding_between_sections;
+    }
 
-//     if picks.len() != 5 {
-//         return picks.join(" "); // fallback sécu
-//     }
+    // Enregistrer l'image finale
+    let output_path = PathBuf::from(format!("/tmp/replay_{}.png", "test"));
 
-//     let mut result = vec![];
-//     let is_first = player.player_id == first_pick_id;
+    let output_path_clone = output_path.clone();
+    tokio::task::spawn_blocking(move || {
+        std::fs::create_dir_all("/tmp")?;
+        output.save(&output_path_clone)?;
+        Ok::<_, anyhow::Error>(output_path_clone)
+    })
+    .await??;
 
-//     if is_first {
-//         result.push(picks[0].clone()); // (1)
-//         result.push("→".into());
-//         result.push(format!("{} {}", picks[1], picks[2])); // (3)
-//         result.push("→".into());
-//         result.push(format!("{} {}", picks[3], picks[4])); // (5)
-//         result.push("<:blank:1360319527828590752>".repeat(1).into());
-//     } else {
-//         // :loading:1358029412716515418>
-//         result.push("<:blank:1360319527828590752>".repeat(1).into());
-//         result.push(format!("{} {}", picks[0], picks[1])); // (2)
-//         result.push("→".into());
-//         result.push(format!("{} {}", picks[2], picks[3])); // (4)
-//         result.push("→".into());
-//         result.push(picks[4].clone()); // (6)
-//     }
+    Ok(output_path)
+}
 
-//     result.join(" ")
-// }
+async fn create_team_collage_custom_layout(
+    image_urls: &[String],
+    monster_ids: &[u32],
+    ban_id: u32,
+    leader_id: u32,
+    first_pick: bool,
+    cache: &mut HashMap<String, DynamicImage>,
+) -> Result<RgbaImage> {
+    let mut images = Vec::new();
+    for url in image_urls {
+        let img = download_image_cached(url, cache).await?; // <-- await ici
+        images.push(img);
+    }
 
-// async fn get_remaining_emojis(
-//     player: &ReplayPlayer,
-//     collection: &Collection<mongodb::bson::Document>,
-// ) -> String {
-//     let ban_id = player.ban_monster_id;
+    let width = images[0].width();
+    let height = images[0].height();
 
-//     let filtered_monsters: Vec<_> = player
-//         .monster_info_list
-//         .iter()
-//         .filter(|m| Some(m.monster_id) != ban_id)
-//         .take(4)
-//         .collect();
+    // Taille de l’image finale : 4 colonnes pour accueillir le monstre décalé
+    let mut collage = ImageBuffer::new(width * 3, height * 2);
 
-//     let mut emojis = vec![];
-//     for m in filtered_monsters {
-//         if let Some(emoji) = get_emoji_from_filename(collection, &m.image_filename).await {
-//             emojis.push(emoji);
-//         }
-//     }
+    // Charger croix
+    let cross = image::open("cross.png")
+        .expect("Erreur lors du chargement de cross.png")
+        .resize_exact(width, height, image::imageops::FilterType::Lanczos3)
+        .to_rgba8();
 
-//     if emojis.is_empty() {
-//         "None".to_string()
-//     } else {
-//         emojis.join(" ")
-//     }
-// }
+    // Séparer les monstres
+    let mut grid_slots = vec![(0, 0); 5]; // (x,y) pour chaque monstre
+
+    if first_pick {
+        // First pick layout
+        // M2 M4
+        // M3 M5
+        // M1 → à gauche, centré verticalement
+        grid_slots[1] = (1, 0); // M2
+        grid_slots[2] = (1, 1); // M3
+        grid_slots[3] = (2, 0); // M4
+        grid_slots[4] = (2, 1); // M5
+        grid_slots[0] = (0, 1); // M1 (sera décalé manuellement verticalement ensuite)
+    } else {
+        // Non first pick layout
+        // M1 M3
+        // M2 M4
+        // M5 → à droite, centré verticalement
+        grid_slots[0] = (0, 0); // M1
+        grid_slots[1] = (0, 1); // M2
+        grid_slots[2] = (1, 0); // M3
+        grid_slots[3] = (1, 1); // M4
+        grid_slots[4] = (2, 1); // M5 (sera décalé verticalement ensuite)
+    }
+
+    for (i, (img, &monster_id)) in images.iter().zip(monster_ids).enumerate() {
+        let mut rgba = img.to_rgba8();
+
+        // ⭐ Leader encadré vert
+        if monster_id == leader_id {
+            let border_color = Rgba([255, 215, 0, 255]);
+            let thickness = 5;
+            for x in 0..width {
+                for t in 0..thickness {
+                    rgba.put_pixel(x, t, border_color);
+                    rgba.put_pixel(x, height - 1 - t, border_color);
+                }
+            }
+            for y in 0..height {
+                for t in 0..thickness {
+                    rgba.put_pixel(t, y, border_color);
+                    rgba.put_pixel(width - 1 - t, y, border_color);
+                }
+            }
+        }
+
+        // ❌ Banni avec croix
+        if monster_id == ban_id {
+            image::imageops::overlay(&mut rgba, &cross, 0, 0);
+        }
+
+        // 📌 Placement selon grille
+        let (grid_x, grid_y) = grid_slots[i];
+        let x = grid_x as u32 * width;
+
+        let y = if first_pick && i == 0 {
+            // M1 décalé verticalement (first pick)
+            ((height * 2) as f32 / 2.0 - (height as f32 / 2.0)).round() as u32
+        } else if !first_pick && i == 4 {
+            // M5 décalé verticalement (last pick)
+            ((height * 2) as f32 / 2.0 - (height as f32 / 2.0)).round() as u32
+        } else {
+            grid_y as u32 * height
+        };
+
+        collage.copy_from(&rgba, x, y).unwrap();
+    }
+
+    // retourner l'image finale
+    Ok(collage)
+}
+
+async fn download_image_cached(
+    url: &str,
+    cache: &mut HashMap<String, DynamicImage>,
+) -> Result<DynamicImage> {
+    if let Some(img) = cache.get(url) {
+        return Ok(img.clone());
+    }
+
+    let bytes = reqwest::get(url).await?.bytes().await?;
+    let img = image::load_from_memory(&bytes)?;
+    cache.insert(url.to_string(), img.clone());
+    Ok(img)
+}
+
+fn create_name_banner(text: &str, width: u32, font_path: &str, color: Rgba<u8>) -> RgbaImage {
+    let height = 40;
+    let mut image = ImageBuffer::from_pixel(width, height, color); // Couleur de fond (semi-transparente)
+
+    let font_data = std::fs::read(font_path).expect("Erreur lecture police");
+    let font = FontArc::try_from_vec(font_data).expect("Police invalide");
+
+    let scale = PxScale::from(26.0);
+    let text_width = (text.len() as u32 * 14).min(width);
+    let x = ((width - text_width).max(0)) as i32 / 2;
+    let y = 8;
+
+    draw_bold_text_mut(
+        &mut image,
+        Rgba([255, 255, 255, 255]),
+        x,
+        y,
+        scale,
+        &font,
+        text,
+    );
+
+    image
+}
+
+fn draw_bold_text_mut(
+    image: &mut RgbaImage,
+    color: Rgba<u8>,
+    x: i32,
+    y: i32,
+    scale: PxScale,
+    font: &FontArc,
+    text: &str,
+) {
+    // Offsets pour simuler le gras
+    let offsets = [(0, 0), (1, 0), (0, 1), (1, 1)];
+
+    for (dx, dy) in offsets.iter() {
+        draw_text_mut(image, color, x + dx, y + dy, scale, font, text);
+    }
+}
