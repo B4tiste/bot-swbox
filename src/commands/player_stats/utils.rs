@@ -152,59 +152,6 @@ struct ReplayMonster {
     monster_id: u32,
 }
 
-// #[derive(Debug, Deserialize)]
-// pub struct ReplayMonster {
-//     #[serde(rename = "imageFilename")]
-//     pub image_filename: String,
-//     #[serde(rename = "monsterId")]
-//     pub monster_id: i32,
-// }
-
-// #[derive(Debug, Deserialize)]
-// pub struct ReplayPlayer {
-//     #[serde(rename = "swrtPlayerId")]
-//     pub swrt_player_id: i64,
-//     #[serde(rename = "monsterInfoList")]
-//     pub monster_info_list: Vec<ReplayMonster>,
-//     #[serde(rename = "playerCountry")]
-//     pub player_country: String,
-//     #[serde(rename = "playerName")]
-//     pub name: String,
-//     #[serde(rename = "leaderMonsterId")]
-//     pub leader_monster_id: i32,
-//     #[serde(rename = "banMonsterId")]
-//     pub ban_monster_id: Option<i32>,
-//     #[serde(rename = "playerId")]
-//     pub player_id: i64,
-// }
-
-// #[derive(Debug, Deserialize)]
-// pub struct Replay {
-//     #[serde(rename = "playerOne")]
-//     pub player_one: ReplayPlayer,
-//     #[serde(rename = "playerTwo")]
-//     pub player_two: ReplayPlayer,
-//     #[serde(rename = "status")]
-//     pub replay_type: i32,
-//     #[serde(rename = "firstPick")]
-//     pub first_pick: i64,
-// }
-
-// #[derive(Debug, Deserialize)]
-// struct ReplayListData {
-//     list: Vec<Replay>,
-// }
-
-// #[derive(Debug, Deserialize)]
-// struct ReplayListWrapper {
-//     page: ReplayListData,
-// }
-
-// #[derive(Debug, Deserialize)]
-// struct ReplayListResponse {
-//     data: Option<ReplayListWrapper>,
-// }
-
 pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetail> {
     let url = format!(
         "https://m.swranking.com/api/player/detail?swrtPlayerId={}",
@@ -542,7 +489,8 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
             battle.player_one.leader_monster_id,
             is_p1_first_pick,
             &mut image_cache,
-        ).await?;
+        )
+        .await?;
 
         let img2 = create_team_collage_custom_layout(
             &urls_player_two,
@@ -551,7 +499,8 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
             battle.player_two.leader_monster_id,
             !is_p1_first_pick,
             &mut image_cache,
-        ).await?;
+        )
+        .await?;
 
         let image_width = img1.width() / 3;
         let spacing = image_width / 2;
@@ -567,13 +516,13 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
         let p1_banner = create_name_banner(
             &battle.player_one.player_name,
             img1.width(),
-            "NotoSansCJK-Regular.otf",
+            "src\\commands\\player_stats\\NotoSansCJK-Regular.otf",
             Rgba([0, 0, 0, 0]),
         );
         let p2_banner = create_name_banner(
             &battle.player_two.player_name,
             img2.width(),
-            "NotoSansCJK-Regular.otf",
+            "src\\commands\\player_stats\\NotoSansCJK-Regular.otf",
             Rgba([0, 0, 0, 0]),
         );
 
@@ -667,7 +616,7 @@ async fn create_team_collage_custom_layout(
     let mut collage = ImageBuffer::new(width * 3, height * 2);
 
     // Charger croix
-    let cross = image::open("cross.png")
+    let cross = image::open("src\\commands\\player_stats\\cross.png")
         .expect("Erreur lors du chargement de cross.png")
         .resize_exact(width, height, image::imageops::FilterType::Lanczos3)
         .to_rgba8();

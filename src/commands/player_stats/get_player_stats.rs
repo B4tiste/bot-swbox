@@ -2,7 +2,7 @@ use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::CreateSelectMenuKind;
 use poise::CreateReply;
 use serenity::{
-    builder::{CreateActionRow, CreateButton, CreateSelectMenu, CreateSelectMenuOption},
+    builder::{CreateActionRow, CreateSelectMenu, CreateSelectMenuOption},
     Error,
 };
 
@@ -17,7 +17,7 @@ use crate::{Data, API_TOKEN};
 
 /// 📂 Displays the RTA stats of the given player. (LD & most used monsters)
 ///
-/// Usage: `/get_player_stats`
+/// Usage: /get_player_stats
 #[poise::command(slash_command)]
 pub async fn get_player_stats(
     ctx: poise::ApplicationContext<'_, Data, Error>,
@@ -86,50 +86,19 @@ pub async fn get_player_stats(
             .edit(
                 poise::Context::Application(ctx),
                 CreateReply {
-                    embeds: vec![updated_embed.clone()],
+                    embeds: vec![updated_embed],
                     ..Default::default()
                 },
             )
             .await?;
 
-        let button_row = CreateActionRow::Buttons(vec![CreateButton::new("show_replays")
-            .label("🎬 Voir les replays récents")
-            .style(serenity::ButtonStyle::Primary)]);
-
-        reply_handle
-            .edit(
-                poise::Context::Application(ctx),
-                CreateReply {
-                    embeds: vec![updated_embed.clone()],
-                    components: Some(vec![button_row]),
-                    ..Default::default()
-                },
-            )
-            .await?;
-
-        let shard = ctx.serenity_context.shard.clone();
-        let author_id = ctx.author().id;
-        if let Some(button_interaction) = serenity::ComponentInteractionCollector::new(&shard)
-            .filter(move |i| i.data.custom_id == "show_replays" && i.user.id == author_id)
-            .timeout(std::time::Duration::from_secs(30))
-            .await
-        {
-            button_interaction
-                .create_response(
-                    &ctx.serenity_context,
-                    serenity::CreateInteractionResponse::UpdateMessage(
-                        serenity::CreateInteractionResponseMessage::default(),
-                    ),
-                )
-                .await?;
-
-            ctx.send(CreateReply {
-                content: Some("🎬 Replays récents :".to_string()),
-                attachments: vec![attachment.clone()],
-                ..Default::default()
-            })
-            .await?;
-        }
+        // send the image in a separate message
+        ctx.send(CreateReply {
+            content: Some("Recent replays:".to_string()),
+            attachments: vec![attachment],
+            ..Default::default()
+        })
+        .await?;
 
         send_log(
             &ctx,
@@ -192,14 +161,12 @@ pub async fn get_player_stats(
 
         let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
-        let recent_replays = get_recent_replays(&token, &details.swrt_player_id)
-            .await
-            .map_err(|e| {
-                Error::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Error retrieving recent replays: {}", e),
-                ))
-            })?;
+        let recent_replays = get_recent_replays(&token, &details.swrt_player_id).await.map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Error retrieving recent replays: {}", e),
+            ))
+        })?;
 
         let updated_embed =
             create_player_embed_without_replays(&details, ld_emojis, top_monsters, rank_emojis);
@@ -211,44 +178,16 @@ pub async fn get_player_stats(
         // Create attachment for the replay image
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
-        let button_row = CreateActionRow::Buttons(vec![CreateButton::new("show_replays")
-            .label("🎬 Voir les replays récents")
-            .style(serenity::ButtonStyle::Primary)]);
-
+        // Edit the message to include loaded data
         reply_handle
             .edit(
                 poise::Context::Application(ctx),
                 CreateReply {
-                    embeds: vec![updated_embed.clone()],
-                    components: Some(vec![button_row]),
+                    embeds: vec![updated_embed],
                     ..Default::default()
                 },
             )
             .await?;
-
-        let shard = ctx.serenity_context.shard.clone();
-        let author_id = ctx.author().id;
-        if let Some(button_interaction) = serenity::ComponentInteractionCollector::new(&shard)
-            .filter(move |i| i.data.custom_id == "show_replays" && i.user.id == author_id)
-            .timeout(std::time::Duration::from_secs(30))
-            .await
-        {
-            button_interaction
-                .create_response(
-                    &ctx.serenity_context,
-                    serenity::CreateInteractionResponse::UpdateMessage(
-                        serenity::CreateInteractionResponseMessage::default(),
-                    ),
-                )
-                .await?;
-
-            ctx.send(CreateReply {
-                content: Some("🎬 Replays récents :".to_string()),
-                attachments: vec![attachment.clone()],
-                ..Default::default()
-            })
-            .await?;
-        }
 
         // send the image in a separate message
         ctx.send(CreateReply {
@@ -374,14 +313,12 @@ pub async fn get_player_stats(
         // Step 2: load emojis + monsters
         let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
-        let recent_replays = get_recent_replays(&token, &details.swrt_player_id)
-            .await
-            .map_err(|e| {
-                Error::from(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Error retrieving recent replays: {}", e),
-                ))
-            })?;
+        let recent_replays = get_recent_replays(&token, &details.swrt_player_id).await.map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Error retrieving recent replays: {}", e),
+            ))
+        })?;
 
         let updated_embed =
             create_player_embed_without_replays(&details, ld_emojis, top_monsters, rank_emojis);
@@ -397,50 +334,19 @@ pub async fn get_player_stats(
             poise::Context::Application(ctx),
             CreateReply {
                 content: Some("".to_string()),
-                embeds: vec![updated_embed.clone()],
+                embeds: vec![updated_embed],
                 ..Default::default()
             },
         )
         .await?;
 
-        let button_row = CreateActionRow::Buttons(vec![CreateButton::new("show_replays")
-            .label("🎬 Voir les replays récents")
-            .style(serenity::ButtonStyle::Primary)]);
-
-        msg
-            .edit(
-                poise::Context::Application(ctx),
-                CreateReply {
-                    embeds: vec![updated_embed],
-                    components: Some(vec![button_row]),
-                    ..Default::default()
-                },
-            )
-            .await?;
-
-        let shard = ctx.serenity_context.shard.clone();
-        let author_id = ctx.author().id;
-        if let Some(button_interaction) = serenity::ComponentInteractionCollector::new(&shard)
-            .filter(move |i| i.data.custom_id == "show_replays" && i.user.id == author_id)
-            .timeout(std::time::Duration::from_secs(30))
-            .await
-        {
-            button_interaction
-                .create_response(
-                    &ctx.serenity_context,
-                    serenity::CreateInteractionResponse::UpdateMessage(
-                        serenity::CreateInteractionResponseMessage::default(),
-                    ),
-                )
-                .await?;
-
-            ctx.send(CreateReply {
-                content: Some("🎬 Replays récents :".to_string()),
-                attachments: vec![attachment],
-                ..Default::default()
-            })
-            .await?;
-        }
+        // send the image in a separate message
+        ctx.send(CreateReply {
+            content: Some("Recent replays:".to_string()),
+            attachments: vec![attachment],
+            ..Default::default()
+        })
+        .await?;
 
         send_log(
             &ctx,
