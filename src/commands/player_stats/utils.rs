@@ -516,13 +516,11 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
         let p1_banner = create_name_banner(
             &battle.player_one.player_name,
             img1.width(),
-            "src\\commands\\player_stats\\NotoSansCJK-Regular.otf",
             Rgba([0, 0, 0, 0]),
         );
         let p2_banner = create_name_banner(
             &battle.player_two.player_name,
             img2.width(),
-            "src\\commands\\player_stats\\NotoSansCJK-Regular.otf",
             Rgba([0, 0, 0, 0]),
         );
 
@@ -615,8 +613,9 @@ async fn create_team_collage_custom_layout(
     // Taille de l’image finale : 4 colonnes pour accueillir le monstre décalé
     let mut collage = ImageBuffer::new(width * 3, height * 2);
 
-    // Charger croix
-    let cross = image::open("src\\commands\\player_stats\\cross.png")
+    // Embedding image data directly
+    const CROSS_BYTES: &[u8] = include_bytes!("cross.png");
+    let cross = image::load_from_memory(CROSS_BYTES)
         .expect("Erreur lors du chargement de cross.png")
         .resize_exact(width, height, image::imageops::FilterType::Lanczos3)
         .to_rgba8();
@@ -707,12 +706,12 @@ async fn download_image_cached(
     Ok(img)
 }
 
-fn create_name_banner(text: &str, width: u32, font_path: &str, color: Rgba<u8>) -> RgbaImage {
+fn create_name_banner(text: &str, width: u32, color: Rgba<u8>) -> RgbaImage {
     let height = 40;
     let mut image = ImageBuffer::from_pixel(width, height, color); // Couleur de fond (semi-transparente)
 
-    let font_data = std::fs::read(font_path).expect("Erreur lecture police");
-    let font = FontArc::try_from_vec(font_data).expect("Police invalide");
+    const FONT_BYTES: &[u8] = include_bytes!("NotoSansCJK-Regular.otf");
+    let font = FontArc::try_from_vec(FONT_BYTES.to_vec()).expect("Police invalide");
 
     let scale = PxScale::from(26.0);
     let text_width = (text.len() as u32 * 14).min(width);
