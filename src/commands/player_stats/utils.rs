@@ -414,7 +414,7 @@ pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Repl
         "swrtPlayerId": player_id.to_string(),
         "result": 2,
         "pageNum": 1,
-        "pageSize": 4,
+        "pageSize": 3,
     });
 
     let res = client
