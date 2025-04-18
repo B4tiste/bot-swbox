@@ -108,11 +108,14 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 **Usage**:
 
--  `/get_player_stats` => Opens a form to enter the player's name
+-  `/get_player_stats` + `USERNAME`
 
 **Features**:
 -   Displays the player's rank, win rate, and other relevant statistics.
 -   Displays the player's LD5 and Most Played Monsters with their win rates.
+-   Displays the last tree replays of the player
+
+---
 
 ### `/get_mob_stats`
 
