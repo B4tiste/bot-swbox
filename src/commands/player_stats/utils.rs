@@ -347,11 +347,12 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
 }
 
 /// Creates an embed for player info without the replay list
-pub fn create_player_embed_without_replays(
+pub fn create_player_embed(
     details: &PlayerDetail,
     ld_emojis: Vec<String>,
     top_monsters: Vec<String>,
     rank_emojis: String,
+    has_image: bool,
 ) -> CreateEmbed {
     let format_emojis = |mut list: Vec<String>| {
         let mut result = list.join(" ");
@@ -395,6 +396,13 @@ pub fn create_player_embed_without_replays(
         .footer(CreateEmbedFooter::new(
             "Please use /send_suggestion to report any issue.",
         ))
+        .image(
+            if has_image {
+                "attachment://replay.png"
+            } else {
+                "https://cdn.discordapp.com/emojis/1358029412716515418.gif?size=128"
+            }
+        )
 }
 
 pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
@@ -583,7 +591,7 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
     }
 
     // Enregistrer l'image finale
-    let output_path = PathBuf::from(format!("/tmp/replay_{}.png", "test"));
+    let output_path = PathBuf::from("replay.png");
 
     let output_path_clone = output_path.clone();
     tokio::task::spawn_blocking(move || {

@@ -7,7 +7,7 @@ use serenity::{
 };
 
 use crate::commands::player_stats::utils::{
-    create_player_embed_without_replays, create_replay_image, format_player_ld_monsters_emojis,
+    create_player_embed, create_replay_image, format_player_ld_monsters_emojis,
     format_player_monsters, get_rank_emojis_for_score, get_recent_replays, get_user_detail,
     search_users,
 };
@@ -48,11 +48,12 @@ pub async fn get_player_stats(
             .await
             .unwrap_or_else(|_| "❓".to_string());
 
-        let embed = create_player_embed_without_replays(
+        let embed = create_player_embed(
             &details,
             vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
             vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
             rank_emojis.clone(),
+            false,
         );
 
         let reply_handle = ctx
@@ -71,9 +72,6 @@ pub async fn get_player_stats(
             ))
         })?;
 
-        let updated_embed =
-            create_player_embed_without_replays(&details, ld_emojis, top_monsters, rank_emojis);
-
         let replay_image_path = create_replay_image(recent_replays)
             .await
             .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
@@ -81,24 +79,28 @@ pub async fn get_player_stats(
         // Create attachment for the replay image
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
+        let updated_embed =
+            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
+
         // Edit the message to include loaded data
         reply_handle
             .edit(
                 poise::Context::Application(ctx),
                 CreateReply {
                     embeds: vec![updated_embed],
+                    attachments: vec![attachment],
                     ..Default::default()
                 },
             )
             .await?;
 
         // send the image in a separate message
-        ctx.send(CreateReply {
-            content: Some("Recent replays:".to_string()),
-            attachments: vec![attachment],
-            ..Default::default()
-        })
-        .await?;
+        // ctx.send(CreateReply {
+        //     content: Some("Recent replays:".to_string()),
+        //     attachments: vec![attachment],
+        //     ..Default::default()
+        // })
+        // .await?;
 
         send_log(
             &ctx,
@@ -145,11 +147,12 @@ pub async fn get_player_stats(
             .await
             .unwrap_or_else(|_| "❓".to_string());
 
-        let embed = create_player_embed_without_replays(
+        let embed = create_player_embed(
             &details,
             vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
             vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
             rank_emojis.clone(),
+            false,
         );
 
         let reply_handle = ctx
@@ -161,15 +164,17 @@ pub async fn get_player_stats(
 
         let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
-        let recent_replays = get_recent_replays(&token, &details.swrt_player_id).await.map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Error retrieving recent replays: {}", e),
-            ))
-        })?;
+        let recent_replays = get_recent_replays(&token, &details.swrt_player_id)
+            .await
+            .map_err(|e| {
+                Error::from(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Error retrieving recent replays: {}", e),
+                ))
+            })?;
 
         let updated_embed =
-            create_player_embed_without_replays(&details, ld_emojis, top_monsters, rank_emojis);
+            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
 
         let replay_image_path = create_replay_image(recent_replays)
             .await
@@ -293,11 +298,12 @@ pub async fn get_player_stats(
             .await
             .unwrap_or_else(|_| "❓".to_string());
 
-        let embed = create_player_embed_without_replays(
+        let embed = create_player_embed(
             &details,
             vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
             vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
             rank_emojis.clone(),
+            false,
         );
 
         msg.edit(
@@ -313,15 +319,17 @@ pub async fn get_player_stats(
         // Step 2: load emojis + monsters
         let ld_emojis = format_player_ld_monsters_emojis(&details).await;
         let top_monsters = format_player_monsters(&details).await;
-        let recent_replays = get_recent_replays(&token, &details.swrt_player_id).await.map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Error retrieving recent replays: {}", e),
-            ))
-        })?;
+        let recent_replays = get_recent_replays(&token, &details.swrt_player_id)
+            .await
+            .map_err(|e| {
+                Error::from(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Error retrieving recent replays: {}", e),
+                ))
+            })?;
 
         let updated_embed =
-            create_player_embed_without_replays(&details, ld_emojis, top_monsters, rank_emojis);
+            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
 
         let replay_image_path = create_replay_image(recent_replays)
             .await
