@@ -508,62 +508,35 @@ fn remap_monster_id(monster_id: i32) -> i32 {
         (29715, 29315),
 
         // Yuji
-        (30411, 31001),
-        (30412, 31012),
-        (30413, 31013),
-        (30414, 31014),
-        (30415, 31015),
+        (31001, 30411),
+        (31012, 30412),
+        (31013, 30413),
+        (31014, 30414),
+        (31015, 30415),
 
         // Megumi
-        (30511, 31111),
-        (30512, 31112),
-        (30513, 31113),
-        (30514, 31114),
-        (30515, 31115),
+        (31111, 30511),
+        (31112, 30512),
+        (31113, 30513),
+        (31114, 30514),
+        (31115, 30515),
 
         // Nobara
-        /*
-        private static final Triplet<Integer,Integer,Integer> COLAB_MONSTER_JUJUTSU_KAISEN_WATER_NOBARA_KUGISAKI = new Triplet<Integer,Integer,Integer>(
-		30611, //Water Nobara Kugisaki
-		0, //Unawakened (doesn't exist)
-		31211 //Mizuki
-	);
-	private static final Triplet<Integer,Integer,Integer> COLAB_MONSTER_JUJUTSU_KAISEN_FIRE_NOBARA_KUGISAKI = new Triplet<Integer,Integer,Integer>(
-		30612, //Fire Nobara Kugisaki
-		0, //Unawakened (doesn't exist)
-		31212 //Sayumi
-	);
-	private static final Triplet<Integer,Integer,Integer> COLAB_MONSTER_JUJUTSU_KAISEN_WIND_NOBARA_KUGISAKI = new Triplet<Integer,Integer,Integer>(
-		30613, //Wind Nobara Kugisaki
-		0, //Unawakened (doesn't exist)
-		31213 //Aya
-	);
-	private static final Triplet<Integer,Integer,Integer> COLAB_MONSTER_JUJUTSU_KAISEN_LIGHT_NOBARA_KUGISAKI = new Triplet<Integer,Integer,Integer>(
-		30614, //Light Nobara Kugisaki
-		0, //Unawakened (doesn't exist)
-		31214 //Haruka
-	);
-	private static final Triplet<Integer,Integer,Integer> COLAB_MONSTER_JUJUTSU_KAISEN_DARK_NOBARA_KUGISAKI = new Triplet<Integer,Integer,Integer>(
-		30615, //Dark Nobara Kugisaki
-		0, //Unawakened (doesn't exist)
-		31215 //Yuko
-	);
-        */
-        (30611, 31211),
-        (30612, 31212),
-        (30613, 31213),
-        (30614, 31214),
-        (30615, 31215),
+        (31211, 30611),
+        (31212, 30612),
+        (31213, 30613),
+        (31214, 30614),
+        (31215, 30615),
 
         // Gojo
-        (30311, 30911),
-        (30312, 30912),
-        (30313, 30913),
-        (30314, 30914),
-        (30315, 30915),
+        (30911, 30311),
+        (30912, 30312),
+        (30913, 30313),
+        (30914, 30314),
+        (30915, 30315),
 
         // Sukuna
-        (30215, 30815)
+        (30815, 30215 )
     ];
 
     mappings
