@@ -141,6 +141,9 @@ struct ReplayPlayer {
 
     #[serde(rename = "playerName")]
     player_name: String,
+
+    #[serde(rename = "playerScore")]
+    player_score: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -514,12 +517,12 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
             .unwrap();
 
         let p1_banner = create_name_banner(
-            &battle.player_one.player_name,
+            format!("{} - {}", battle.player_one.player_score, battle.player_one.player_name).as_str(),
             img1.width(),
             Rgba([0, 0, 0, 0]),
         );
         let p2_banner = create_name_banner(
-            &battle.player_two.player_name,
+            format!("{} - {}", battle.player_two.player_name, battle.player_two.player_score).as_str(),
             img2.width(),
             Rgba([0, 0, 0, 0]),
         );
@@ -714,7 +717,7 @@ fn create_name_banner(text: &str, width: u32, color: Rgba<u8>) -> RgbaImage {
     let font = FontArc::try_from_vec(FONT_BYTES.to_vec()).expect("Police invalide");
 
     let scale = PxScale::from(26.0);
-    let text_width = (text.len() as u32 * 14).min(width);
+    let text_width = (text.len() as u32 * 8).min(width);
     let x = ((width - text_width).max(0)) as i32 / 2;
     let y = 8;
 
