@@ -393,9 +393,6 @@ pub fn create_player_embed(
         .field("Matches Played", details.season_count.unwrap_or(0).to_string(), true)
         .field("✨ LD Monsters (RTA only)", ld_display, false)
         .field("🔥 Most Used Units Winrate", top_display, false)
-        .footer(CreateEmbedFooter::new(
-            "Please use /send_suggestion to report any issue.",
-        ))
         .image(
             if has_image {
                 "attachment://replay.png"
@@ -403,6 +400,9 @@ pub fn create_player_embed(
                 "https://cdn.discordapp.com/emojis/1358029412716515418.gif?size=128"
             }
         )
+        .footer(CreateEmbedFooter::new(
+            "Please use /send_suggestion to report any issue.",
+        ))
 }
 
 pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {

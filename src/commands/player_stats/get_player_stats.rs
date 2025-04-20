@@ -94,14 +94,6 @@ pub async fn get_player_stats(
             )
             .await?;
 
-        // send the image in a separate message
-        // ctx.send(CreateReply {
-        //     content: Some("Recent replays:".to_string()),
-        //     attachments: vec![attachment],
-        //     ..Default::default()
-        // })
-        // .await?;
-
         send_log(
             &ctx,
             "Command: /get_player_stats".to_string(),
@@ -173,9 +165,6 @@ pub async fn get_player_stats(
                 ))
             })?;
 
-        let updated_embed =
-            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
-
         let replay_image_path = create_replay_image(recent_replays)
             .await
             .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
@@ -183,24 +172,21 @@ pub async fn get_player_stats(
         // Create attachment for the replay image
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
+        let updated_embed =
+            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
+
         // Edit the message to include loaded data
         reply_handle
             .edit(
                 poise::Context::Application(ctx),
                 CreateReply {
                     embeds: vec![updated_embed],
+                    attachments: vec![attachment],
                     ..Default::default()
                 },
             )
             .await?;
 
-        // send the image in a separate message
-        ctx.send(CreateReply {
-            content: Some("Recent replays:".to_string()),
-            attachments: vec![attachment],
-            ..Default::default()
-        })
-        .await?;
         send_log(
             &ctx,
             "Command: /get_player_stats".to_string(),
@@ -328,9 +314,6 @@ pub async fn get_player_stats(
                 ))
             })?;
 
-        let updated_embed =
-            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
-
         let replay_image_path = create_replay_image(recent_replays)
             .await
             .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
@@ -338,22 +321,18 @@ pub async fn get_player_stats(
         // Create attachment for the replay image
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
+        let updated_embed =
+            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
+
         msg.edit(
             poise::Context::Application(ctx),
             CreateReply {
                 content: Some("".to_string()),
                 embeds: vec![updated_embed],
+                attachments: vec![attachment],
                 ..Default::default()
             },
         )
-        .await?;
-
-        // send the image in a separate message
-        ctx.send(CreateReply {
-            content: Some("Recent replays:".to_string()),
-            attachments: vec![attachment],
-            ..Default::default()
-        })
         .await?;
 
         send_log(
