@@ -425,7 +425,7 @@ pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Repl
         "swrtPlayerId": player_id.to_string(),
         "result": 2,
         "pageNum": 1,
-        "pageSize": 3,
+        "pageSize": 6,
     });
 
     let res = client
@@ -525,12 +525,20 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
             .unwrap();
 
         let p1_banner = create_name_banner(
-            format!("{} - {}", battle.player_one.player_score, battle.player_one.player_name).as_str(),
+            format!(
+                "{} - {}",
+                battle.player_one.player_score, battle.player_one.player_name
+            )
+            .as_str(),
             img1.width(),
             Rgba([0, 0, 0, 0]),
         );
         let p2_banner = create_name_banner(
-            format!("{} - {}", battle.player_two.player_name, battle.player_two.player_score).as_str(),
+            format!(
+                "{} - {}",
+                battle.player_two.player_name, battle.player_two.player_score
+            )
+            .as_str(),
             img2.width(),
             Rgba([0, 0, 0, 0]),
         );
@@ -574,20 +582,27 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
         sections.push(section);
     }
 
-    // Créer l'image finale verticale avec un padding entre chaque section
-    let padding_between_sections = 10;
-    let total_height: u32 = sections
-        .iter()
-        .map(|img| img.height() + padding_between_sections)
-        .sum::<u32>()
-        - padding_between_sections;
+    // Créer l'image finale 2 colonnes × 3 lignes
+    let columns = 2;
+    let rows = 3;
+    let padding = 10;
 
-    let mut output = ImageBuffer::new(max_width, total_height);
+    let section_width = sections.first().map(|img| img.width()).unwrap_or(0);
+    let section_height = sections.first().map(|img| img.height()).unwrap_or(0);
 
-    let mut y_offset = 0;
-    for section in sections {
-        output.copy_from(&section, 0, y_offset).unwrap();
-        y_offset += section.height() + padding_between_sections;
+    let full_width = columns * section_width + (columns - 1) * padding;
+    let full_height = rows * section_height + (rows - 1) * padding;
+
+    let mut final_image = ImageBuffer::new(full_width, full_height);
+
+    for (i, section) in sections.iter().enumerate() {
+        let col = (i % columns as usize) as u32;
+        let row = (i / columns as usize) as u32;
+
+        let x = col * (section_width + padding);
+        let y = row * (section_height + padding);
+
+        final_image.copy_from(section, x, y)?;
     }
 
     // Enregistrer l'image finale
@@ -596,7 +611,7 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
     let output_path_clone = output_path.clone();
     tokio::task::spawn_blocking(move || {
         std::fs::create_dir_all("/tmp")?;
-        output.save(&output_path_clone)?;
+        final_image.save(&output_path_clone)?;
         Ok::<_, anyhow::Error>(output_path_clone)
     })
     .await??;

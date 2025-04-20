@@ -2,3 +2,4 @@
 .shuttle*
 Secrets*.toml
 /test
+replay.png
