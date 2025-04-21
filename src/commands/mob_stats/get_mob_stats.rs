@@ -18,7 +18,7 @@ use crate::{
     PUNISHER_EMOJI_ID,
 };
 
-/// 📊 Displays the monster stats from SWRT
+/// 📂 Displays the monster stats from SWRT
 #[poise::command(slash_command)]
 pub async fn get_mob_stats(
     ctx: poise::ApplicationContext<'_, Data, Error>,
