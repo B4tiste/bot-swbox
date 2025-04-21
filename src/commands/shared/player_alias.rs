@@ -74,12 +74,6 @@ lazy_static! {
                 "swrt_id": 11401858
             },
             {
-                "og_name": "TamLego",
-                "en_names": ["wardone"],
-                "swarena_id": 1046014,
-                "swrt_id": 10305
-            },
-            {
                 "og_name": "ᴅᴀᴍ~",
                 "en_names": ["Le débilos"],
                 "swarena_id": 2419842,
