@@ -61,7 +61,7 @@ pub async fn get_mob_stats(
         }
     };
 
-    let (season, version) = match get_swrt_settings(&token).await {
+    let season = match get_swrt_settings(&token).await {
         Ok(data) => data,
         Err(e) => {
             let reply = ctx.send(create_embed_error(&e)).await?;
@@ -73,7 +73,7 @@ pub async fn get_mob_stats(
 
     let mut current_level = 1;
 
-    let stats = get_monster_stats_swrt(monster_info.id, season, &version, &token, current_level)
+    let stats = get_monster_stats_swrt(monster_info.id, season, &token, current_level)
         .await
         .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
@@ -117,7 +117,7 @@ pub async fn get_mob_stats(
     let channel_id = ctx.channel_id();
 
     let (high_matchups, low_matchups) =
-        get_monster_matchups_swrt(monster_info.id, season, &version, current_level, &token)
+        get_monster_matchups_swrt(monster_info.id, season, current_level, &token)
             .await
             .unwrap_or((vec![], vec![]));
 
@@ -207,7 +207,7 @@ pub async fn get_mob_stats(
             .await?;
 
         let new_stats =
-            match get_monster_stats_swrt(monster_info.id, season, &version, &token, current_level)
+            match get_monster_stats_swrt(monster_info.id, season, &token, current_level)
                 .await
             {
                 Ok(data) => data,
@@ -226,7 +226,7 @@ pub async fn get_mob_stats(
             };
 
         let (high_matchups, low_matchups) =
-            get_monster_matchups_swrt(monster_info.id, season, &version, current_level, &token)
+            get_monster_matchups_swrt(monster_info.id, season, current_level, &token)
                 .await
                 .unwrap_or((vec![], vec![]));
 

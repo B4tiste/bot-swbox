@@ -6,15 +6,14 @@ use reqwest::Client;
 pub async fn get_monster_stats_swrt(
     monster_id: i32,
     season: i64,
-    version: &str,
     token: &str,
     level: i32,
 ) -> Result<MonsterRtaInfoData, String> {
     let monster_id = remap_monster_id(monster_id); // 🔄 Apply remap here
 
     let url = format!(
-        "https://m.swranking.com/api/monster/statistical?season={}&version={}&monsterId={}&level={}&real=0",
-        season, version, monster_id, level
+        "https://m.swranking.com/api/monster/statistical?season={}&version=&monsterId={}&level={}&real=0",
+        season, monster_id, level
     );
 
     let client = Client::new();
@@ -56,7 +55,7 @@ pub async fn get_monster_stats_swrt(
     Err("No data returned from SWRT API".to_string())
 }
 
-pub async fn get_swrt_settings(token: &str) -> Result<(i64, String), String> {
+pub async fn get_swrt_settings(token: &str) -> Result<i64, String> {
     let url = "https://m.swranking.com/api/setting/settingMap";
 
     let client = Client::new();
@@ -78,31 +77,25 @@ pub async fn get_swrt_settings(token: &str) -> Result<(i64, String), String> {
         .as_str()
         .ok_or("Missing nowSeason".to_string())?;
 
-    let version = json["data"]["nowVersion"]
-        .as_str()
-        .ok_or("Missing nowVersion".to_string())?
-        .to_string();
-
     let season = season_str
         .trim_start_matches('S')
         .parse::<i64>()
         .map_err(|_| "Invalid season format".to_string())?;
 
-    Ok((season, version))
+    Ok(season)
 }
 
 pub async fn get_monster_matchups_swrt(
     monster_id: i32,
     season: i64,
-    version: &str,
     level: i32,
     token: &str,
 ) -> Result<(Vec<MonsterMatchup>, Vec<MonsterMatchup>), String> {
     let monster_id = remap_monster_id(monster_id); // 🔄 Applique le mapping ici aussi
 
     let url = format!(
-        "https://m.swranking.com/api/monster/highdata?pageNum=1&pageSize=10&monsterId={}&season={}&version={}&level={}&factor=0.01&real=0",
-        monster_id, season, version, level
+        "https://m.swranking.com/api/monster/highdata?pageNum=1&pageSize=10&monsterId={}&season={}&version=&level={}&factor=0.01&real=0",
+        monster_id, season, level
     );
 
     let client = Client::new();
