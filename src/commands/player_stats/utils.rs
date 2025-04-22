@@ -397,7 +397,7 @@ pub fn create_player_embed(
             if has_image {
                 "attachment://replay.png"
             } else {
-                "https://cdn.discordapp.com/emojis/1358029412716515418.gif?size=128"
+                "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzU5dGF6OXEzNGR4YzByc3BldmJuaGo1bGV0bnN2cHFjbXRyZGxxMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/feN0YJbVs0fwA/giphy.gif"
             }
         )
         .footer(CreateEmbedFooter::new(
