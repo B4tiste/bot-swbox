@@ -31,6 +31,7 @@ lazy_static! {
 
     static ref ALIAS_DATA: serde_json::Value = json!({
         "players": [
+            // Gros joueurs
             {
                 "og_name": "沙比版本策划",
                 "en_names": ["kelianbao", "kelian bao"],
@@ -61,6 +62,7 @@ lazy_static! {
                 "swarena_id": 1176597,
                 "swrt_id": 11026
             },
+            // Custom
             {
                 "og_name": "Salvandar~",
                 "en_names": ["salvodar"],
@@ -78,6 +80,12 @@ lazy_static! {
                 "en_names": ["Le débilos"],
                 "swarena_id": 2419842,
                 "swrt_id": 17817
+            },
+            {
+                "og_name": "ҜΞИZФ™",
+                "en_names": ["yaz le fou"],
+                "swarena_id": 155825,
+                "swrt_id": 1353033
             }
         ]
     });
