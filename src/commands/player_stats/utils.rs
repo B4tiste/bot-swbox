@@ -155,6 +155,17 @@ struct ReplayMonster {
     monster_id: u32,
 }
 
+#[derive(Debug, Deserialize)]
+struct EstimationResponse {
+    data: EstimationData,
+}
+
+#[derive(Debug, Deserialize)]
+struct EstimationData {
+    one_win_rate: f32,
+    two_win_rate: f32,
+}
+
 pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetail> {
     let url = format!(
         "https://m.swranking.com/api/player/detail?swrtPlayerId={}",
@@ -450,7 +461,7 @@ pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Repl
     Ok(json.data.page.list)
 }
 
-pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf> {
+pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str) -> Result<PathBuf> {
     let base_url = "https://swarfarm.com/static/herders/images/monsters/";
 
     let nb_battles = recent_replays.len();
@@ -524,19 +535,31 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>) -> Result<PathBuf>
             .copy_from(&img2, img1.width() + spacing, 0)
             .unwrap();
 
+        let (wr_one, wr_two) = get_replay_estimation(
+            token,
+            &monster_ids_one,
+            &monster_ids_two,
+            battle.player_one.leader_monster_id,
+            battle.player_two.leader_monster_id,
+            battle.player_one.ban_monster_id,
+            battle.player_two.ban_monster_id,
+            if is_p1_first_pick { 1 } else { 2 },
+        ).await.unwrap_or((0.0, 0.0));
+
         let p1_banner = create_name_banner(
             format!(
-                "{} - {}",
-                battle.player_one.player_score, battle.player_one.player_name
+                "{} - {} - {:.0}%",
+                battle.player_one.player_score, battle.player_one.player_name, wr_one*100.0
             )
             .as_str(),
             img1.width(),
             Rgba([0, 0, 0, 0]),
         );
+
         let p2_banner = create_name_banner(
             format!(
-                "{} - {}",
-                battle.player_two.player_name, battle.player_two.player_score
+                "{:.0}% - {} - {}",
+                wr_two*100.0, battle.player_two.player_name, battle.player_two.player_score
             )
             .as_str(),
             img2.width(),
@@ -772,4 +795,44 @@ fn draw_bold_text_mut(
     for (dx, dy) in offsets.iter() {
         draw_text_mut(image, color, x + dx, y + dy, scale, font, text);
     }
+}
+
+/// Appelle l'API de prédiction et retourne les estimations de winrate (one, two)
+pub async fn get_replay_estimation(
+    token: &str,
+    player_one_units: &[u32],
+    player_two_units: &[u32],
+    leader_one: u32,
+    leader_two: u32,
+    ban_one: u32,
+    ban_two: u32,
+    first_pick: u8, // 1 or 2
+) -> Result<(f32, f32)> {
+    let url = "https://m.swranking.com/api/ai/calcGameResult";
+    let client = reqwest::Client::new();
+
+    let json_body = serde_json::json!({
+        "player_one_units": player_one_units.iter().map(|id| id.to_string()).collect::<Vec<_>>().join(","),
+        "player_two_units": player_two_units.iter().map(|id| id.to_string()).collect::<Vec<_>>().join(","),
+        "leader_one_unit": leader_one,
+        "leader_two_unit": leader_two,
+        "ban_one_unit": ban_one,
+        "ban_two_unit": ban_two,
+        "first_pick": first_pick,
+    });
+
+    let res = client
+        .post(url)
+        .json(&json_body)
+        .header("Authentication", token)
+        .header("Content-Type", "application/json")
+        .send()
+        .await?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("API returned error status: {}", res.status()));
+    }
+
+    let resp: EstimationResponse = res.json().await?;
+    Ok((resp.data.one_win_rate, resp.data.two_win_rate))
 }
