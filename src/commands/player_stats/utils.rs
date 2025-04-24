@@ -363,7 +363,7 @@ pub fn create_player_embed(
     ld_emojis: Vec<String>,
     top_monsters: Vec<String>,
     rank_emojis: String,
-    has_image: bool,
+    has_image: i32,
 ) -> CreateEmbed {
     let format_emojis = |mut list: Vec<String>| {
         let mut result = list.join(" ");
@@ -405,10 +405,13 @@ pub fn create_player_embed(
         .field("✨ LD Monsters (RTA only)", ld_display, false)
         .field("🔥 Most Used Units Winrate", top_display, false)
         .image(
-            if has_image {
+            if has_image == 1 {
                 "attachment://replay.png"
-            } else {
+            } else if has_image  == 0 {
                 "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzU5dGF6OXEzNGR4YzByc3BldmJuaGo1bGV0bnN2cHFjbXRyZGxxMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/feN0YJbVs0fwA/giphy.gif"
+            }
+            else {
+                ""
             }
         )
         .footer(CreateEmbedFooter::new(

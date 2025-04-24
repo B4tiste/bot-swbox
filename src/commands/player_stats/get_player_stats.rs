@@ -53,7 +53,7 @@ pub async fn get_player_stats(
             vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
             vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
             rank_emojis.clone(),
-            false,
+            0,
         );
 
         let reply_handle = ctx
@@ -80,7 +80,7 @@ pub async fn get_player_stats(
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
         let updated_embed =
-            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
+            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
 
         // Edit the message to include loaded data
         reply_handle
@@ -144,7 +144,7 @@ pub async fn get_player_stats(
             vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
             vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
             rank_emojis.clone(),
-            false,
+            0,
         );
 
         let reply_handle = ctx
@@ -173,7 +173,7 @@ pub async fn get_player_stats(
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
         let updated_embed =
-            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
+            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
 
         // Edit the message to include loaded data
         reply_handle
@@ -289,7 +289,7 @@ pub async fn get_player_stats(
             vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
             vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
             rank_emojis.clone(),
-            false,
+            0,
         );
 
         msg.edit(
@@ -322,7 +322,7 @@ pub async fn get_player_stats(
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
         let updated_embed =
-            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, true);
+            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
 
         msg.edit(
             poise::Context::Application(ctx),

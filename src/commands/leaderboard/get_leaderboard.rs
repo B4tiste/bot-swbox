@@ -124,7 +124,7 @@ pub async fn get_rta_leaderboard(
                                 ld_emojis,
                                 top_monsters,
                                 rank_emojis.clone(),
-                                false
+                                2
                             );
 
                             followup
