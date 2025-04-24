@@ -737,7 +737,7 @@ async fn load_image_local(
         return Ok(img.clone());
     }
 
-    let path = format!("src/commands/shared/monster_images/{}", filename);
+    let path = format!("monster_images/{}", filename);
 
     let img = tokio::task::spawn_blocking(move || -> Result<DynamicImage> {
         let data = std::fs::read(&path)?;

@@ -1,0 +1,4 @@
+[build]
+include = [
+    "assets/*"  # Include all files and subdirs in the folder
+]
