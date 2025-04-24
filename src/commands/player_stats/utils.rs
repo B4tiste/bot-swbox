@@ -465,8 +465,6 @@ pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Repl
 }
 
 pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str) -> Result<PathBuf> {
-    let base_url = "https://swarfarm.com/static/herders/images/monsters/";
-
     let nb_battles = recent_replays.len();
 
     let mut sections: Vec<RgbaImage> = Vec::new();
@@ -481,14 +479,14 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str) -> Re
             .player_one
             .monster_info_list
             .iter()
-            .map(|m| format!("{}{}", base_url, m.image_filename))
+            .map(|m| m.image_filename.clone())
             .collect();
 
         let urls_player_two: Vec<String> = battle
             .player_two
             .monster_info_list
             .iter()
-            .map(|m| format!("{}{}", base_url, m.image_filename))
+            .map(|m| m.image_filename.clone())
             .collect();
 
         let monster_ids_one: Vec<u32> = battle
@@ -547,12 +545,16 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str) -> Re
             battle.player_one.ban_monster_id,
             battle.player_two.ban_monster_id,
             if is_p1_first_pick { 1 } else { 2 },
-        ).await.unwrap_or((0.0, 0.0));
+        )
+        .await
+        .unwrap_or((0.0, 0.0));
 
         let p1_banner = create_name_banner(
             format!(
                 "{} - {} - {:.0}%",
-                battle.player_one.player_score, battle.player_one.player_name, wr_one*100.0
+                battle.player_one.player_score,
+                battle.player_one.player_name,
+                wr_one * 100.0
             )
             .as_str(),
             img1.width(),
@@ -562,7 +564,9 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str) -> Re
         let p2_banner = create_name_banner(
             format!(
                 "{:.0}% - {} - {}",
-                wr_two*100.0, battle.player_two.player_name, battle.player_two.player_score
+                wr_two * 100.0,
+                battle.player_two.player_name,
+                battle.player_two.player_score
             )
             .as_str(),
             img2.width(),
@@ -646,7 +650,7 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str) -> Re
 }
 
 async fn create_team_collage_custom_layout(
-    image_urls: &[String],
+    image_filenames: &[String], // <- renommé pour plus de clarté
     monster_ids: &[u32],
     ban_id: u32,
     leader_id: u32,
@@ -654,53 +658,40 @@ async fn create_team_collage_custom_layout(
     cache: &mut HashMap<String, DynamicImage>,
 ) -> Result<RgbaImage> {
     let mut images = Vec::new();
-    for url in image_urls {
-        let img = download_image_cached(url, cache).await?; // <-- await ici
+    for filename in image_filenames {
+        let img = load_image_local(filename, cache).await?; // <-- on charge en local maintenant
         images.push(img);
     }
 
     let width = images[0].width();
     let height = images[0].height();
-
-    // Taille de l’image finale : 4 colonnes pour accueillir le monstre décalé
     let mut collage = ImageBuffer::new(width * 3, height * 2);
 
-    // Embedding image data directly
     const CROSS_BYTES: &[u8] = include_bytes!("cross.png");
     let cross = image::load_from_memory(CROSS_BYTES)
         .expect("Erreur lors du chargement de cross.png")
         .resize_exact(width, height, image::imageops::FilterType::Lanczos3)
         .to_rgba8();
 
-    // Séparer les monstres
-    let mut grid_slots = vec![(0, 0); 5]; // (x,y) pour chaque monstre
+    let mut grid_slots = vec![(0, 0); 5];
 
     if first_pick {
-        // First pick layout
-        // M2 M4
-        // M3 M5
-        // M1 → à gauche, centré verticalement
-        grid_slots[1] = (1, 0); // M2
-        grid_slots[2] = (1, 1); // M3
-        grid_slots[3] = (2, 0); // M4
-        grid_slots[4] = (2, 1); // M5
-        grid_slots[0] = (0, 1); // M1 (sera décalé manuellement verticalement ensuite)
+        grid_slots[1] = (1, 0);
+        grid_slots[2] = (1, 1);
+        grid_slots[3] = (2, 0);
+        grid_slots[4] = (2, 1);
+        grid_slots[0] = (0, 1);
     } else {
-        // Non first pick layout
-        // M1 M3
-        // M2 M4
-        // M5 → à droite, centré verticalement
-        grid_slots[0] = (0, 0); // M1
-        grid_slots[1] = (0, 1); // M2
-        grid_slots[2] = (1, 0); // M3
-        grid_slots[3] = (1, 1); // M4
-        grid_slots[4] = (2, 1); // M5 (sera décalé verticalement ensuite)
+        grid_slots[0] = (0, 0);
+        grid_slots[1] = (0, 1);
+        grid_slots[2] = (1, 0);
+        grid_slots[3] = (1, 1);
+        grid_slots[4] = (2, 1);
     }
 
     for (i, (img, &monster_id)) in images.iter().zip(monster_ids).enumerate() {
         let mut rgba = img.to_rgba8();
 
-        // ⭐ Leader encadré vert
         if monster_id == leader_id {
             let border_color = Rgba([255, 215, 0, 255]);
             let thickness = 5;
@@ -718,20 +709,15 @@ async fn create_team_collage_custom_layout(
             }
         }
 
-        // ❌ Banni avec croix
         if monster_id == ban_id {
             image::imageops::overlay(&mut rgba, &cross, 0, 0);
         }
 
-        // 📌 Placement selon grille
         let (grid_x, grid_y) = grid_slots[i];
         let x = grid_x as u32 * width;
-
         let y = if first_pick && i == 0 {
-            // M1 décalé verticalement (first pick)
             ((height * 2) as f32 / 2.0 - (height as f32 / 2.0)).round() as u32
         } else if !first_pick && i == 4 {
-            // M5 décalé verticalement (last pick)
             ((height * 2) as f32 / 2.0 - (height as f32 / 2.0)).round() as u32
         } else {
             grid_y as u32 * height
@@ -740,21 +726,26 @@ async fn create_team_collage_custom_layout(
         collage.copy_from(&rgba, x, y).unwrap();
     }
 
-    // retourner l'image finale
     Ok(collage)
 }
 
-async fn download_image_cached(
-    url: &str,
+async fn load_image_local(
+    filename: &str,
     cache: &mut HashMap<String, DynamicImage>,
 ) -> Result<DynamicImage> {
-    if let Some(img) = cache.get(url) {
+    if let Some(img) = cache.get(filename) {
         return Ok(img.clone());
     }
 
-    let bytes = reqwest::get(url).await?.bytes().await?;
-    let img = image::load_from_memory(&bytes)?;
-    cache.insert(url.to_string(), img.clone());
+    let path = format!("src/commands/shared/monster_images/{}", filename);
+
+    let img = tokio::task::spawn_blocking(move || -> Result<DynamicImage> {
+        let data = std::fs::read(&path)?;
+        Ok(image::load_from_memory(&data)?)
+    })
+    .await??;
+
+    cache.insert(filename.to_string(), img.clone());
     Ok(img)
 }
 
