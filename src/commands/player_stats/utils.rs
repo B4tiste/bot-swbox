@@ -2,7 +2,7 @@ use crate::commands::ranks::utils::get_rank_info;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
 use crate::MONGO_URI;
 use ab_glyph::{FontArc, PxScale};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result, Context};
 use image::GenericImage;
 use image::{DynamicImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::drawing::draw_text_mut;
