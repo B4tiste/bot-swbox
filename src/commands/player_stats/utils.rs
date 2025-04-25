@@ -2,7 +2,7 @@ use crate::commands::ranks::utils::get_rank_info;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
 use crate::MONGO_URI;
 use ab_glyph::{FontArc, PxScale};
-use anyhow::{anyhow, Result, Context};
+use anyhow::{anyhow, Context, Result};
 use image::GenericImage;
 use image::{DynamicImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::drawing::draw_text_mut;
@@ -740,14 +740,51 @@ async fn load_image_local(
     let path = format!("assets/monster_images/{}", filename);
     let filename_string = filename.to_string();
 
-    let img = tokio::task::spawn_blocking(move || -> Result<DynamicImage> {
+    let img: DynamicImage;
+
+    // Essayez de lire localement
+    let local_result = tokio::task::spawn_blocking(move || -> Result<DynamicImage> {
         let data = std::fs::read(&path)
             .with_context(|| format!("Failed to read image file: {}", filename_string))?;
         Ok(image::load_from_memory(&data)
             .with_context(|| format!("Failed to decode image: {}", filename_string))?)
     })
-    .await?
-    .with_context(|| format!("Blocking task panicked or failed for file: {}", filename))?;
+    .await;
+
+    match local_result {
+        Ok(Ok(image)) => {
+            img = image;
+        }
+        // Si le fichier n'est pas trouvé, on télécharge sans le sauvegarder
+        Ok(Err(e))
+            if e.downcast_ref::<std::io::Error>().map(|io| io.kind())
+                == Some(std::io::ErrorKind::NotFound) =>
+        {
+            let url = format!(
+                "https://swarfarm.com/static/herders/images/monsters/{}",
+                filename
+            );
+            let bytes = reqwest::get(&url)
+                .await
+                .with_context(|| format!("Failed to download image from: {}", url))?
+                .bytes()
+                .await
+                .with_context(|| {
+                    format!("Failed to read downloaded bytes for file: {}", filename)
+                })?;
+
+            img = image::load_from_memory(&bytes)
+                .with_context(|| format!("Failed to decode downloaded image: {}", filename))?;
+        }
+        Ok(Err(e)) => return Err(e),
+        Err(e) => {
+            return Err(anyhow::anyhow!(
+                "Blocking task failed for file: {}: {}",
+                filename,
+                e
+            ))
+        }
+    }
 
     cache.insert(filename.to_string(), img.clone());
     Ok(img)
