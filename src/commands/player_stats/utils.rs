@@ -738,12 +738,16 @@ async fn load_image_local(
     }
 
     let path = format!("assets/monster_images/{}", filename);
+    let filename_string = filename.to_string();
 
     let img = tokio::task::spawn_blocking(move || -> Result<DynamicImage> {
-        let data = std::fs::read(&path)?;
-        Ok(image::load_from_memory(&data)?)
+        let data = std::fs::read(&path)
+            .with_context(|| format!("Failed to read image file: {}", filename_string))?;
+        Ok(image::load_from_memory(&data)
+            .with_context(|| format!("Failed to decode image: {}", filename_string))?)
     })
-    .await??;
+    .await?
+    .with_context(|| format!("Blocking task panicked or failed for file: {}", filename))?;
 
     cache.insert(filename.to_string(), img.clone());
     Ok(img)
