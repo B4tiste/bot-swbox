@@ -24,12 +24,12 @@ pub async fn get_monster_stats_swrt(
         .header("User-Agent", "Mozilla/5.0")
         .send()
         .await
-        .map_err(|_| "Failed to send request to SWRT".to_string())?;
+        .map_err(|_| "Failed to send request".to_string())?;
 
     let body = response
         .json::<serde_json::Value>()
         .await
-        .map_err(|_| "Failed to parse SWRT JSON".to_string())?;
+        .map_err(|_| "Failed to parse JSON".to_string())?;
 
     if body["retCode"] == 0
         && body["data"]["list"].is_array()
@@ -66,12 +66,12 @@ pub async fn get_swrt_settings(token: &str) -> Result<i64, String> {
         .header("User-Agent", "Mozilla/5.0")
         .send()
         .await
-        .map_err(|_| "Failed to contact SWRT for settings".to_string())?;
+        .map_err(|_| "Failed get settings".to_string())?;
 
     let json = response
         .json::<serde_json::Value>()
         .await
-        .map_err(|_| "Failed to parse SWRT settings JSON".to_string())?;
+        .map_err(|_| "Failed to parse settings JSON".to_string())?;
 
     let season_str = json["data"]["nowSeason"]
         .as_str()
