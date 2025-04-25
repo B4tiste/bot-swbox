@@ -52,7 +52,7 @@ pub async fn get_monster_stats_swrt(
         });
     }
 
-    Err("No data returned from SWRT API".to_string())
+    Err("No data returned from API".to_string())
 }
 
 pub async fn get_swrt_settings(token: &str) -> Result<i64, String> {
