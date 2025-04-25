@@ -400,7 +400,7 @@ pub fn create_player_embed(
         .field("WinRate", format!("{:.1} %", details.win_rate.unwrap_or(0.0) * 100.0), true)
         .field("Elo", details.player_score.unwrap_or(0).to_string(), true)
         .field("Rank", details.player_rank.unwrap_or(0).to_string(), true)
-        .field("🏆 Estimation", rank_emojis, true)
+        .field("🏆 Approx. Rank", rank_emojis, true)
         .field("Matches Played", details.season_count.unwrap_or(0).to_string(), true)
         .field("✨ LD Monsters (RTA only)", ld_display, false)
         .field("🔥 Most Used Units Winrate", top_display, false)
