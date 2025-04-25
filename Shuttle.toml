@@ -1,4 +1,4 @@
 [build]
-include = [
-    "assets/*"  # Include all files and subdirs in the folder
+assets = [
+    "assets/*"  # This copies the assets to the runtime image
 ]
