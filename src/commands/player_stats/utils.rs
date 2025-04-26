@@ -8,6 +8,7 @@ use image::{DynamicImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::drawing::draw_text_mut;
 use mongodb::{bson::doc, Client, Collection};
 use poise::serenity_prelude as serenity;
+use rand::seq::IndexedRandom;
 use serde::Deserialize;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use std::collections::HashMap;
@@ -384,6 +385,18 @@ pub fn create_player_embed(
     let ld_display = format_emojis(ld_emojis.clone());
     let top_display = format_emojis(top_monsters);
 
+    // Créer une liste de gif qui seront choisis aléatoirement pour l'image de fond
+    let gifs = vec![
+        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif",
+        "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeXRmY2locjR2cnJ5d2JvdWF5djN5cTRlajdna3JxeTA4d2RsdzVxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rGDZbxkkjo0hfLe4EA/giphy.gif",
+        "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExY213eXU5M2N0NWxuNWJ0OXB5MW93aDltNWJ5aGx0bHh2bnpzbzNvNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VX7yEoXAFf8as/giphy.gif",
+        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmV6YWN2bjFzeGJkOHB4anh5ZmMxNTZvd3Fuajh4czZybnM3aDlzNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9FW60Vv9QzWRh1OpvP/giphy.gif",
+        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTRsODVtNThvbTl2bW50NnhzYjB5MWN3aHF5dW40NTIwMmpoaGk0ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WiIuC6fAOoXD2/giphy.gif",
+        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHFreWtobWUwdmx4MGlpYXZvZjVubDd4ejBuOTcweTh1d3IyaGtzeiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KDZdynDNJUrrp7EjTM/giphy.gif"
+    ];
+
+    let random_gif = gifs.choose(&mut rand::rng()).unwrap_or(&gifs[0]);
+
     CreateEmbed::default()
         .title(format!(
             ":flag_{}: {}{} RTA Statistics (Regular Season only)",
@@ -408,7 +421,7 @@ pub fn create_player_embed(
             if has_image == 1 {
                 "attachment://replay.png"
             } else if has_image  == 0 {
-                "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExY213eXU5M2N0NWxuNWJ0OXB5MW93aDltNWJ5aGx0bHh2bnpzbzNvNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VX7yEoXAFf8as/giphy.gif"
+                random_gif
             }
             else {
                 ""
