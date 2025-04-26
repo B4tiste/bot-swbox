@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 anyhow = "1.0.98"
 poise = "0.6.1"
-shuttle-runtime = "0.53.0"
+shuttle-runtime = { version = "0.53.0", features = ["setup-otel-exporter"] }
 shuttle-serenity = "0.53.0"
 tokio = "1.44.2"
 log = "0.4.27"
