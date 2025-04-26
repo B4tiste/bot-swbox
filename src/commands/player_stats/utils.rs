@@ -408,7 +408,7 @@ pub fn create_player_embed(
             if has_image == 1 {
                 "attachment://replay.png"
             } else if has_image  == 0 {
-                "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzU5dGF6OXEzNGR4YzByc3BldmJuaGo1bGV0bnN2cHFjbXRyZGxxMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/feN0YJbVs0fwA/giphy.gif"
+                "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExY213eXU5M2N0NWxuNWJ0OXB5MW93aDltNWJ5aGx0bHh2bnpzbzNvNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VX7yEoXAFf8as/giphy.gif"
             }
             else {
                 ""
