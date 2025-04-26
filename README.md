@@ -199,8 +199,12 @@ If you wish to contribute to this project, please contact B4tiste on Discord (ta
 
 ---
 
-## Bot Images
+## Demo
 
-![alt text](Images/image.png)
+### 1. **/get_player_stats**
 
-### Written by B4tiste
+![player](Images/player.gif)
+
+### 2. **/get_mob_stats**
+
+![mob](Images/mob.gif)
