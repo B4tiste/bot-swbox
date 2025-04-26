@@ -316,7 +316,7 @@ pub async fn upload_json(
         )
         .field(
             "Leaderboard",
-            "You can check the leaderboard [here](https://leaderboard-bot-swbox.netlify.app/)",
+            "You can check the leaderboard [HERE](https://leaderboard-bot-swbox.netlify.app/)",
             false,
         )
         .color(0x00FF00)

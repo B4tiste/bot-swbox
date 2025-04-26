@@ -407,7 +407,7 @@ pub fn create_player_embed(
         ))
         .thumbnail(details.head_img.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
-        .description("⚠️ Stats are not 100% accurate ➡️ The very last battle is not included in the elo/rank, and people around 1300 elo will have weird stats (missing games, weird winrates) ⚠️")
+        .description("⚠️ Stats are not 100% accurate ➡️ The very last battle is not included in the elo/rank, and people under/around 1300 (C1) elo will have weird stats (missing games, weird winrates) ⚠️")
         .field("WinRate", format!("{:.1} %", details.win_rate.unwrap_or(0.0) * 100.0), true)
         .field("Elo", details.player_score.unwrap_or(0).to_string(), true)
         .field("Rank", details.player_rank.unwrap_or(0).to_string(), true)
