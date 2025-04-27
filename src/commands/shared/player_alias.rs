@@ -86,7 +86,13 @@ lazy_static! {
                 "en_names": ["yaz le fou"],
                 "swarena_id": 155825,
                 "swrt_id": 1353033
-            }
+            },
+{
+"og_names": "?",
+"en_names": ["compte tyteii"],
+"swarena_id": 935484,
+"swrt_id": 31998085,
+},
         ]
     });
 }
