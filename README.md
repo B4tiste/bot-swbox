@@ -23,8 +23,9 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ### ToDo:
 
--   [] Create the command that gives trio cores for a given JSON.
--   [] Disconnect from SWRT and use RedWest new API (FUTURE).
+-   [ ] Create the command that gives trio cores for a given JSON.
+-   [ ] Disconnect from SWRT and use RedWest new API (FUTURE).
+-   [ ] Find something that Unaxe can do so that he stops ouin-oui'ing.
 
 ### Completed:
 
