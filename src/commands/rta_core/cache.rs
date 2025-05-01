@@ -13,7 +13,7 @@ type DuoKey = (u32, i64, i32);
 static DUO_CACHE: Lazy<Cache<DuoKey, Result<Vec<MonsterDuoStat>, String>>> =
     Lazy::new(|| {
         Cache::builder()
-            .time_to_live(Duration::from_secs(24 * 3600))
+            .time_to_live(Duration::from_secs(96 * 3600))
             .max_capacity(10_000)
             .build()
     });
