@@ -17,6 +17,7 @@ use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::upload_json::upload_json::upload_json;
 use crate::commands::player_stats::get_player_stats::get_player_stats;
 use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
+use crate::commands::rta_core::get_rta_core::get_rta_core;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -155,6 +156,22 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         }
     });
 
+    // Télécharger le fichier "https://raw.githubusercontent.com/B4tiste/SWbox/refs/heads/master/src/data/monsters.json"
+    // et le stocker dans un fichier local
+    let monsters_url = "https://raw.githubusercontent.com/B4tiste/SWbox/refs/heads/master/src/data/monsters.json";
+    let monsters_response = reqwest::get(monsters_url)
+        .await
+        .context("Failed to download monsters.json")?;
+    let monsters_content = monsters_response
+        .text()
+        .await
+        .context("Failed to read monsters.json content")?;
+    let monsters_file_path = "monsters.json";
+    tokio::fs::write(monsters_file_path, &monsters_content)
+        .await
+        .context("Failed to write monsters.json to file")?;
+    println!("monsters.json downloaded and saved to {}", monsters_file_path);
+
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![
@@ -167,6 +184,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 upload_json(),
                 get_player_stats(),
                 get_rta_leaderboard(),
+                get_rta_core(),
             ],
             ..Default::default()
         })

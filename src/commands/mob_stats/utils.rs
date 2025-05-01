@@ -117,12 +117,12 @@ pub async fn get_monster_matchups_swrt(
         .await
         .map_err(|_| "DB error".to_string())?;
 
-    let high =
+    let high_team =
         extract_matchups_from_json(&json["data"]["highOneWithTwoList"], &collection, true).await;
-    let low =
+    let low_matchup =
         extract_matchups_from_json(&json["data"]["lowOneVsTwoList"], &collection, false).await;
 
-    Ok((high, low))
+    Ok((high_team, low_matchup))
 }
 
 pub async fn extract_matchups_from_json(
