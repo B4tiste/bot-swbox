@@ -54,6 +54,20 @@ pub struct MonsterStat {
     pub monster_id: u32,
     #[serde(rename = "monsterHeadImg")]
     pub monster_head_img: String,
+    #[serde(rename = "pickTotal")]
+    pub pick_total: u32,
+    #[serde(rename = "firstPickTotal")]
+    pub first_pick_total: u32,
+    #[serde(rename = "secondPickTotal")]
+    pub second_pick_total: u32,
+    #[serde(rename = "thirdPickTotal")]
+    pub third_pick_total: u32,
+    #[serde(rename = "fourthPickTotal")]
+    pub fourth_pick_total: u32,
+    #[serde(rename = "fifthPickTotal")]
+    pub fifth_pick_total: u32,
+    #[serde(rename = "lastPickTotal")]
+    pub last_pick_total: u32,
 }
 
 /// Représente une entrée de la réponse highdata (duo pour un monstre de base)

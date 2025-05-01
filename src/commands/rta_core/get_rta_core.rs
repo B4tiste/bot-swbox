@@ -100,6 +100,23 @@ pub async fn get_rta_core(
                 }
             };
 
+            let mut late_pick_ratio_map = HashMap::new();
+            for m in tierlist_data
+                .sss_monster
+                .iter()
+                .chain(&tierlist_data.ss_monster)
+                .chain(&tierlist_data.s_monster)
+                .chain(&tierlist_data.a_monster)
+            {
+                let total = m.pick_total as f32;
+                let late_sum = (m.third_pick_total
+                    + m.fourth_pick_total
+                    + m.fifth_pick_total
+                    + m.last_pick_total) as f32;
+                let ratio = if total > 0.0 { late_sum / total } else { 0.0 };
+                late_pick_ratio_map.insert(m.monster_id, ratio);
+            }
+
             // Filtrage des monstres
             let filtered_tierlist = filter_monster(&tierlist_data, &monsters);
 
@@ -180,6 +197,16 @@ pub async fn get_rta_core(
                             let picks = duo.pick_total;
                             // score de base
                             let mut score = rate * (1.0 + (picks as f32).ln());
+
+                            // on calcule le late-pick ratio max sur les 3 membres
+                            let max_late = [b, o, t]
+                                .iter()
+                                .map(|id| *late_pick_ratio_map.get(id).unwrap_or(&0.0))
+                                .fold(0.0_f32, f32::max);
+
+                            // penalty = 1 − late_ratio : si late_ratio=1.0, tout est supprimé
+                            let penalty = 1.0 - max_late;
+                            score *= penalty;
 
                             // Détection Light/Dark avec exclusions et boost variable
                             let excluded_ids: HashSet<u32> =
