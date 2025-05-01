@@ -47,8 +47,8 @@ pub fn get_monsters_from_json_bytes(
             }
             // règle par élément
             match m.element.as_str() {
-                "Fire" | "Water" | "Wind" => m.natural_stars == 5,
-                "Light" | "Dark" => m.natural_stars >= 4,
+                "Fire" | "Water" | "Wind" => m.natural_stars >= 3,
+                "Light" | "Dark" => m.natural_stars >= 3,
                 _ => false,
             }
         })
