@@ -167,15 +167,15 @@ pub async fn get_rta_core(
                 }
             }
 
-            // Tri et top 10
+            // Tri et top
             trios.sort_by(|a, b| b.weighted_score.partial_cmp(&a.weighted_score).unwrap());
-            let mut top10 = trios.into_iter().take(10).collect::<Vec<_>>();
+            let mut top = trios.into_iter().take(15).collect::<Vec<_>>();
 
             // Récupération des emojis
             let collection = get_mob_emoji_collection().await.map_err(|_| {
                 Error::from(std::io::Error::new(std::io::ErrorKind::Other, "DB error"))
             })?;
-            for t in &mut top10 {
+            for t in &mut top {
                 let emojis_string = format!(
                     "{} {} {}",
                     get_emoji_from_id(&collection, t.base)
@@ -193,15 +193,13 @@ pub async fn get_rta_core(
 
             // Affichage final unique
             let mut msg =
-                String::from("🎯 Top 10 Core trios that this account can play :\n");
-            if top10.is_empty() {
-                msg.push_str("– No trios found.\n");
+                String::from("🎯 15 Core trios that this account can play to reach the given rank :\n");
+            if top.is_empty() {
+                msg.push_str("– Aucun trio trouvé, voir les logs DEBUG pour plus de détails.\n");
             } else {
-                for (i, t) in top10.iter().enumerate() {
-                    // i va de 0 à 9, on ajoute 1 pour commencer à 1
+                for t in &top {
                     msg.push_str(&format!(
-                        "{}. {} → **{:.1} %** ({})\n",
-                        i + 1,
+                        "- {} → **{:.1} %** WR ({})\n",
                         t.emojis.clone().unwrap_or_default(),
                         t.win_rate * 100.0,
                         t.pick_total,
