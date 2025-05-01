@@ -38,3 +38,4 @@ pub enum Mode {
     Anonymized,
     NoSpeedDetailAndAnonymized,
 }
+
