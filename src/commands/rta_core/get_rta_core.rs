@@ -1,18 +1,20 @@
+use crate::commands::mob_stats::utils::get_swrt_settings;
+use crate::commands::player_stats::utils::get_mob_emoji_collection;
+use crate::commands::rta_core::models::MonstersFile;
+use crate::commands::rta_core::models::{Rank, Trio};
+use crate::commands::rta_core::utils::{
+    filter_monster, get_emoji_from_id, get_monster_duos, get_monsters_from_json_bytes,
+    get_tierlist_data,
+};
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
 use crate::commands::shared::logs::send_log;
 use crate::{Data, API_TOKEN};
 use poise::serenity_prelude::{Attachment, Error};
+use std::collections::HashMap;
 use std::collections::HashSet;
-
-use crate::commands::mob_stats::utils::get_swrt_settings;
-use crate::commands::player_stats::utils::get_mob_emoji_collection;
-use crate::commands::rta_core::models::{Rank, Trio};
-use crate::commands::rta_core::utils::{
-    filter_monster, get_emoji_from_id, get_monster_duos, get_monsters_from_json_bytes,
-    get_tierlist_data,
-};
+use std::fs;
 
 /// 📂 (BETA) Displays best Trios to play for any given account JSON
 #[poise::command(slash_command)]
@@ -63,6 +65,19 @@ pub async fn get_rta_core(
             return Ok(());
         }
     };
+
+    // 1️⃣ Charger le JSON statique "monsters.json" pour connaître l'élément de chaque monstre
+    let monsters_json_str =
+        fs::read_to_string("monsters.json").expect("Impossible de lire monsters.json");
+    let all_monsters_file: MonstersFile =
+        serde_json::from_str(&monsters_json_str).expect("Impossible de parser monsters.json");
+
+    // 2️⃣ Construire la table id → élément
+    let element_map: HashMap<u32, String> = all_monsters_file
+        .monsters
+        .into_iter()
+        .map(|m| (m.com2us_id, m.element))
+        .collect();
 
     // Extraction des monsters
     match get_monsters_from_json_bytes(&bytes, "monsters.json") {
@@ -150,7 +165,20 @@ pub async fn get_rta_core(
                         // sinon on calcule score et on push
                         if let Ok(rate) = duo.win_rate.parse::<f32>() {
                             let picks = duo.pick_total;
-                            let score = rate * (1.0 + (picks as f32).ln());
+                            // score de base
+                            let mut score = rate * (1.0 + (picks as f32).ln());
+
+                            // 3️⃣ Détection Light/Dark
+                            let has_light_dark = [b, o, t].iter().any(|id| {
+                                matches!(
+                                    element_map.get(id).map(String::as_str),
+                                    Some("Light") | Some("Dark")
+                                )
+                            });
+                            if has_light_dark {
+                                // appliquer un boost (ici 20%)
+                                score *= 1.2;
+                            }
                             trios.push(Trio {
                                 base: b,
                                 one: o,
