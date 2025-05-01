@@ -149,13 +149,19 @@ pub async fn get_emoji_from_id(
     collection: &Collection<mongodb::bson::Document>,
     monster_id: u32,
 ) -> Option<String> {
+    // println!("Searching for emoji with monster_id: {}", monster_id);
+
     let emoji_doc = collection
         .find_one(doc! { "com2us_id": monster_id })
         .await
         .ok()??;
 
+    // println!("Found emoji document: {:?}", emoji_doc);
+
     let emoji_id = emoji_doc.get_str("id").ok()?;
     let emoji_name = emoji_doc.get_str("name").ok()?;
+
+    // println!("Extracted emoji_id: {}, emoji_name: {}", emoji_id, emoji_name);
 
     Some(format!("<:{}:{}>", emoji_name, emoji_id))
 }

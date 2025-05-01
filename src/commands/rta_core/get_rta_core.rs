@@ -3,9 +3,10 @@ use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use crate::commands::rta_core::models::MonstersFile;
 use crate::commands::rta_core::models::{Rank, Trio};
 use crate::commands::rta_core::utils::{
-    filter_monster, get_emoji_from_id, get_monster_duos, get_monsters_from_json_bytes,
+    filter_monster, get_emoji_from_id, get_monsters_from_json_bytes,
     get_tierlist_data,
 };
+use crate::commands::rta_core::cache::get_monster_duos_cached;
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
@@ -146,7 +147,7 @@ pub async fn get_rta_core(
                     Rank::G1 | Rank::G2 => 1,
                     Rank::G3 => 3,
                 };
-                if let Ok(duos) = get_monster_duos(&token, season, base.monster_id, rank_duos).await
+                if let Ok(duos) = get_monster_duos_cached(&token, season, base.monster_id, rank_duos).await
                 {
                     for duo in duos {
                         let (b, o, t) = (base.monster_id, duo.team_one_id, duo.team_two_id);
