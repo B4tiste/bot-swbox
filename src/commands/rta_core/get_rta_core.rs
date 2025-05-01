@@ -183,15 +183,15 @@ pub async fn get_rta_core(
                         // sinon on calcule score et on push
 
                         // 1️⃣ Extraire les trois éléments
-                        let elems: HashSet<&String> = [b, o, t]
-                            .iter()
-                            .filter_map(|id| element_map.get(id))
-                            .collect();
+                        // let elems: HashSet<&String> = [b, o, t]
+                        //     .iter()
+                        //     .filter_map(|id| element_map.get(id))
+                        //     .collect();
 
                         // 2️⃣ Si on n’a pas exactement 3 éléments distincts → skip
-                        if elems.len() != 3 {
-                            continue;
-                        }
+                        // if elems.len() != 3 {
+                        //     continue;
+                        // }
 
                         if let Ok(rate) = duo.win_rate.parse::<f32>() {
                             let picks = duo.pick_total;
