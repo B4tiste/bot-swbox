@@ -1,12 +1,11 @@
 use crate::commands::mob_stats::utils::get_swrt_settings;
 use crate::commands::player_stats::utils::get_mob_emoji_collection;
+use crate::commands::rta_core::cache::get_monster_duos_cached;
 use crate::commands::rta_core::models::MonstersFile;
 use crate::commands::rta_core::models::{Rank, Trio};
 use crate::commands::rta_core::utils::{
-    filter_monster, get_emoji_from_id, get_monsters_from_json_bytes,
-    get_tierlist_data,
+    filter_monster, get_emoji_from_id, get_monsters_from_json_bytes, get_tierlist_data,
 };
-use crate::commands::rta_core::cache::get_monster_duos_cached;
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
@@ -147,7 +146,8 @@ pub async fn get_rta_core(
                     Rank::G1 | Rank::G2 => 1,
                     Rank::G3 => 3,
                 };
-                if let Ok(duos) = get_monster_duos_cached(&token, season, base.monster_id, rank_duos).await
+                if let Ok(duos) =
+                    get_monster_duos_cached(&token, season, base.monster_id, rank_duos).await
                 {
                     for duo in duos {
                         let (b, o, t) = (base.monster_id, duo.team_one_id, duo.team_two_id);
@@ -181,17 +181,34 @@ pub async fn get_rta_core(
                             // score de base
                             let mut score = rate * (1.0 + (picks as f32).ln());
 
-                            // Détection Light/Dark
-                            let has_light_dark = [b, o, t].iter().any(|id| {
-                                matches!(
-                                    element_map.get(id).map(String::as_str),
-                                    Some("Light") | Some("Dark")
-                                )
-                            });
-                            if has_light_dark {
-                                // appliquer un boost (ici 20%)
-                                score *= 1.2;
+                            // Détection Light/Dark avec exclusions et boost variable
+                            let excluded_ids: HashSet<u32> =
+                                [21814, 28915, 19214, 19215].iter().cloned().collect();
+
+                            let light_dark_count = [b, o, t]
+                                .iter()
+                                .filter(|&&id| {
+                                    // on exclut d'abord certains IDs
+                                    !excluded_ids.contains(&id)
+                                    // puis on ne garde que Light ou Dark
+                                    && matches!(
+                                        element_map.get(&id).map(String::as_str),
+                                        Some("Light") | Some("Dark")
+                                    )
+                                })
+                                .count();
+
+                            // si on a au moins 1 monstre Light/Dark (hors exclusions), on calcule le boost
+                            if light_dark_count > 0 {
+                                let boost = match light_dark_count {
+                                    1 => 0.2,
+                                    2 => 0.3,
+                                    3 => 0.5,
+                                    _ => 0.0, // dans l'improbable cas de >3, pas de boost supplémentaire
+                                };
+                                score *= 1.0 + boost;
                             }
+
                             trios.push(Trio {
                                 base: b,
                                 one: o,
