@@ -150,7 +150,7 @@ pub async fn get_rta_core(
                         // sinon on calcule score et on push
                         if let Ok(rate) = duo.win_rate.parse::<f32>() {
                             let picks = duo.pick_total;
-                            let score = rate * (picks as f32);
+                            let score = rate * (picks as f32).sqrt();
                             trios.push(Trio {
                                 base: b,
                                 one: o,
