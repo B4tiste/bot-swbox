@@ -94,13 +94,6 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 -   📈 When a player is selected, their RTA performance (rank, ELO, winrate, LD monsters, top units) is shown right away.
 -   ✅ No need to retype `/get_player_stats`, it’s handled automatically.
 
-**Result**:
-
--   A smooth and interactive experience with Discord components:
-    -   Buttons for navigation.
-    -   Dropdown menu for quick access to player stats.
-    -   Embeds with detailed and dynamic information.
-
 ---
 
 ### `/get_player_stats`
@@ -114,7 +107,7 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 **Features**:
 -   Displays the player's rank, win rate, and other relevant statistics.
 -   Displays the player's LD5 and Most Played Monsters with their win rates.
--   Displays the last tree replays of the player
+-   Displays the last six replays of the player
 
 ---
 
