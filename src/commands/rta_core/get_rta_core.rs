@@ -191,9 +191,38 @@ pub async fn get_rta_core(
                 t.emojis = Some(emojis_string);
             }
 
+            // Récupération en string du rank sélectionné
+            let rank_str = match rank {
+                Rank::C1 => "C1",
+                Rank::C2 => "C2",
+                Rank::C3 => "C3",
+                Rank::P1 => "P1",
+                Rank::P2 => "P2",
+                Rank::P3 => "P3",
+                Rank::G1 => "G1",
+                Rank::G2 => "G2",
+                Rank::G3 => "G3",
+            };
+
+            // Récupération du pseudo dans le fichier JSON uploadé (field wizard_info.wizard_name)
+            let json_str = String::from_utf8_lossy(&bytes).to_string();
+            let json_value: serde_json::Value = serde_json::from_str(&json_str).unwrap_or_default();
+            let wizard_name = json_value
+                .get("wizard_info")
+                .and_then(|w| w.get("wizard_name"))
+                .and_then(|w| w.as_str())
+                .unwrap_or("Unknown");
+            let wizard_name = if wizard_name.is_empty() {
+                "Unknown"
+            } else {
+                wizard_name
+            };
+
             // Affichage final unique
-            let mut msg =
-                String::from("🎯 15 Core trios that this account can play to reach the given rank :\n");
+            let mut msg = format!(
+                "🎯 Trios for `{}` to play in `{}` : \n",
+                wizard_name, rank_str
+            );
             if top.is_empty() {
                 msg.push_str("– Aucun trio trouvé, voir les logs DEBUG pour plus de détails.\n");
             } else {
