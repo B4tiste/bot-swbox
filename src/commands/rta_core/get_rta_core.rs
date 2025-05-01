@@ -4,15 +4,17 @@ use crate::commands::shared::embed_error_handling::{
 use crate::commands::shared::logs::send_log;
 use crate::{Data, API_TOKEN};
 use poise::serenity_prelude::{Attachment, Error};
+use std::collections::HashSet;
 
 use crate::commands::mob_stats::utils::get_swrt_settings;
+use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use crate::commands::rta_core::models::{Rank, Trio};
 use crate::commands::rta_core::utils::{
-    filter_monster, get_monster_duos, get_monsters_from_json_bytes, get_tierlist_data, get_emoji_from_id
+    filter_monster, get_emoji_from_id, get_monster_duos, get_monsters_from_json_bytes,
+    get_tierlist_data,
 };
-use crate::commands::player_stats::utils::get_mob_emoji_collection;
 
-/// Commande get_rta_core
+/// 📂 Displays best Trios to play for any given account JSON
 #[poise::command(slash_command)]
 pub async fn get_rta_core(
     ctx: poise::ApplicationContext<'_, Data, Error>,
@@ -113,7 +115,9 @@ pub async fn get_rta_core(
             }
 
             // Collecte des trios
+            let mut seen_trios = HashSet::<(u32, u32, u32)>::new();
             let mut trios: Vec<Trio> = Vec::new();
+
             for base in filtered_tierlist
                 .sss_monster
                 .iter()
@@ -127,22 +131,35 @@ pub async fn get_rta_core(
                     Rank::G1 | Rank::G2 => 1,
                     Rank::G3 => 3,
                 };
-                if let Ok(duos) = get_monster_duos(&token, season, base.monster_id, rank_duos).await {
+                if let Ok(duos) = get_monster_duos(&token, season, base.monster_id, rank_duos).await
+                {
                     for duo in duos {
-                        if core_ids.contains(&duo.team_one_id) && core_ids.contains(&duo.team_two_id) {
-                            if let Ok(rate) = duo.win_rate.parse::<f32>() {
-                                let picks = duo.pick_total;
-                                let score = rate * (picks as f32);
-                                trios.push(Trio {
-                                    base: base.monster_id,
-                                    one: duo.team_one_id,
-                                    two: duo.team_two_id,
-                                    win_rate: rate,
-                                    pick_total: picks,
-                                    weighted_score: score,
-                                    emojis: None,
-                                });
-                            }
+                        let (b, o, t) = (base.monster_id, duo.team_one_id, duo.team_two_id);
+                        // on ne garde que les trios 100% « core »
+                        if !core_ids.contains(&o) || !core_ids.contains(&t) {
+                            continue;
+                        }
+                        // clé triée pour être indépendante de l’ordre
+                        let mut key = [b, o, t];
+                        key.sort_unstable();
+                        let key = (key[0], key[1], key[2]);
+                        // si on l’a déjà vu, on skip
+                        if !seen_trios.insert(key) {
+                            continue;
+                        }
+                        // sinon on calcule score et on push
+                        if let Ok(rate) = duo.win_rate.parse::<f32>() {
+                            let picks = duo.pick_total;
+                            let score = rate * (picks as f32);
+                            trios.push(Trio {
+                                base: b,
+                                one: o,
+                                two: t,
+                                win_rate: rate,
+                                pick_total: picks,
+                                weighted_score: score,
+                                emojis: None,
+                            });
                         }
                     }
                 } else {
@@ -155,31 +172,39 @@ pub async fn get_rta_core(
             let mut top10 = trios.into_iter().take(10).collect::<Vec<_>>();
 
             // Récupération des emojis
-            let collection = get_mob_emoji_collection()
-                .await
-                .map_err(|_| Error::from(std::io::Error::new(std::io::ErrorKind::Other, "DB error")))?;
+            let collection = get_mob_emoji_collection().await.map_err(|_| {
+                Error::from(std::io::Error::new(std::io::ErrorKind::Other, "DB error"))
+            })?;
             for t in &mut top10 {
                 let emojis_string = format!(
                     "{} {} {}",
-                    get_emoji_from_id(&collection, t.base).await.unwrap_or_default(),
-                    get_emoji_from_id(&collection, t.one).await.unwrap_or_default(),
-                    get_emoji_from_id(&collection, t.two).await.unwrap_or_default()
+                    get_emoji_from_id(&collection, t.base)
+                        .await
+                        .unwrap_or_default(),
+                    get_emoji_from_id(&collection, t.one)
+                        .await
+                        .unwrap_or_default(),
+                    get_emoji_from_id(&collection, t.two)
+                        .await
+                        .unwrap_or_default()
                 );
                 t.emojis = Some(emojis_string);
             }
 
             // Affichage final unique
-            let mut msg = String::from("🎯 Top 10 des trios “core” pondérés (win_rate × pick_total) :\n");
+            let mut msg =
+                String::from("🎯 Top 10 Core trios that this account can play :\n");
             if top10.is_empty() {
-                msg.push_str("– Aucun trio trouvé, voir les logs DEBUG pour plus de détails.\n");
+                msg.push_str("– No trios found.\n");
             } else {
-                for t in &top10 {
+                for (i, t) in top10.iter().enumerate() {
+                    // i va de 0 à 9, on ajoute 1 pour commencer à 1
                     msg.push_str(&format!(
-                        "• {} → {:.2}% sur {} picks (score {:.0})\n",
+                        "{}. {} → **{:.1} %** ({})\n",
+                        i + 1,
                         t.emojis.clone().unwrap_or_default(),
                         t.win_rate * 100.0,
                         t.pick_total,
-                        t.weighted_score,
                     ));
                 }
             }
