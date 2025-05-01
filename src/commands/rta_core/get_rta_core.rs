@@ -163,12 +163,24 @@ pub async fn get_rta_core(
                             continue;
                         }
                         // sinon on calcule score et on push
+
+                        // 1️⃣ Extraire les trois éléments
+                        let elems: HashSet<&String> = [b, o, t]
+                            .iter()
+                            .filter_map(|id| element_map.get(id))
+                            .collect();
+
+                        // 2️⃣ Si on n’a pas exactement 3 éléments distincts → skip
+                        if elems.len() != 3 {
+                            continue;
+                        }
+
                         if let Ok(rate) = duo.win_rate.parse::<f32>() {
                             let picks = duo.pick_total;
                             // score de base
                             let mut score = rate * (1.0 + (picks as f32).ln());
 
-                            // 3️⃣ Détection Light/Dark
+                            // Détection Light/Dark
                             let has_light_dark = [b, o, t].iter().any(|id| {
                                 matches!(
                                     element_map.get(id).map(String::as_str),
