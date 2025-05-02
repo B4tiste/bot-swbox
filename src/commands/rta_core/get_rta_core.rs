@@ -298,7 +298,7 @@ pub async fn get_rta_core(
                 wizard_name, rank_str
             );
             if top.is_empty() {
-                msg.push_str("– Aucun trio trouvé, voir les logs DEBUG pour plus de détails.\n");
+                msg.push_str("– No Trio Found\n");
             } else {
                 for t in &top {
                     msg.push_str(&format!(
