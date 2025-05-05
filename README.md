@@ -23,7 +23,8 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ### ToDo:
 
--   [ ] Create the command that gives trio cores for a given JSON.
+-   [ ] **WIP** Create the command that gives trio cores for a given JSON.
+    -   [ ] Add a "MONSTER" option to allow the user to focus on trios with a specific monster.
 -   [ ] Disconnect from SWRT and use RedWest new API (FUTURE).
 -   [ ] Find something that Unaxe can do so that he stops ouin-oui'ing.
 
