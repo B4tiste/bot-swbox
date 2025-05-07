@@ -25,6 +25,7 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 -   [ ] **WIP** Create the command that gives trio cores for a given JSON.
     -   [ ] Add a "MONSTER" option to allow the user to focus on trios with a specific monster.
+-   [ ] Create a commande `/get_replays <Monster1> <Monster2> ...` that gives the replays of the last 10 replays containing the monsters in the list.
 -   [ ] Disconnect from SWRT and use RedWest new API (FUTURE).
 -   [ ] Find something that Unaxe can do so that he stops ouin-oui'ing.
 
