@@ -1,7 +1,7 @@
 use poise::Modal;
 
 #[derive(Debug, Modal)]
-#[name = "Enter the monster's name"]
+#[name = "Suggestion"]
 pub struct SuggestionModal {
     #[name = "Feature name"]
     #[placeholder = "Enter a title for your suggestion"]
