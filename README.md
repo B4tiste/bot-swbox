@@ -6,6 +6,12 @@
 
 To use the bot, add it to your Discord server by contacting B4tiste on Discord (tag: b4tiste).
 
+## Installation Guide (French)
+
+Click on the image to go to the French Youtube Video Guide : 
+
+[![](Images/minia.jpg)](https://www.youtube.com/watch?v=WGs2rWrIy5M)
+
 ## Features
 
 -   **Interactive Commands**: Use a series of slash commands to access the bot's features.
