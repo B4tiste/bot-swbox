@@ -156,21 +156,21 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         }
     });
 
-    // Télécharger le fichier "https://raw.githubusercontent.com/B4tiste/SWbox/refs/heads/master/src/data/monsters.json"
+    // Télécharger le fichier "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json"
     // et le stocker dans un fichier local
-    let monsters_url = "https://raw.githubusercontent.com/B4tiste/SWbox/refs/heads/master/src/data/monsters.json";
+    let monsters_url = "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json";
     let monsters_response = reqwest::get(monsters_url)
         .await
-        .context("Failed to download monsters.json")?;
+        .context("Failed to download monsters_elements.json")?;
     let monsters_content = monsters_response
         .text()
         .await
-        .context("Failed to read monsters.json content")?;
-    let monsters_file_path = "monsters.json";
+        .context("Failed to read monsters_elements.json content")?;
+    let monsters_file_path = "monsters_elements.json";
     tokio::fs::write(monsters_file_path, &monsters_content)
         .await
-        .context("Failed to write monsters.json to file")?;
-    println!("monsters.json downloaded and saved to {}", monsters_file_path);
+        .context("Failed to write monsters_elements.json to file")?;
+    println!("monsters_elements.json downloaded and saved to {}", monsters_file_path);
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {

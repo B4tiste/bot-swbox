@@ -7,9 +7,9 @@ publish = false
 [dependencies]
 anyhow = "1.0.98"
 poise = "0.6.1"
-shuttle-runtime = { version = "0.53.0", features = ["setup-otel-exporter"] }
-shuttle-serenity = "0.53.0"
-tokio = "1.44.2"
+shuttle-runtime = { version = "0.54.0", features = ["setup-otel-exporter"] }
+shuttle-serenity = "0.54.0"
+tokio = "1.45.0"
 log = "0.4.27"
 reqwest = { version = "0.12.15", features = ["json", "blocking", "rustls-tls"] }
 serde = { version = "1.0.219", features = ["derive"] }

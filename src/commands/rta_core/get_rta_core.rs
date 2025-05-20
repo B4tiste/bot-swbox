@@ -66,11 +66,11 @@ pub async fn get_rta_core(
         }
     };
 
-    // 1️⃣ Charger le JSON statique "monsters.json" pour connaître l'élément de chaque monstre
+    // 1️⃣ Charger le JSON statique "monsters_elements.json" pour connaître l'élément de chaque monstre
     let monsters_json_str =
-        fs::read_to_string("monsters.json").expect("Impossible de lire monsters.json");
+        fs::read_to_string("monsters_elements.json").expect("Impossible de lire monsters_elements.json");
     let all_monsters_file: MonstersFile =
-        serde_json::from_str(&monsters_json_str).expect("Impossible de parser monsters.json");
+        serde_json::from_str(&monsters_json_str).expect("Impossible de parser monsters_elements.json");
 
     // 2️⃣ Construire la table id → élément
     let element_map: HashMap<u32, String> = all_monsters_file
@@ -80,7 +80,7 @@ pub async fn get_rta_core(
         .collect();
 
     // Extraction des monsters
-    match get_monsters_from_json_bytes(&bytes, "monsters.json") {
+    match get_monsters_from_json_bytes(&bytes, "monsters_elements.json") {
         Ok(monsters) => {
             // 1) Déterminer le paramètre `level` SWRanking selon le Rank choisi
             let api_level = match rank {
