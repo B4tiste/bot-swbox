@@ -101,7 +101,7 @@ pub async fn get_mob_stats(
         .field(
             "📉 Worst Matchups",
             "<a:loading:1358029412716515418> Loading...",
-            false,
+            true,
         )
         .field(
             "ℹ️ Tip",
@@ -151,7 +151,7 @@ pub async fn get_mob_stats(
         .await
         .field("📈 Best Teammates", good_teams, false)
         .field("📈 Best Matchups", good_matchups, false)
-        .field("📉 Worst Matchups", bad_matchups, false)
+        .field("📉 Worst Matchups", bad_matchups, true)
         .field(
             "ℹ️ Tip",
             "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",
