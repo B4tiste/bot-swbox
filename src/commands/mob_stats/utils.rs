@@ -203,7 +203,7 @@ pub fn format_good_teams(monster_emoji: &str, matchups: &[MonsterMatchup]) -> St
         .map(|(i, m)| {
             let pick_display = format_pick_total(m.pick_total);
             format!(
-                "{}. {} + {} {} **{:.1} %** WR {}",
+                "{}. {} + {} {} **{:.1} %**/{}",
                 i + 1,
                 monster_emoji,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
@@ -228,7 +228,7 @@ pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) ->
         .map(|(i, m)| {
             let pick_display = format_pick_total(m.pick_total);
             format!(
-                "{}. {} → {} {} **{:.1} %** WR {}",
+                "{}. {} → {} {} **{:.1} %**/{}",
                 i + 1,
                 monster_emoji,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
@@ -253,7 +253,7 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
         .map(|(i, m)| {
             let pick_display = format_pick_total(m.pick_total);
             format!(
-                "{}. {} {} → {} **{:.1} %** WR {}",
+                "{}. {} {} → {} **{:.1} %**/{}",
                 i + 1,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
