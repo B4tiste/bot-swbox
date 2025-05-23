@@ -7,8 +7,9 @@ use crate::commands::mob_stats::utils::{
     build_loading_monster_stats_embed,
     build_monster_stats_embed,
     create_level_buttons,
-    format_bad_matchups,
+    format_good_teams,
     format_good_matchups,
+    format_bad_matchups,
     get_monster_matchups_swrt,
     get_monster_stats_swrt,
     get_swrt_settings,
@@ -93,6 +94,11 @@ pub async fn get_mob_stats(
             false,
         )
         .field(
+            "📈 Best Matchups",
+            "<a:loading:1358029412716515418> Loading...",
+            false,
+        )
+        .field(
             "📉 Worst Matchups",
             "<a:loading:1358029412716515418> Loading...",
             false,
@@ -124,10 +130,10 @@ pub async fn get_mob_stats(
     let message_id = reply.message().await?.id;
     let channel_id = ctx.channel_id();
 
-    let (high_matchups, low_matchups) =
+    let (high_teams, high_matchups, low_matchups) =
         get_monster_matchups_swrt(com2us_id, season, current_level, &token)
             .await
-            .unwrap_or((vec![], vec![]));
+            .unwrap_or((vec![], vec![], vec![]));
 
     let collection = get_mob_emoji_collection()
         .await
@@ -137,13 +143,15 @@ pub async fn get_mob_stats(
         .await
         .unwrap_or("❓".to_string());
 
-    let good = format_good_matchups(&monster_emoji, &high_matchups);
-    let bad = format_bad_matchups(&monster_emoji, &low_matchups);
+    let good_teams = format_good_teams(&monster_emoji, &high_teams);
+    let good_matchups = format_good_matchups(&monster_emoji, &high_matchups);
+    let bad_matchups = format_bad_matchups(&monster_emoji, &low_matchups);
 
     let updated_embed = build_monster_stats_embed(&stats, season, current_level)
         .await
-        .field("📈 Best Teammates", good, false)
-        .field("📉 Worst Matchups", bad, false)
+        .field("📈 Best Teammates", good_teams, false)
+        .field("📈 Best Matchups", good_matchups, false)
+        .field("📉 Worst Matchups", bad_matchups, false)
         .field(
             "ℹ️ Tip",
             "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",
@@ -233,22 +241,24 @@ pub async fn get_mob_stats(
                 }
             };
 
-        let (high_matchups, low_matchups) =
+        let (high_teams, high_matchups, low_matchups) =
             get_monster_matchups_swrt(com2us_id, season, current_level, &token)
                 .await
-                .unwrap_or((vec![], vec![]));
+                .unwrap_or((vec![], vec![], vec![]));
 
         let monster_emoji = get_emoji_from_filename(&collection, &new_stats.image_filename)
             .await
             .unwrap_or("❓".to_string());
 
-        let good = format_good_matchups(&monster_emoji, &high_matchups);
-        let bad = format_bad_matchups(&monster_emoji, &low_matchups);
+        let good_teams = format_good_teams(&monster_emoji, &high_teams);
+        let good_matchups = format_good_matchups(&monster_emoji, &high_matchups);
+        let bad_matchups = format_bad_matchups(&monster_emoji, &low_matchups);
 
         let final_embed = build_monster_stats_embed(&new_stats, season, current_level)
             .await
-            .field("📈 Dream Teams", good, false)
-            .field("📉 Worst Matchups", bad, false)
+            .field("📈 Dream Teams", good_teams, false)
+            .field("📈 Best Matchups", good_matchups, false)
+            .field("📉 Worst Matchups", bad_matchups, false)
             .field(
                 "ℹ️ Tip",
                 "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",

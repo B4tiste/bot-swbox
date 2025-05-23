@@ -90,7 +90,7 @@ pub async fn get_monster_matchups_swrt(
     season: i64,
     level: i32,
     token: &str,
-) -> Result<(Vec<MonsterMatchup>, Vec<MonsterMatchup>), String> {
+) -> Result<(Vec<MonsterMatchup>, Vec<MonsterMatchup>, Vec<MonsterMatchup>), String> {
     let monster_id = remap_monster_id(monster_id); // 🔄 Applique le mapping ici aussi
 
     let url = format!(
@@ -117,12 +117,14 @@ pub async fn get_monster_matchups_swrt(
         .await
         .map_err(|_| "DB error".to_string())?;
 
-    let high_team =
+    let high_teams =
         extract_matchups_from_json(&json["data"]["highOneWithTwoList"], &collection, true).await;
-    let low_matchup =
+    let high_matchups =
+        extract_matchups_from_json(&json["data"]["highOneVsTwoList"], &collection, false).await;
+    let low_matchups =
         extract_matchups_from_json(&json["data"]["lowOneVsTwoList"], &collection, false).await;
 
-    Ok((high_team, low_matchup))
+    Ok((high_teams, high_matchups, low_matchups))
 }
 
 pub async fn extract_matchups_from_json(
@@ -190,7 +192,7 @@ fn truncate_entries_safely(entries: Vec<String>, max_len: usize) -> String {
     result
 }
 
-pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
+pub fn format_good_teams(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
     if matchups.is_empty() {
         return "No good teammates data.".to_string();
     }
@@ -199,14 +201,40 @@ pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) ->
         .iter()
         .enumerate()
         .map(|(i, m)| {
+            let pick_display = format_pick_total(m.pick_total);
             format!(
-                "{}. {} + {} {} **{:.1} %** WR ({})",
+                "{}. {} + {} {} **{:.1} %** WR-{}",
                 i + 1,
                 monster_emoji,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
                 m.win_rate,
-                m.pick_total
+                pick_display,
+            )
+        })
+        .collect();
+
+    truncate_entries_safely(entries, 1024)
+}
+
+pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
+    if matchups.is_empty() {
+        return "No good matchup data.".to_string();
+    }
+
+    let entries: Vec<String> = matchups
+        .iter()
+        .enumerate()
+        .map(|(i, m)| {
+            let pick_display = format_pick_total(m.pick_total);
+            format!(
+                "{}. {} {} + {} **{:.1} %** WR-{}",
+                i + 1,
+                m.emoji1.clone().unwrap_or("❓".to_string()),
+                m.emoji2.clone().unwrap_or("❓".to_string()),
+                monster_emoji,
+                m.win_rate,
+                pick_display,
             )
         })
         .collect();
@@ -223,19 +251,36 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
         .iter()
         .enumerate()
         .map(|(i, m)| {
+            let pick_display = format_pick_total(m.pick_total);
             format!(
-                "{}. {} {} → {} **{:.1} %** WR ({})",
+                "{}. {} {} → {} **{:.1} %** WR-{}",
                 i + 1,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
                 monster_emoji,
                 100.0 - m.win_rate,
-                m.pick_total
+                pick_display,
             )
         })
         .collect();
 
     truncate_entries_safely(entries, 1024)
+}
+
+
+/// Retourne une chaîne du type "123", "1k" ou "1k2" selon la valeur
+fn format_pick_total(pick_total: i32) -> String {
+    if pick_total >= 1000 {
+        let k = pick_total / 1000;
+        let remainder = (pick_total % 1000) / 100;
+        if remainder == 0 {
+            format!("{}k", k)
+        } else {
+            format!("{}k{}", k, remainder)
+        }
+    } else {
+        pick_total.to_string()
+    }
 }
 
 pub async fn build_monster_stats_embed(
@@ -346,6 +391,11 @@ pub async fn build_loading_monster_stats_embed(
             false,
         )
         .field(
+            "📈 Best Matchups",
+            "<a:loading:1358029412716515418> Loading...",
+            false,
+        )
+        .field(
             "📉 Worst Matchups",
             "<a:loading:1358029412716515418> Loading...",
             false,
@@ -412,7 +462,6 @@ pub fn create_level_buttons(
 
 pub fn remap_monster_id(monster_id: i32) -> i32 {
     let mappings: &[(i32, i32)] = &[
-
         // Street Fighter
         (24011, 24511), // Water Ryu
         (24012, 24512), // Fire Ryu
@@ -435,7 +484,6 @@ pub fn remap_monster_id(monster_id: i32) -> i32 {
         (24413, 24913), // Wind Chun-Li
         (24414, 24914), // Light Chun-Li
         (24415, 24915), // Dark Chun-Li
-
         // Cookie Run Kingdom
         (26213, 26713), // Wind GingerBrave
         (26311, 26811), // Water Pure Vanilla Cookie
@@ -458,7 +506,6 @@ pub fn remap_monster_id(monster_id: i32) -> i32 {
         (26613, 27113), // Wind Madeleine Cookie
         (26614, 27114), // Light Madeleine Cookie
         (26615, 27115), // Dark Madeleine Cookie
-
         // Assassin's Creed
         (27804, 27314),
         (27814, 27314),
@@ -546,38 +593,32 @@ pub fn remap_monster_id(monster_id: i32) -> i32 {
         (29714, 29314),
         (29705, 29315),
         (29715, 29315),
-
         // Yuji
         (31001, 30411),
         (31012, 30412),
         (31013, 30413),
         (31014, 30414),
         (31015, 30415),
-
         // Megumi
         (31111, 30511),
         (31112, 30512),
         (31113, 30513),
         (31114, 30514),
         (31115, 30515),
-
         // Nobara
         (31211, 30611),
         (31212, 30612),
         (31213, 30613),
         (31214, 30614),
         (31215, 30615),
-
         // Gojo
         (30911, 30311),
         (30912, 30312),
         (30913, 30313),
         (30914, 30314),
         (30915, 30315),
-
         // Sukuna
         (30815, 30215),
-
         // Demon Slayer
         (32413, 31713), // Gyomei Himejima
         (32811, 32111), // Water Inosuke Hashibira
@@ -599,7 +640,7 @@ pub fn remap_monster_id(monster_id: i32) -> i32 {
         (32912, 32212), // Fire Zenitsu Agatsuma
         (32913, 32213), // Wind Zenitsu Agatsuma
         (32914, 32214), // Light Zenitsu Agatsuma
-        (32915, 32215)  // Dark Zenitsu Agatsuma
+        (32915, 32215), // Dark Zenitsu Agatsuma
     ];
 
     mappings
