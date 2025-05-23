@@ -8,7 +8,7 @@ To use the bot, add it to your Discord server by contacting B4tiste on Discord (
 
 ## Installation Guide (French)
 
-Click on the image to go to the French Youtube Video Guide : 
+Click on the image to go to the French Youtube Video Guide :
 
 [![](Images/minia.jpg)](https://www.youtube.com/watch?v=WGs2rWrIy5M)
 
@@ -18,6 +18,7 @@ Click on the image to go to the French Youtube Video Guide :
 -   **Ranking Information**: View rankings and their details.
 -   **Player Statistics**: Retrieve and display detailed information about a player's account, including their rank, win rate, LD5 and most played monsters.
 -   **Mob Statistics**: Retrieve and display monster statistics for different seasons.
+-   **RTA Core Trios**: Shows 15 trios to play in RTA for a given account and selected rank.
 -   **Duo Statistics**: Display common win rates of two monsters played together.
 -   **JSON File analysis** : Gives a small breakdown of your account
 -   **Feature Suggestion & BUG Report**: Suggest features or report bugs directly to the developer.
@@ -29,14 +30,12 @@ Click on the image to go to the French Youtube Video Guide :
 
 ### ToDo:
 
--   [ ] **WIP** Create the command that gives trio cores for a given JSON.
-    -   [ ] Add a "MONSTER" option to allow the user to focus on trios with a specific monster.
 -   [ ] Create a commande `/get_replays <Monster1> <Monster2> ...` that gives the replays of the last 10 replays containing the monsters in the list.
-<!-- -   [ ] Disconnect from SWRT and use RedWest new API (FUTURE). -->
 -   [ ] Find something that Unaxe can do so that he stops ouin-oui'ing.
 
 ### Completed:
 
+-   [x] Create the command that gives trio cores for a given JSON.
 -   [x] Switch to SWRT for data.
 -   [x] Add replay on player stats.
 -   [x] Separate RTA & Siege JSON analysis using different coeffs.
@@ -121,16 +120,15 @@ Click on the image to go to the French Youtube Video Guide :
 
 ### `/get_mob_stats`
 
-**Description**: Retrieves monster statistics, with an option to specify the season. It also displays some great combo and counter to that monster.
+**Description**: Retrieves monster statistics. It also displays some great combo and counter to that monster.
 
 **Usage**:
 
--   `/get_mob_stats` => Opens a form to enter the monster name and season (optional).
+-   `/get_mob_stats` + The name of the monster you want to search for with an autocomplete feature.
 
 **Features**:
 
--   Automatically prioritizes 2A monsters in searches when applicable.
--   Allows retrieving season-specific data.
+-   Allows you to choose the rank you want to see the stats for.
 
 ---
 
@@ -183,6 +181,28 @@ Uploads a JSON file to analyze account data and display an account score along w
 -   Attach a JSON file (with a `.json` extension) containing the account data.
 
 ---
+
+### `/get_rta_core`
+
+**Description**
+
+Analyzes an RTA/Siege export JSON file and suggests 15 “core” trios to play for the chosen rank. The list is based on the following criteria:
+- Trio **win rate**
+- Total trio **pick count**
+- **Penalty** for late-picks (to downrank lately-picked monsters)
+- **Bonus** if Light/Dark monsters are included
+
+**Usage**
+
+- Type `/get_rta_core` in your Discord server.
+- Attach a JSON file (with a `.json` extension) containing the account data.
+- Select the rank you want to analyze.
+
+**Result**
+
+Sends a Discord message listing up to 15 trios (as emojis), each showing:
+- **Win Rate** (in %)
+- **Total Picks** count
 
 ## Contributions
 
