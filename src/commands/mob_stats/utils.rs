@@ -393,12 +393,12 @@ pub async fn build_loading_monster_stats_embed(
         .field(
             "📈 Best Matchups",
             "<a:loading:1358029412716515418> Loading...",
-            false,
+            true,
         )
         .field(
             "📉 Worst Matchups",
             "<a:loading:1358029412716515418> Loading...",
-            false,
+            true,
         )
         .footer(serenity::builder::CreateEmbedFooter::new(
             "Use /send_suggestion to report issues.",
