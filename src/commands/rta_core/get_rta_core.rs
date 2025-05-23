@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs;
 
-/// 📂 (BETA) Displays best Trios to play for any given account JSON
+/// 📂 Displays best Trios to play for any given account JSON
 #[poise::command(slash_command)]
 pub async fn get_rta_core(
     ctx: poise::ApplicationContext<'_, Data, Error>,

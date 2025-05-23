@@ -4,30 +4,60 @@ use serenity::builder::EditInteractionResponse;
 use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
 use crate::commands::mob_stats::utils::{
-    build_loading_monster_stats_embed, build_monster_stats_embed, create_level_buttons,
-    format_bad_matchups, format_good_matchups, get_monster_matchups_swrt, get_monster_stats_swrt,
+    build_loading_monster_stats_embed,
+    build_monster_stats_embed,
+    create_level_buttons,
+    format_bad_matchups,
+    format_good_matchups,
+    get_monster_matchups_swrt,
+    get_monster_stats_swrt,
     get_swrt_settings,
 };
 use crate::commands::player_stats::utils::{get_emoji_from_filename, get_mob_emoji_collection};
-use crate::commands::shared::embed_error_handling::{
-    create_embed_error, schedule_message_deletion,
-};
-use crate::commands::shared::utils::{get_monster_general_info, get_monster_slug};
-use crate::{
-    commands::shared::logs::send_log, Data, API_TOKEN, CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID,
-    PUNISHER_EMOJI_ID,
-};
+use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
+use crate::commands::shared::logs::send_log;
+use crate::{Data, API_TOKEN, CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 
-/// 📂 Displays the monster stats
+// Import de la map globale
+use crate::MONSTER_MAP;
+
+/// Autocomplete basé sur MONSTER_MAP
+async fn autocomplete_monster<'a>(
+    _ctx: poise::ApplicationContext<'a, Data, Error>,
+    partial: &'a str,
+) -> impl Iterator<Item = String> + 'a {
+    let lower = partial.to_ascii_lowercase();
+    MONSTER_MAP
+        .keys()
+        .filter(move |name| name.to_ascii_lowercase().contains(&lower))
+        .take(10)
+        .cloned()
+}
+
+/// 📂 Affiche les stats du monstre
 #[poise::command(slash_command)]
 pub async fn get_mob_stats(
     ctx: poise::ApplicationContext<'_, Data, Error>,
-    #[description = "Name of the monster"] monster_name: String,
+    #[autocomplete = "autocomplete_monster"]
+    #[description = "Name of the monster"]
+    monster_name: String,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
     let input_data = format!("Monster name: {:?}", monster_name);
     let user_id = ctx.author().id;
+
+    // 1️⃣ Récupérer l'ID depuis la map
+    let com2us_id = match MONSTER_MAP.get(&monster_name) {
+        Some(&id) => id as i32,
+        None => {
+            let msg = format!("❌ Cannot find '{}', please use the autocomplete feature for a perfect match.", monster_name);
+            let reply = ctx.send(create_embed_error(&msg)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            send_log(&ctx, input_data, false, &msg).await?;
+            return Ok(());
+        }
+    };
 
     let token = {
         let guard = API_TOKEN.lock().unwrap();
@@ -37,28 +67,6 @@ pub async fn get_mob_stats(
                 "Missing API token",
             ))
         })?
-    };
-
-    let monster_slug = match get_monster_slug(monster_name.clone()).await {
-        Ok(slug) => slug,
-        Err(_) => {
-            let msg = "Monster not found.";
-            let reply = ctx.send(create_embed_error(msg)).await?;
-            schedule_message_deletion(reply, ctx).await?;
-            send_log(&ctx, input_data, false, msg).await?;
-            return Ok(());
-        }
-    };
-
-    let monster_info = match get_monster_general_info(monster_slug.slug.clone()).await {
-        Ok(info) => info,
-        Err(_) => {
-            let msg = "Unable to retrieve monster info.";
-            let reply = ctx.send(create_embed_error(msg)).await?;
-            schedule_message_deletion(reply, ctx).await?;
-            send_log(&ctx, input_data, false, msg).await?;
-            return Ok(());
-        }
     };
 
     let season = match get_swrt_settings(&token).await {
@@ -73,7 +81,7 @@ pub async fn get_mob_stats(
 
     let mut current_level = 1;
 
-    let stats = get_monster_stats_swrt(monster_info.id, season, &token, current_level)
+    let stats = get_monster_stats_swrt(com2us_id, season, &token, current_level)
         .await
         .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
@@ -117,7 +125,7 @@ pub async fn get_mob_stats(
     let channel_id = ctx.channel_id();
 
     let (high_matchups, low_matchups) =
-        get_monster_matchups_swrt(monster_info.id, season, current_level, &token)
+        get_monster_matchups_swrt(com2us_id, season, current_level, &token)
             .await
             .unwrap_or((vec![], vec![]));
 
@@ -207,7 +215,7 @@ pub async fn get_mob_stats(
             .await?;
 
         let new_stats =
-            match get_monster_stats_swrt(monster_info.id, season, &token, current_level)
+            match get_monster_stats_swrt(com2us_id, season, &token, current_level)
                 .await
             {
                 Ok(data) => data,
@@ -226,7 +234,7 @@ pub async fn get_mob_stats(
             };
 
         let (high_matchups, low_matchups) =
-            get_monster_matchups_swrt(monster_info.id, season, current_level, &token)
+            get_monster_matchups_swrt(com2us_id, season, current_level, &token)
                 .await
                 .unwrap_or((vec![], vec![]));
 
@@ -267,7 +275,7 @@ pub async fn get_mob_stats(
         &ctx,
         input_data,
         true,
-        format!("SWRT stats sent for {}", monster_slug.name),
+        format!("SWRT stats sent for {}", monster_name),
     )
     .await?;
 

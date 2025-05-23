@@ -8,6 +8,11 @@ use shuttle_serenity::ShuttleSerenity;
 use std::sync::{Arc, Mutex};
 use tokio::time::{sleep, Duration};
 
+// Pour la map des monstres
+use std::{collections::HashMap, fs};
+use once_cell::sync::Lazy;
+use serde::Deserialize;
+
 use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
 use crate::commands::help::help::help;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
@@ -30,6 +35,44 @@ lazy_static! {
 }
 
 pub struct Data;
+
+/// Structure pour parser chaque entrée de monsters_elements.json
+#[derive(Deserialize, Clone)]
+struct MonsterEntry {
+    pub com2us_id: u32,
+    pub name: String,
+    pub awaken_level: u8,
+}
+
+/// Wrapper si le JSON a une racine { "monsters": [...] }
+#[derive(Deserialize)]
+struct MonstersFile {
+    pub monsters: Vec<MonsterEntry>,
+}
+
+/// Map statique: name -> com2us_id, pour awaken_level > 0
+static MONSTER_MAP: Lazy<HashMap<String, u32>> = Lazy::new(|| {
+    let data = fs::read_to_string("monsters_elements.json")
+        .expect("Impossible de lire monsters_elements.json");
+    let file: MonstersFile = serde_json::from_str(&data)
+        .expect("Impossible de parser monsters_elements.json");
+
+    let mut tmp: HashMap<String, MonsterEntry> = HashMap::new();
+    for entry in file.monsters.into_iter() {
+        if entry.awaken_level > 0 {
+            tmp.entry(entry.name.clone())
+                .and_modify(|e| {
+                    if entry.awaken_level > e.awaken_level {
+                        *e = entry.clone();
+                    }
+                })
+                .or_insert(entry);
+        }
+    }
+    tmp.into_iter()
+        .map(|(name, entry)| (name, entry.com2us_id))
+        .collect()
+});
 
 /// Fonction asynchrone qui se connecte au service web et retourne le token
 async fn login(username: String, password: String) -> Result<String> {

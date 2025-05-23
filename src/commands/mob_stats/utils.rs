@@ -412,6 +412,53 @@ pub fn create_level_buttons(
 
 pub fn remap_monster_id(monster_id: i32) -> i32 {
     let mappings: &[(i32, i32)] = &[
+
+        // Street Fighter
+        (24011, 24511), // Water Ryu
+        (24012, 24512), // Fire Ryu
+        (24013, 24513), // Wind Ryu
+        (24014, 24514), // Light Ryu
+        (24015, 24515), // Dark Ryu
+        (24112, 24612), // Fire Ken
+        (24211, 24711), // Water M. Bison
+        (24212, 24712), // Fire M. Bison
+        (24213, 24713), // Wind M. Bison
+        (24214, 24714), // Light M. Bison
+        (24215, 24715), // Dark M. Bison
+        (24311, 24811), // Water Dhalsim
+        (24312, 24812), // Fire Dhalsim
+        (24313, 24813), // Wind Dhalsim
+        (24314, 24814), // Light Dhalsim
+        (24315, 24815), // Dark Dhalsim
+        (24411, 24911), // Water Chun-Li
+        (24412, 24912), // Fire Chun-Li
+        (24413, 24913), // Wind Chun-Li
+        (24414, 24914), // Light Chun-Li
+        (24415, 24915), // Dark Chun-Li
+
+        // Cookie Run Kingdom
+        (26213, 26713), // Wind GingerBrave
+        (26311, 26811), // Water Pure Vanilla Cookie
+        (26312, 26812), // Fire Pure Vanilla Cookie
+        (26313, 26813), // Wind Pure Vanilla Cookie
+        (26314, 26814), // Light Pure Vanilla Cookie
+        (26315, 26815), // Dark Pure Vanilla Cookie
+        (26411, 26911), // Water Hollyberry Cookie
+        (26412, 26912), // Fire Hollyberry Cookie
+        (26413, 26913), // Wind Hollyberry Cookie
+        (26414, 26914), // Light Hollyberry Cookie
+        (26415, 26915), // Dark Hollyberry Cookie
+        (26511, 27011), // Water Espresso Cookie
+        (26512, 27012), // Fire Espresso Cookie
+        (26513, 27013), // Wind Espresso Cookie
+        (26514, 27014), // Light Espresso Cookie
+        (26515, 27015), // Dark Espresso Cookie
+        (26611, 27111), // Water Madeleine Cookie
+        (26612, 27112), // Fire Madeleine Cookie
+        (26613, 27113), // Wind Madeleine Cookie
+        (26614, 27114), // Light Madeleine Cookie
+        (26615, 27115), // Dark Madeleine Cookie
+
         // Assassin's Creed
         (27804, 27314),
         (27814, 27314),
@@ -529,7 +576,30 @@ pub fn remap_monster_id(monster_id: i32) -> i32 {
         (30915, 30315),
 
         // Sukuna
-        (30815, 30215 )
+        (30815, 30215),
+
+        // Demon Slayer
+        (32413, 31713), // Gyomei Himejima
+        (32811, 32111), // Water Inosuke Hashibira
+        (32812, 32112), // Fire Inosuke Hashibira
+        (32813, 32113), // Wind Inosuke Hashibira
+        (32814, 32114), // Light Inosuke Hashibira
+        (32815, 32115), // Dark Inosuke Hashibira
+        (32611, 31911), // Water Nezuko Kamado
+        (32612, 31912), // Fire Nezuko Kamado
+        (32613, 31913), // Wind Nezuko Kamado
+        (32614, 31914), // Light Nezuko Kamado
+        (32615, 31915), // Dark Nezuko Kamado
+        (32511, 31811), // Water Tanjiro Kamado
+        (32512, 31812), // Fire Tanjiro Kamado
+        (32513, 31813), // Wind Tanjiro Kamado
+        (32514, 31814), // Light Tanjiro Kamado
+        (32515, 31815), // Dark Tanjiro Kamado
+        (32911, 32211), // Water Zenitsu Agatsuma
+        (32912, 32212), // Fire Zenitsu Agatsuma
+        (32913, 32213), // Wind Zenitsu Agatsuma
+        (32914, 32214), // Light Zenitsu Agatsuma
+        (32915, 32215)  // Dark Zenitsu Agatsuma
     ];
 
     mappings
