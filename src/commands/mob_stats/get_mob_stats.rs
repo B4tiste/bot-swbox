@@ -96,7 +96,7 @@ pub async fn get_mob_stats(
         .field(
             "📈 Best Matchups",
             "<a:loading:1358029412716515418> Loading...",
-            false,
+            true,
         )
         .field(
             "📉 Worst Matchups",
@@ -150,7 +150,7 @@ pub async fn get_mob_stats(
     let updated_embed = build_monster_stats_embed(&stats, season, current_level)
         .await
         .field("📈 Best Teammates", good_teams, false)
-        .field("📈 Best Matchups", good_matchups, false)
+        .field("📈 Best Matchups", good_matchups, true)
         .field("📉 Worst Matchups", bad_matchups, true)
         .field(
             "ℹ️ Tip",
@@ -257,8 +257,8 @@ pub async fn get_mob_stats(
         let final_embed = build_monster_stats_embed(&new_stats, season, current_level)
             .await
             .field("📈 Dream Teams", good_teams, false)
-            .field("📈 Best Matchups", good_matchups, false)
-            .field("📉 Worst Matchups", bad_matchups, false)
+            .field("📈 Best Matchups", good_matchups, true)
+            .field("📉 Worst Matchups", bad_matchups, true)
             .field(
                 "ℹ️ Tip",
                 "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",
