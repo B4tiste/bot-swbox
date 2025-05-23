@@ -410,7 +410,7 @@ pub fn create_level_buttons(
     ])
 }
 
-fn remap_monster_id(monster_id: i32) -> i32 {
+pub fn remap_monster_id(monster_id: i32) -> i32 {
     let mappings: &[(i32, i32)] = &[
         // Assassin's Creed
         (27804, 27314),

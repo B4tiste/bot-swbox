@@ -5,6 +5,7 @@ use std::collections::HashSet;
 use std::fs;
 use reqwest::Client;
 use mongodb::{bson::doc, Collection};
+use crate::commands::mob_stats::utils::remap_monster_id;
 
 /// Lit le JSON dynamique (upload), extrait les unit_master_id,
 /// puis charge monsters.json et renvoie les Monster correspondants.
@@ -23,7 +24,7 @@ pub fn get_monsters_from_json_bytes(
         .context("Champ unit_list introuvable ou pas un tableau")?;
     let wanted_ids: HashSet<u32> = unit_list
         .iter()
-        .filter_map(|u| u.get("unit_master_id")?.as_u64().map(|id| id as u32))
+        .filter_map(|u| u.get("unit_master_id")?.as_u64().map(|id| remap_monster_id(id as i32) as u32))
         .collect();
 
     // 3) Lire et parser monsters.json
