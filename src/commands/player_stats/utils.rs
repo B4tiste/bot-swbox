@@ -400,13 +400,13 @@ pub fn create_player_embed(
 
     CreateEmbed::default()
         .title(format!(
-            ":flag_{}: {}{} (id: {}) RTA Statistics (Regular Season only)",
+            ":flag_{}: {} (id: {}) {} RTA Statistics (Regular Season only)",
             details.player_country.to_lowercase(),
             details.name,
             details.player_id,
             PLAYER_ALIAS_MAP
                 .get(&details.swrt_player_id)
-                .map(|alias| format!(" (aka. {})", alias))
+                .map(|alias| format!("(aka. {})", alias))
                 .unwrap_or_default()
         ))
         .thumbnail(details.head_img.clone().unwrap_or_default())
