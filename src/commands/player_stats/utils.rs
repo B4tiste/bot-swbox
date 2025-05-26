@@ -62,6 +62,8 @@ pub struct PlayerDetail {
     pub player_country: String,
     #[serde(rename = "swrtPlayerId")]
     pub swrt_player_id: i64,
+    #[serde(rename = "playerId")]
+    pub player_id: i64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -203,6 +205,7 @@ pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetai
             player_monsters: d.player_monsters,
             player_country: d.player.player_country,
             swrt_player_id: d.player.swrt_player_id,
+            player_id: d.player.player_id,
             // monster_simple_imgs: d.monster_simple_imgs,
             monster_ld_imgs: d.monster_ld_imgs,
             season_count: d.season_count,
@@ -397,12 +400,13 @@ pub fn create_player_embed(
 
     CreateEmbed::default()
         .title(format!(
-            ":flag_{}: {}{} RTA Statistics (Regular Season only)",
+            ":flag_{}: {}{} (id: {}) RTA Statistics (Regular Season only)",
             details.player_country.to_lowercase(),
             details.name,
+            details.player_id,
             PLAYER_ALIAS_MAP
                 .get(&details.swrt_player_id)
-                .map(|alias| format!(" ({})", alias))
+                .map(|alias| format!(" (aka. {})", alias))
                 .unwrap_or_default()
         ))
         .thumbnail(details.head_img.clone().unwrap_or_default())
