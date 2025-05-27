@@ -28,11 +28,16 @@ async fn autocomplete_monster<'a>(
     partial: &'a str,
 ) -> impl Iterator<Item = String> + 'a {
     let lower = partial.to_ascii_lowercase();
-    MONSTER_MAP
+    let mut matches: Vec<String> = MONSTER_MAP
         .keys()
-        .filter(move |name| name.to_ascii_lowercase().contains(&lower))
-        .take(10)
+        .filter(|name| name.to_ascii_lowercase().contains(&lower))
         .cloned()
+        .collect();
+
+    // Sort by length, shortest first
+    matches.sort_by_key(|s| s.len());
+
+    matches.into_iter().take(10)
 }
 
 /// 📂 Affiche les stats du monstre
