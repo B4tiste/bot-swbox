@@ -98,6 +98,7 @@ struct PlayerDetailWrapper {
     season_count: Option<i32>,
 }
 
+// Replay
 #[derive(Debug, Deserialize)]
 struct Root {
     data: DataWrapper,
@@ -479,7 +480,7 @@ pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Repl
     Ok(json.data.page.list)
 }
 
-pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str) -> Result<PathBuf> {
+pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str, rows: i32, cols: i32) -> Result<PathBuf> {
     let nb_battles = recent_replays.len();
 
     let mut sections: Vec<RgbaImage> = Vec::new();
@@ -628,8 +629,8 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str) -> Re
     }
 
     // Créer l'image finale 2 colonnes × 3 lignes
-    let columns = 2;
-    let rows = 3;
+    let rows = rows as u32;
+    let columns = cols as u32;
     let padding = 10;
 
     let section_width = sections.first().map(|img| img.width()).unwrap_or(0);

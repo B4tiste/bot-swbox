@@ -35,7 +35,7 @@ async fn autocomplete_monster<'a>(
         .cloned()
 }
 
-/// 📂 Affiche les stats du monstre
+/// 📂 Display monster stats
 #[poise::command(slash_command)]
 pub async fn get_mob_stats(
     ctx: poise::ApplicationContext<'_, Data, Error>,
