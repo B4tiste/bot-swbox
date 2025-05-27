@@ -28,16 +28,39 @@ async fn autocomplete_monster<'a>(
     partial: &'a str,
 ) -> impl Iterator<Item = String> + 'a {
     let lower = partial.to_ascii_lowercase();
-    let mut matches: Vec<String> = MONSTER_MAP
+
+    // On sépare d’abord les noms qui commencent par le préfixe...
+    let mut prefix_matches: Vec<String> = MONSTER_MAP
         .keys()
-        .filter(|name| name.to_ascii_lowercase().contains(&lower))
+        .filter(|name| name.to_ascii_lowercase().starts_with(&lower))
         .cloned()
         .collect();
 
-    // Sort by length, shortest first
-    matches.sort_by_key(|s| s.len());
+    // ...puis ceux qui le contiennent ailleurs
+    let mut contains_matches: Vec<String> = MONSTER_MAP
+        .keys()
+        .filter(|name| {
+            let name_l = name.to_ascii_lowercase();
+            !name_l.starts_with(&lower) && name_l.contains(&lower)
+        })
+        .cloned()
+        .collect();
 
-    matches.into_iter().take(10)
+    // On peut ensuite trier chaque liste :
+    //   - préfixes par longueur croissante
+    //   - contenus par position d’apparition puis longueur
+    prefix_matches.sort_by_key(|s| s.len());
+    contains_matches.sort_by(|a, b| {
+        let la = a.to_ascii_lowercase().find(&lower).unwrap_or(usize::MAX);
+        let lb = b.to_ascii_lowercase().find(&lower).unwrap_or(usize::MAX);
+        la.cmp(&lb).then(a.len().cmp(&b.len()))
+    });
+
+    // Enfin on concatène et on prend les 10 premiers
+    prefix_matches
+        .into_iter()
+        .chain(contains_matches.into_iter())
+        .take(10)
 }
 
 /// 📂 Affiche les stats du monstre
