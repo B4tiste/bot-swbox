@@ -3,14 +3,13 @@ use std::thread::current;
 use poise::reply;
 use poise::serenity_prelude as serenity;
 use poise::CreateReply;
-use serenity::builder::EditInteractionResponse;
+use serenity::builder::{EditInteractionResponse, EditAttachments};
 use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
 use crate::commands::mob_stats::utils::create_level_buttons;
-
 use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::player_stats::utils::create_replay_image;
-use crate::commands::replays::utils::{create_replays_embed, get_replays_data};
+use crate::commands::replays::utils::{create_replays_embed, get_replays_data, create_loading_replays_embed};
 
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
@@ -114,18 +113,19 @@ pub async fn get_replays(
 
     let mut current_level = 1;
 
+    // Récupérer les données initiales
     let replays = get_replays_data(&monster_ids, current_level)
         .await
         .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
-    let replay_image_path = create_replay_image(replays, &token, 5, 2)
+    let replay_image_path = create_replay_image(replays, &token, 4, 4)
         .await
         .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
     // Create attachment for the replay image
-    let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
+    let attachment = serenity::CreateAttachment::path(&replay_image_path).await?;
 
-    let embed = create_replays_embed(monster_ids);
+    let embed = create_replays_embed(&monster_names, current_level);
 
     let conqueror_id: u64 = CONQUEROR_EMOJI_ID.lock().unwrap().parse().unwrap();
     let guardian_id: u64 = GUARDIAN_EMOJI_ID.lock().unwrap().parse().unwrap();
@@ -146,28 +146,17 @@ pub async fn get_replays(
         })
         .await?;
 
-    send_log(
-        &ctx,
-        "Command: /get_replays".to_string(),
-        true,
-        format!(
-            "User ID: {}\nMonsters: {}",
-            user_id,
-            monster_names_for_log.join(", ")
-        ),
-    )
-    .await?;
-
     let message_id = reply.message().await?.id;
     let channel_id = ctx.channel_id();
 
-    while let Some(interaction) = 
-    serenity::ComponentInteractionCollector::new(&ctx.serenity_context.shard)
-        .channel_id(channel_id)
-        .message_id(message_id)
-        .filter(move |i| i.user.id == user_id)
-        .timeout(std::time::Duration::from_secs(600))
-        .await
+    // Boucle de gestion des interactions avec les boutons
+    while let Some(interaction) =
+        serenity::ComponentInteractionCollector::new(&ctx.serenity_context.shard)
+            .channel_id(channel_id)
+            .message_id(message_id)
+            .filter(move |i| i.user.id == user_id)
+            .timeout(std::time::Duration::from_secs(600))
+            .await
     {
         let selected_level = match interaction.data.custom_id.as_str() {
             "level_c1c3" => 0,
@@ -183,27 +172,100 @@ pub async fn get_replays(
 
         current_level = selected_level;
 
-        let new_replays = get_replays_data(&monster_ids, current_level)
-            .await
-            .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        // Afficher l'embed de chargement
+        let loading_embed = create_loading_replays_embed(&monster_names, current_level);
 
-        let new_replay_image_path = create_replay_image(new_replays, &token, 5, 2)
-            .await
-            .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        interaction
+            .create_response(
+                &ctx.serenity_context,
+                CreateInteractionResponse::UpdateMessage(
+                    CreateInteractionResponseMessage::new()
+                        .embed(loading_embed)
+                        .components(vec![create_level_buttons(
+                            conqueror_id,
+                            guardian_id,
+                            punisher_id,
+                            current_level,
+                            true, // Boutons désactivés pendant le chargement
+                        )]),
+                ),
+            )
+            .await?;
 
-        let new_attachment = serenity::CreateAttachment::path(new_replay_image_path).await?;
-        let new_embed = create_replays_embed(monster_ids.clone());
-        let new_components = create_level_buttons(
-            conqueror_id,
-            guardian_id,
-            punisher_id,
-            current_level,
-            false,
-        );
+        // Récupérer les nouvelles données
+        let new_replays = match get_replays_data(&monster_ids, current_level).await {
+            Ok(data) => data,
+            Err(e) => {
+                interaction
+                    .edit_response(
+                        &ctx.serenity_context.http,
+                        EditInteractionResponse::new()
+                            .content(format!("❌ Error fetching replay data: {}", e))
+                            .components(vec![])
+                            .embeds(vec![]),
+                    )
+                    .await?;
+                continue;
+            }
+        };
 
-        
+        // Créer la nouvelle image
+        let new_replay_image_path = match create_replay_image(new_replays, &token, 4, 4).await {
+            Ok(path) => path,
+            Err(e) => {
+                interaction
+                    .edit_response(
+                        &ctx.serenity_context.http,
+                        EditInteractionResponse::new()
+                            .content(format!("❌ Error creating replay image: {}", e))
+                            .components(vec![])
+                            .embeds(vec![]),
+                    )
+                    .await?;
+                continue;
+            }
+        };
+
+        // Créer le nouvel attachment
+        let new_attachment = serenity::CreateAttachment::path(&new_replay_image_path).await?;
+
+        // Créer l'embed final
+        let final_embed = create_replays_embed(&monster_names, current_level);
+
+        // Note: Discord ne permet pas de modifier les attachments via edit_response
+        // Il faut créer un nouveau message ou utiliser une approche différente
+        // Pour le moment, on met à jour juste l'embed sans l'image
+        interaction
+            .edit_response(
+                &ctx.serenity_context.http,
+                EditInteractionResponse::new()
+                    .embeds(vec![final_embed])
+                    .components(vec![create_level_buttons(
+                        conqueror_id,
+                        guardian_id,
+                        punisher_id,
+                        current_level,
+                        false, // Boutons réactivés
+                    )])
+                    .attachments(EditAttachments::new().add(new_attachment))
+            )
+            .await?;
+
+        // Optionnel: Envoyer un message de suivi avec la nouvelle image
+        // ou implémenter une logique pour remplacer le message entier
     }
 
+    send_log(
+        &ctx,
+        "Command: /get_replays".to_string(),
+        true,
+        format!(
+            "User ID: {}\nMonsters: {}",
+            user_id,
+            monster_names_for_log.join(", ")
+        ),
+    )
+    .await?;
 
-    return Ok(());
+    Ok(())
 }
