@@ -102,8 +102,13 @@ pub fn create_replays_embed(
         .color(serenity::Colour::from_rgb(0, 123, 255)) // Bleu
         .image("attachment://replay.png")
         .field("Players", players_field, false)  // ← insertion du champ
+        .field(
+            "ℹ️ Tip",
+            "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",
+            false,
+        )
         .footer(CreateEmbedFooter::new(
-            "Use the buttons below to view replays for different RTA ranks • Use /send_suggestion to report issues.",
+            "Use /send_suggestion to report issues.",
         ))
 }
 
