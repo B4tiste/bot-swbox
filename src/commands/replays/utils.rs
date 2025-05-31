@@ -35,7 +35,25 @@ pub async fn get_replays_data(ids: &Vec<i32>, level: i32) -> Result<Vec<Replay>>
         ));
     }
 
-    Ok(json.data.list)
+    // If playerOne does have the monster in the ids, swap playerOne with playerTwo
+    let mut replays = json.data.list;
+    for replay in &mut replays {
+        if replay.player_one.monster_info_list.iter().any(|m| ids.contains(&(m.monster_id as i32))) {
+            // Player one has the monster, no need to swap
+            continue;
+        } else if replay.player_two.monster_info_list.iter().any(|m| ids.contains(&(m.monster_id as i32))) {
+            // Player two has the monster, swap players
+            std::mem::swap(&mut replay.player_one, &mut replay.player_two);
+            // if replay.status is 1, set it to 2 else if replay.status is 2, set it to 1
+            if replay.status == 1 {
+                replay.status = 2;
+            } else if replay.status == 2 {
+                replay.status = 1;
+            }
+        }
+    }
+    // Return the list of replays
+    Ok(replays)
 }
 
 pub fn create_replays_embed(
@@ -102,7 +120,7 @@ pub fn create_loading_replays_embed(monster_names: &Vec<String>, level: i32) -> 
     } else {
         let monsters_list = monster_names
             .iter()
-            .map(|name| format!("• {}", name))
+            .map(|name| format!("• **{}**", name))
             .collect::<Vec<_>>()
             .join("\n");
 

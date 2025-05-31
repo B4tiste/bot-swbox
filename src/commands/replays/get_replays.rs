@@ -32,7 +32,7 @@ async fn autocomplete_monster<'a>(
         .cloned()
 }
 
-/// 📂 Affiche les replays contenant une sélection
+/// 📂 Display replays containing the selected monsters
 #[poise::command(slash_command)]
 pub async fn get_replays(
     ctx: poise::ApplicationContext<'_, Data, Error>,

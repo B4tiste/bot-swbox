@@ -126,7 +126,7 @@ pub struct Replay {
     first_pick: u32,
 
     #[serde(rename = "status")]
-    status: u32,
+    pub status: u32,
 }
 
 #[derive(Debug, Deserialize)]
