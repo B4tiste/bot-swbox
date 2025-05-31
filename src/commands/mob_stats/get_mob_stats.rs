@@ -6,7 +6,7 @@ use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Erro
 use crate::commands::mob_stats::utils::{
     build_loading_monster_stats_embed,
     build_monster_stats_embed,
-    create_level_buttons,
+    create_mob_level_buttons,
     format_good_teams,
     format_good_matchups,
     format_bad_matchups,
@@ -63,7 +63,7 @@ async fn autocomplete_monster<'a>(
         .take(10)
 }
 
-/// 📂 Affiche les stats du monstre
+/// 📂 Display monster stats
 #[poise::command(slash_command)]
 pub async fn get_mob_stats(
     ctx: poise::ApplicationContext<'_, Data, Error>,
@@ -144,7 +144,7 @@ pub async fn get_mob_stats(
     let reply = ctx
         .send(CreateReply {
             embeds: vec![initial_embed],
-            components: Some(vec![create_level_buttons(
+            components: Some(vec![create_mob_level_buttons(
                 conqueror_id,
                 guardian_id,
                 punisher_id,
@@ -191,7 +191,7 @@ pub async fn get_mob_stats(
             poise::Context::Application(ctx),
             CreateReply {
                 embeds: vec![updated_embed],
-                components: Some(vec![create_level_buttons(
+                components: Some(vec![create_mob_level_buttons(
                     conqueror_id,
                     guardian_id,
                     punisher_id,
@@ -239,7 +239,7 @@ pub async fn get_mob_stats(
                 CreateInteractionResponse::UpdateMessage(
                     CreateInteractionResponseMessage::new()
                         .embed(loading_embed)
-                        .components(vec![create_level_buttons(
+                        .components(vec![create_mob_level_buttons(
                             conqueror_id,
                             guardian_id,
                             punisher_id,
@@ -298,7 +298,7 @@ pub async fn get_mob_stats(
                 &ctx.serenity_context.http,
                 EditInteractionResponse::new()
                     .embeds(vec![final_embed])
-                    .components(vec![create_level_buttons(
+                    .components(vec![create_mob_level_buttons(
                         conqueror_id,
                         guardian_id,
                         punisher_id,
