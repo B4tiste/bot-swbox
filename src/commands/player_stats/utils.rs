@@ -117,10 +117,10 @@ struct PageData {
 #[derive(Debug, Deserialize)]
 pub struct Replay {
     #[serde(rename = "playerOne")]
-    player_one: ReplayPlayer,
+    pub player_one: ReplayPlayer,
 
     #[serde(rename = "playerTwo")]
-    player_two: ReplayPlayer,
+    pub player_two: ReplayPlayer,
 
     #[serde(rename = "firstPick")]
     first_pick: u32,
@@ -130,9 +130,9 @@ pub struct Replay {
 }
 
 #[derive(Debug, Deserialize)]
-struct ReplayPlayer {
+pub struct ReplayPlayer {
     #[serde(rename = "monsterInfoList")]
-    monster_info_list: Vec<ReplayMonster>,
+    pub monster_info_list: Vec<ReplayMonster>,
 
     #[serde(rename = "banMonsterId")]
     ban_monster_id: u32,
@@ -144,19 +144,19 @@ struct ReplayPlayer {
     player_id: u32,
 
     #[serde(rename = "playerName")]
-    player_name: String,
+    pub player_name: String,
 
     #[serde(rename = "playerScore")]
     player_score: u32,
 }
 
 #[derive(Debug, Deserialize)]
-struct ReplayMonster {
+pub struct ReplayMonster {
     #[serde(rename = "imageFilename")]
     image_filename: String,
 
     #[serde(rename = "monsterId")]
-    monster_id: u32,
+    pub monster_id: u32,
 }
 
 #[derive(Debug, Deserialize)]

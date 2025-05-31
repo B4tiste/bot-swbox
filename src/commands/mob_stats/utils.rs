@@ -405,7 +405,7 @@ pub async fn build_loading_monster_stats_embed(
         ))
 }
 
-pub fn create_level_buttons(
+pub fn create_mob_level_buttons(
     conqueror_id: u64,
     guardian_id: u64,
     punisher_id: u64,

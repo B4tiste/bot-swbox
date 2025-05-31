@@ -1,21 +1,20 @@
-use std::thread::current;
-
-use poise::reply;
 use poise::serenity_prelude as serenity;
 use poise::CreateReply;
-use serenity::builder::{EditInteractionResponse, EditAttachments};
+use serenity::builder::{EditAttachments, EditInteractionResponse};
 use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
-use crate::commands::mob_stats::utils::create_level_buttons;
 use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::player_stats::utils::create_replay_image;
-use crate::commands::replays::utils::{create_replays_embed, get_replays_data, create_loading_replays_embed};
+use crate::commands::replays::utils::{
+    create_loading_replays_embed, create_replay_level_buttons, create_replays_embed,
+    get_replays_data,
+};
 
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
 use crate::commands::shared::logs::send_log;
-use crate::{Data, API_TOKEN, CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
+use crate::{Data, API_TOKEN, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 
 // Import de la map des monstres
 use crate::MONSTER_MAP;
@@ -113,10 +112,42 @@ pub async fn get_replays(
 
     let mut current_level = 1;
 
-    // Récupérer les données initiales
+    // 1) Récupération des replays
     let replays = get_replays_data(&monster_ids, current_level)
         .await
         .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+
+    // 2) Construction d'un set des IDs recherchés
+    let search_ids: Vec<u32> = monster_ids.iter().map(|&i| i as u32).collect();
+
+    // 3) Filtrer et collecter uniquement les joueurs qui ont joué AU MOINS un monstre recherché
+    let mut player_names: Vec<String> = replays
+        .iter()
+        .flat_map(|r| {
+            let mut names = Vec::new();
+            // joueur 1
+            if r.player_one
+                .monster_info_list
+                .iter()
+                .any(|m| search_ids.contains(&m.monster_id))
+            {
+                names.push(r.player_one.player_name.clone());
+            }
+            // joueur 2
+            if r.player_two
+                .monster_info_list
+                .iter()
+                .any(|m| search_ids.contains(&m.monster_id))
+            {
+                names.push(r.player_two.player_name.clone());
+            }
+            names
+        })
+        .collect();
+
+    // 4) Trier et dédupliquer
+    player_names.sort();
+    player_names.dedup();
 
     let replay_image_path = create_replay_image(replays, &token, 4, 4)
         .await
@@ -125,9 +156,8 @@ pub async fn get_replays(
     // Create attachment for the replay image
     let attachment = serenity::CreateAttachment::path(&replay_image_path).await?;
 
-    let embed = create_replays_embed(&monster_names, current_level);
+    let embed = create_replays_embed(&monster_names, current_level, &player_names);
 
-    let conqueror_id: u64 = CONQUEROR_EMOJI_ID.lock().unwrap().parse().unwrap();
     let guardian_id: u64 = GUARDIAN_EMOJI_ID.lock().unwrap().parse().unwrap();
     let punisher_id: u64 = PUNISHER_EMOJI_ID.lock().unwrap().parse().unwrap();
 
@@ -135,8 +165,7 @@ pub async fn get_replays(
         .send(CreateReply {
             embeds: vec![embed],
             attachments: vec![attachment],
-            components: Some(vec![create_level_buttons(
-                conqueror_id,
+            components: Some(vec![create_replay_level_buttons(
                 guardian_id,
                 punisher_id,
                 current_level,
@@ -159,7 +188,6 @@ pub async fn get_replays(
             .await
     {
         let selected_level = match interaction.data.custom_id.as_str() {
-            "level_c1c3" => 0,
             "level_g1g2" => 1,
             "level_g3" => 3,
             "level_p1p3" => 4,
@@ -181,8 +209,7 @@ pub async fn get_replays(
                 CreateInteractionResponse::UpdateMessage(
                     CreateInteractionResponseMessage::new()
                         .embed(loading_embed)
-                        .components(vec![create_level_buttons(
-                            conqueror_id,
+                        .components(vec![create_replay_level_buttons(
                             guardian_id,
                             punisher_id,
                             current_level,
@@ -230,29 +257,22 @@ pub async fn get_replays(
         let new_attachment = serenity::CreateAttachment::path(&new_replay_image_path).await?;
 
         // Créer l'embed final
-        let final_embed = create_replays_embed(&monster_names, current_level);
+        let final_embed = create_replays_embed(&monster_names, current_level, &player_names);
 
-        // Note: Discord ne permet pas de modifier les attachments via edit_response
-        // Il faut créer un nouveau message ou utiliser une approche différente
-        // Pour le moment, on met à jour juste l'embed sans l'image
         interaction
             .edit_response(
                 &ctx.serenity_context.http,
                 EditInteractionResponse::new()
                     .embeds(vec![final_embed])
-                    .components(vec![create_level_buttons(
-                        conqueror_id,
+                    .components(vec![create_replay_level_buttons(
                         guardian_id,
                         punisher_id,
                         current_level,
                         false, // Boutons réactivés
                     )])
-                    .attachments(EditAttachments::new().add(new_attachment))
+                    .attachments(EditAttachments::new().add(new_attachment)),
             )
             .await?;
-
-        // Optionnel: Envoyer un message de suivi avec la nouvelle image
-        // ou implémenter une logique pour remplacer le message entier
     }
 
     send_log(
