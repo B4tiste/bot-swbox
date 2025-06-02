@@ -236,6 +236,33 @@ pub async fn get_replays(
             }
         };
 
+        let search_ids: Vec<u32> = monster_ids.iter().map(|&i| i as u32).collect();
+        let mut new_player_names: Vec<String> = new_replays
+            .iter()
+            .flat_map(|r| {
+                let mut names = Vec::new();
+                // joueur 1
+                if r.player_one
+                    .monster_info_list
+                    .iter()
+                    .any(|m| search_ids.contains(&m.monster_id))
+                {
+                    names.push(r.player_one.player_name.clone());
+                }
+                // joueur 2
+                if r.player_two
+                    .monster_info_list
+                    .iter()
+                    .any(|m| search_ids.contains(&m.monster_id))
+                {
+                    names.push(r.player_two.player_name.clone());
+                }
+                names
+            })
+            .collect();
+        new_player_names.sort();
+        new_player_names.dedup();
+
         // Créer la nouvelle image
         let new_replay_image_path = match create_replay_image(new_replays, &token, 4, 4).await {
             Ok(path) => path,
@@ -257,7 +284,7 @@ pub async fn get_replays(
         let new_attachment = serenity::CreateAttachment::path(&new_replay_image_path).await?;
 
         // Créer l'embed final
-        let final_embed = create_replays_embed(&monster_names, current_level, &player_names);
+        let final_embed = create_replays_embed(&monster_names, current_level, &new_player_names);
 
         interaction
             .edit_response(
