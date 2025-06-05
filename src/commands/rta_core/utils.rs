@@ -99,8 +99,6 @@ pub async fn get_tierlist_data(api_level: i32, token: &str) -> Result<TierListDa
             .unwrap_or_default(),
         c_monster: serde_json::from_value(data.get("cmonster").cloned().unwrap_or_default())
             .unwrap_or_default(),
-        d_monster: serde_json::from_value(data.get("dmonster").cloned().unwrap_or_default())
-            .unwrap_or_default(),
     };
 
     Ok(tierlist_data)
@@ -152,9 +150,6 @@ pub fn filter_monster(tierlist_data: &TierListData, monsters: &[Monster]) -> Tie
         monsters.iter().any(|monster| monster.unit_master_id == m.monster_id)
     });
     filtered_tierlist.c_monster.retain(|m| {
-        monsters.iter().any(|monster| monster.unit_master_id == m.monster_id)
-    });
-    filtered_tierlist.d_monster.retain(|m| {
         monsters.iter().any(|monster| monster.unit_master_id == m.monster_id)
     });
 

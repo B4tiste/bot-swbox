@@ -113,7 +113,6 @@ pub async fn get_rta_core(
                 .chain(&tierlist_data.a_monster)
                 .chain(&tierlist_data.b_monster)
                 .chain(&tierlist_data.c_monster)
-                .chain(&tierlist_data.d_monster)
             {
                 let total = m.pick_total as f32;
                 let late_sum = (m.third_pick_total
@@ -158,9 +157,6 @@ pub async fn get_rta_core(
             for m in &filtered_tierlist.c_monster {
                 core_ids.insert(m.monster_id);
             }
-            for m in &filtered_tierlist.d_monster {
-                core_ids.insert(m.monster_id);
-            }
 
             // Collecte des trios
             let mut seen_trios = HashSet::<(u32, u32, u32)>::new();
@@ -174,7 +170,6 @@ pub async fn get_rta_core(
                 .chain(&filtered_tierlist.a_monster)
                 .chain(&filtered_tierlist.b_monster)
                 .chain(&filtered_tierlist.c_monster)
-                .chain(&filtered_tierlist.d_monster)
             {
                 let rank_duos = match rank {
                     Rank::C1 | Rank::C2 | Rank::C3 => 0,
@@ -262,7 +257,7 @@ pub async fn get_rta_core(
 
             // Tri et top
             trios.sort_by(|a, b| b.weighted_score.partial_cmp(&a.weighted_score).unwrap());
-            let mut top = trios.into_iter().take(15).collect::<Vec<_>>();
+            let mut top = trios.into_iter().take(20).collect::<Vec<_>>();
 
             // Récupération des emojis
             let collection = get_mob_emoji_collection().await.map_err(|_| {
