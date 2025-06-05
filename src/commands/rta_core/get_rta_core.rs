@@ -257,7 +257,7 @@ pub async fn get_rta_core(
 
             // Tri et top
             trios.sort_by(|a, b| b.weighted_score.partial_cmp(&a.weighted_score).unwrap());
-            let mut top = trios.into_iter().take(20).collect::<Vec<_>>();
+            let mut top = trios.into_iter().take(15).collect::<Vec<_>>();
 
             // Récupération des emojis
             let collection = get_mob_emoji_collection().await.map_err(|_| {
