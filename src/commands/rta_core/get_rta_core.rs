@@ -9,6 +9,7 @@ use crate::commands::rta_core::utils::{
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
+// use crate::commands::replays::get_replays::autocomplete_monster;
 use crate::commands::shared::logs::send_log;
 use crate::{Data, API_TOKEN};
 use poise::serenity_prelude::{Attachment, Error};
@@ -22,6 +23,9 @@ pub async fn get_rta_core(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     file: Attachment,
     #[description = "Select the targeted rank"] rank: Rank,
+    // #[autocomplete = "autocomplete_monster"]
+    // #[description = "Monster to include in the core (optional)"]
+    // monster: Option<String>,
 ) -> Result<(), Error> {
     // Évite le timeout de 3 s
     ctx.defer().await?;
@@ -107,6 +111,9 @@ pub async fn get_rta_core(
                 .chain(&tierlist_data.ss_monster)
                 .chain(&tierlist_data.s_monster)
                 .chain(&tierlist_data.a_monster)
+                .chain(&tierlist_data.b_monster)
+                .chain(&tierlist_data.c_monster)
+                .chain(&tierlist_data.d_monster)
             {
                 let total = m.pick_total as f32;
                 let late_sum = (m.third_pick_total
@@ -145,6 +152,15 @@ pub async fn get_rta_core(
             for m in &filtered_tierlist.a_monster {
                 core_ids.insert(m.monster_id);
             }
+            for m in &filtered_tierlist.b_monster {
+                core_ids.insert(m.monster_id);
+            }
+            for m in &filtered_tierlist.c_monster {
+                core_ids.insert(m.monster_id);
+            }
+            for m in &filtered_tierlist.d_monster {
+                core_ids.insert(m.monster_id);
+            }
 
             // Collecte des trios
             let mut seen_trios = HashSet::<(u32, u32, u32)>::new();
@@ -156,6 +172,9 @@ pub async fn get_rta_core(
                 .chain(&filtered_tierlist.ss_monster)
                 .chain(&filtered_tierlist.s_monster)
                 .chain(&filtered_tierlist.a_monster)
+                .chain(&filtered_tierlist.b_monster)
+                .chain(&filtered_tierlist.c_monster)
+                .chain(&filtered_tierlist.d_monster)
             {
                 let rank_duos = match rank {
                     Rank::C1 | Rank::C2 | Rank::C3 => 0,

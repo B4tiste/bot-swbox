@@ -46,6 +46,12 @@ pub struct TierListData {
     pub s_monster: Vec<MonsterStat>,
     #[serde(rename = "amonster")]
     pub a_monster: Vec<MonsterStat>,
+    #[serde(rename = "bmonster")]
+    pub b_monster: Vec<MonsterStat>,
+    #[serde(rename = "cmonster")]
+    pub c_monster: Vec<MonsterStat>,
+    #[serde(rename = "dmonster")]
+    pub d_monster: Vec<MonsterStat>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
