@@ -357,10 +357,17 @@ pub async fn get_rta_core(
                 Mode::MetaSlayer => "Meta Slayer",
                 Mode::FunAndCasual => "Fun and Casual",
             };
-            let mut msg = format!(
-                "🎯 Trios for `{}` to play in `{}` (Mode `{}`) : \n",
-                wizard_name, rank_str, mode_str
-            );
+            let mut msg = if let Some(ref name) = monster {
+                format!(
+                    "🎯 Trios for `{}` to play in `{}` (Mode `{}`) focusing on `{}`:\n",
+                    wizard_name, rank_str, mode_str, name
+                )
+            } else {
+                format!(
+                    "🎯 Trios for `{}` to play in `{}` (Mode `{}`):\n",
+                    wizard_name, rank_str, mode_str
+                )
+            };
             if top.is_empty() {
                 msg.push_str("– No Trio Found\n");
             } else {
