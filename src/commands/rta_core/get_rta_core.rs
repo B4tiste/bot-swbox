@@ -26,7 +26,7 @@ pub async fn get_rta_core(
     // #[autocomplete = "autocomplete_monster"]
     // #[description = "Monster to include in the core (optional)"]
     // monster: Option<String>,
-    #[description = "Mode of the core (Meta Slayer or Fun and Casual)"] mode: Mode,
+    #[description = "Mode of the core (Meta Slayer or Fun/Casual)"] mode: Mode,
 ) -> Result<(), Error> {
     // Évite le timeout de 3 s
     ctx.defer().await?;
@@ -324,9 +324,13 @@ pub async fn get_rta_core(
             };
 
             // Affichage final unique
+            let mode_str = match mode {
+                Mode::MetaSlayer => "Meta Slayer",
+                Mode::FunAndCasual => "Fun and Casual",
+            };
             let mut msg = format!(
-                "🎯 Trios for `{}` to play in `{}` : \n",
-                wizard_name, rank_str
+                "🎯 Trios for `{}` to play in `{}` (Mode `{}`) : \n",
+                wizard_name, rank_str, mode_str
             );
             if top.is_empty() {
                 msg.push_str("– No Trio Found\n");
