@@ -25,7 +25,8 @@ use serenity::builder::CreateEmbedFooter;
 pub async fn upload_json(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     file: Attachment,
-    #[description = "Select the mode (defaults to Classic)"] mode: Option<Mode>,
+    #[description = "Select the mode (defaults to Classic)"]
+    mode: Option<Mode>,
 ) -> Result<(), Error> {
     // Defer the response to avoid the 3 seconds timeout
     ctx.defer().await?;

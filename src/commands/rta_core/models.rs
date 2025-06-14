@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, poise::ChoiceParameter)]
+pub enum Mode {
+    MetaSlayer,
+    FunAndCasual,
+}
+
+#[derive(Debug, poise::ChoiceParameter)]
 pub enum Rank {
     C1,
     C2,

@@ -2,7 +2,7 @@ use crate::commands::mob_stats::utils::get_swrt_settings;
 use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use crate::commands::rta_core::cache::get_monster_duos_cached;
 use crate::commands::rta_core::models::MonstersFile;
-use crate::commands::rta_core::models::{Rank, Trio};
+use crate::commands::rta_core::models::{Mode, Rank, Trio};
 use crate::commands::rta_core::utils::{
     filter_monster, get_emoji_from_id, get_monsters_from_json_bytes, get_tierlist_data,
 };
@@ -26,6 +26,7 @@ pub async fn get_rta_core(
     // #[autocomplete = "autocomplete_monster"]
     // #[description = "Monster to include in the core (optional)"]
     // monster: Option<String>,
+    #[description = "Mode of the core (Meta Slayer or Fun and Casual)"] mode: Mode,
 ) -> Result<(), Error> {
     // Évite le timeout de 3 s
     ctx.defer().await?;
@@ -184,9 +185,22 @@ pub async fn get_rta_core(
                 {
                     for duo in duos {
                         let (b, o, t) = (base.monster_id, duo.team_one_id, duo.team_two_id);
-                        // on ne garde que les trios où o et t sont dans la box du joueur
-                        if !player_box_ids.contains(&o) || !player_box_ids.contains(&t) {
-                            continue;
+
+                        let mode_id = match mode {
+                            Mode::MetaSlayer => 0,
+                            Mode::FunAndCasual => 1,
+                        };
+
+                        if mode_id == 0 {
+                            // on ne garde que les trios 100% « core »
+                            if !core_ids.contains(&o) || !core_ids.contains(&t) {
+                                continue;
+                            }
+                        } else {
+                            // on ne garde que les trios où o et t sont dans la box du joueur
+                            if !player_box_ids.contains(&o) || !player_box_ids.contains(&t) {
+                                continue;
+                            }
                         }
 
                         // clé triée pour être indépendante de l’ordre
@@ -260,7 +274,6 @@ pub async fn get_rta_core(
 
             // Tri et top
             trios.sort_by(|a, b| b.weighted_score.partial_cmp(&a.weighted_score).unwrap());
-            // print len trios
             let mut top = trios.into_iter().take(15).collect::<Vec<_>>();
 
             // Récupération des emojis
