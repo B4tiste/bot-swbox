@@ -23,7 +23,7 @@ use crate::{Data, API_TOKEN, CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMO
 use crate::MONSTER_MAP;
 
 /// Autocomplete basé sur MONSTER_MAP
-async fn autocomplete_monster<'a>(
+pub async fn autocomplete_monster<'a>(
     _ctx: poise::ApplicationContext<'a, Data, Error>,
     partial: &'a str,
 ) -> impl Iterator<Item = String> + 'a {

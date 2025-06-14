@@ -4,6 +4,7 @@ use serenity::builder::{EditAttachments, EditInteractionResponse};
 use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
 use crate::commands::mob_stats::utils::remap_monster_id;
+use crate::commands::mob_stats::get_mob_stats::autocomplete_monster;
 use crate::commands::player_stats::utils::create_replay_image;
 use crate::commands::replays::utils::{
     create_loading_replays_embed, create_replay_level_buttons, create_replays_embed,
@@ -18,19 +19,6 @@ use crate::{Data, API_TOKEN, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 
 // Import de la map des monstres
 use crate::MONSTER_MAP;
-
-/// Autocomplete basé sur MONSTER_MAP
-pub async fn autocomplete_monster<'a>(
-    _ctx: poise::ApplicationContext<'a, Data, Error>,
-    partial: &'a str,
-) -> impl Iterator<Item = String> + 'a {
-    let lower = partial.to_ascii_lowercase();
-    MONSTER_MAP
-        .keys()
-        .filter(move |name| name.to_ascii_lowercase().contains(&lower))
-        .take(10)
-        .cloned()
-}
 
 /// 📂 Display replays containing the selected monsters
 #[poise::command(slash_command)]

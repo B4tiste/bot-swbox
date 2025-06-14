@@ -1,3 +1,4 @@
+use crate::commands::mob_stats::get_mob_stats::autocomplete_monster;
 use crate::commands::mob_stats::utils::get_swrt_settings;
 use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use crate::commands::rta_core::cache::get_monster_duos_cached;
@@ -9,7 +10,6 @@ use crate::commands::rta_core::utils::{
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
-// use crate::commands::replays::get_replays::autocomplete_monster;
 use crate::commands::shared::logs::send_log;
 use crate::{Data, API_TOKEN};
 use poise::serenity_prelude::{Attachment, Error};
@@ -17,15 +17,18 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs;
 
+// Import de la map globale
+use crate::MONSTER_MAP;
+
 /// 📂 Displays best Trios to play for any given account JSON
 #[poise::command(slash_command)]
 pub async fn get_rta_core(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     file: Attachment,
     #[description = "Select the targeted rank"] rank: Rank,
-    // #[autocomplete = "autocomplete_monster"]
-    // #[description = "Monster to include in the core (optional)"]
-    // monster: Option<String>,
+    #[autocomplete = "autocomplete_monster"]
+    #[description = "Monster you want to get core for (optional)"]
+    monster: Option<String>,
     #[description = "Mode of the core (Meta Slayer or Fun/Casual)"] mode: Mode,
 ) -> Result<(), Error> {
     // Évite le timeout de 3 s
@@ -87,6 +90,25 @@ pub async fn get_rta_core(
     // Extraction des monsters
     match get_monsters_from_json_bytes(&bytes, "monsters_elements.json") {
         Ok(monsters) => {
+            // Si l'utilisateur a passé un nom de monstre, on le convertit en ID
+            let filter_monster_id: Option<u32> = if let Some(ref name) = monster {
+                match MONSTER_MAP.get(name) {
+                    Some(&id) => Some(id),
+                    None => {
+                        let msg = format!(
+                                    "❌ Impossible de trouver '{}'. Utilisez l'autocomplete pour un nom exact.",
+                                    name
+                                );
+                        let reply = ctx.send(create_embed_error(&msg)).await?;
+                        schedule_message_deletion(reply, ctx).await?;
+                        send_log(&ctx, "get_rta_core", false, &msg).await?;
+                        return Ok(());
+                    }
+                }
+            } else {
+                None
+            };
+
             // 1) Déterminer le paramètre `level` SWRanking selon le Rank choisi
             let api_level = match rank {
                 Rank::C1 | Rank::C2 | Rank::C3 | Rank::P1 | Rank::P2 => 0,
@@ -185,6 +207,13 @@ pub async fn get_rta_core(
                 {
                     for duo in duos {
                         let (b, o, t) = (base.monster_id, duo.team_one_id, duo.team_two_id);
+
+                        // 👉 Si on a un filtre de monstre, on skip ceux qui ne le contiennent pas
+                        if let Some(filter_id) = filter_monster_id {
+                            if b != filter_id && o != filter_id && t != filter_id {
+                                continue;
+                            }
+                        }
 
                         let mode_id = match mode {
                             Mode::MetaSlayer => 0,
