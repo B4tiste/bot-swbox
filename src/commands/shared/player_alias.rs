@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use lazy_static::lazy_static;
 use serde_json::json;
+use std::collections::HashMap;
 
 lazy_static! {
     /// Map utilisée dans `/get_leaderboard` pour afficher (alias)
@@ -87,12 +87,12 @@ lazy_static! {
                 "swarena_id": 155825,
                 "swrt_id": 1353033
             },
-{
-"og_names": "?",
-"en_names": ["compte tyteii"],
-"swarena_id": 935484,
-"swrt_id": 31998085,
-},
+            {
+            "og_names": "?",
+            "en_names": ["compte tyteii"],
+            "swarena_id": 935484,
+            "swrt_id": 31998085,
+            },
         ]
     });
 }

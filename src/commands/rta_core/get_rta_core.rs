@@ -71,10 +71,10 @@ pub async fn get_rta_core(
     };
 
     // 1️⃣ Charger le JSON statique "monsters_elements.json" pour connaître l'élément de chaque monstre
-    let monsters_json_str =
-        fs::read_to_string("monsters_elements.json").expect("Impossible de lire monsters_elements.json");
-    let all_monsters_file: MonstersFile =
-        serde_json::from_str(&monsters_json_str).expect("Impossible de parser monsters_elements.json");
+    let monsters_json_str = fs::read_to_string("monsters_elements.json")
+        .expect("Impossible de lire monsters_elements.json");
+    let all_monsters_file: MonstersFile = serde_json::from_str(&monsters_json_str)
+        .expect("Impossible de parser monsters_elements.json");
 
     // 2️⃣ Construire la table id → élément
     let element_map: HashMap<u32, String> = all_monsters_file
@@ -137,6 +137,8 @@ pub async fn get_rta_core(
                 }
             };
 
+            // Préparation des IDs de monstres de la box
+            let player_box_ids: HashSet<u32> = monsters.iter().map(|m| m.unit_master_id).collect();
             // Préparation des IDs core
             let mut core_ids = std::collections::HashSet::new();
             for m in &filtered_tierlist.sss_monster {
@@ -182,10 +184,11 @@ pub async fn get_rta_core(
                 {
                     for duo in duos {
                         let (b, o, t) = (base.monster_id, duo.team_one_id, duo.team_two_id);
-                        // on ne garde que les trios 100% « core »
-                        if !core_ids.contains(&o) || !core_ids.contains(&t) {
+                        // on ne garde que les trios où o et t sont dans la box du joueur
+                        if !player_box_ids.contains(&o) || !player_box_ids.contains(&t) {
                             continue;
                         }
+
                         // clé triée pour être indépendante de l’ordre
                         let mut key = [b, o, t];
                         key.sort_unstable();
@@ -257,6 +260,7 @@ pub async fn get_rta_core(
 
             // Tri et top
             trios.sort_by(|a, b| b.weighted_score.partial_cmp(&a.weighted_score).unwrap());
+            // print len trios
             let mut top = trios.into_iter().take(15).collect::<Vec<_>>();
 
             // Récupération des emojis
