@@ -10,3 +10,4 @@ pub mod player_stats;
 pub mod leaderboard;
 pub mod rta_core;
 pub mod replays;
+pub mod how_to_build;

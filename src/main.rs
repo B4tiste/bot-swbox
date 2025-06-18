@@ -24,6 +24,7 @@ use crate::commands::player_stats::get_player_stats::get_player_stats;
 use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
 use crate::commands::rta_core::get_rta_core::get_rta_core;
 use crate::commands::replays::get_replays::get_replays;
+use crate::commands::how_to_build::how_to_build::how_to_build;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -230,6 +231,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 get_rta_leaderboard(),
                 get_rta_core(),
                 get_replays(),
+                how_to_build(),
             ],
             ..Default::default()
         })
