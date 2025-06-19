@@ -1,6 +1,3 @@
-use crate::commands::ranks::utils::get_rank_info;
-use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
-use crate::MONGO_URI;
 use ab_glyph::{FontArc, PxScale};
 use anyhow::{anyhow, Context, Result};
 use image::GenericImage;
@@ -13,6 +10,13 @@ use serde::Deserialize;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use serde_json::Value;
+use std::fs;
+
+use crate::commands::mob_stats::utils::remap_monster_id;
+use crate::commands::ranks::utils::get_rank_info;
+use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
+use crate::MONGO_URI;
 
 #[derive(Debug, Deserialize)]
 pub struct Player {
@@ -276,25 +280,19 @@ pub async fn get_emoji_from_filename(
     Some(format!("<:{}:{}>", name_no_ext, id))
 }
 
-pub async fn get_emoji_from_filename_with_stars(
-    collection: &Collection<mongodb::bson::Document>,
-    filename: &str,
-) -> Option<String> {
-    let name_no_ext = filename.replace(".png", "").replace("unit_icon_", "");
+// Utilitaire global ou lazy_static
+fn get_filename_to_id_map() -> HashMap<String, i32> {
+    let file = fs::read_to_string("monsters_elements.json").unwrap();
+    let v: Value = serde_json::from_str(&file).unwrap();
+    let arr = v["monsters"].as_array().unwrap();
 
-    let emoji_doc = collection
-        .find_one(doc! { "name": &name_no_ext })
-        .await
-        .ok()??;
-
-    let natural_stars = emoji_doc.get_i32("natural_stars").unwrap_or(0);
-
-    if natural_stars < 5 {
-        return None;
+    let mut map = HashMap::new();
+    for m in arr {
+        let filename = m["image_filename"].as_str().unwrap().to_string();
+        let com2us_id = m["com2us_id"].as_i64().unwrap() as i32;
+        map.insert(filename, com2us_id);
     }
-
-    let id = emoji_doc.get_str("id").ok()?;
-    Some(format!("<:{}:{}>", name_no_ext, id))
+    map
 }
 
 pub async fn format_player_ld_monsters_emojis(details: &PlayerDetail) -> Vec<String> {
@@ -308,17 +306,37 @@ pub async fn format_player_ld_monsters_emojis(details: &PlayerDetail) -> Vec<Str
     files.sort();
     files.dedup();
 
+    let filename_to_id = get_filename_to_id_map(); // ← charge le mapping ici
+
     if let Ok(collection) = get_mob_emoji_collection().await {
         for file in files {
-            // ici on utilise la fonction avec filtre sur les étoiles
-            if let Some(emoji) = get_emoji_from_filename_with_stars(&collection, &file).await {
-                emojis.push(emoji);
+            // 1. Trouver l’id depuis le filename
+            if let Some(&monster_id) = filename_to_id.get(&file) {
+                // 2. Remap l’id
+                let remapped_id = remap_monster_id(monster_id);
+
+                // 3. Chercher le bon emoji avec ce com2us_id
+                let emoji_doc = collection
+                    .find_one(doc! { "com2us_id": remapped_id })
+                    .await
+                    .ok()
+                    .flatten();
+
+                if let Some(emoji_doc) = emoji_doc {
+                    let natural_stars = emoji_doc.get_i32("natural_stars").unwrap_or(0);
+                    if natural_stars < 5 { continue; }
+                    if let Ok(id) = emoji_doc.get_str("id") {
+                        let name = emoji_doc.get_str("name").unwrap_or("unit");
+                        emojis.push(format!("<:{}:{}>", name, id));
+                    }
+                }
             }
         }
     }
 
     emojis
 }
+
 
 pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     let mut output = vec![];
