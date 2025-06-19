@@ -337,7 +337,6 @@ pub async fn format_player_ld_monsters_emojis(details: &PlayerDetail) -> Vec<Str
     emojis
 }
 
-
 pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     let mut output = vec![];
 
@@ -346,33 +345,49 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
         Err(_) => return output,
     };
 
+    let filename_to_id = get_filename_to_id_map(); // ← mapping filename → id
+
     if let Some(monsters) = &details.player_monsters {
         for (index, m) in monsters.iter().enumerate() {
-            if let Some(emoji) = get_emoji_from_filename(&collection, &m.monster_img).await {
-                let pick_display = if m.pick_total >= 1000 {
-                    let k = m.pick_total / 1000;
-                    let remainder = (m.pick_total % 1000) / 100;
-                    // if remainder == 0 {
-                    //     format!("{}k", k)
-                    // } else {
-                    //     format!("{}k.{:02}", k, remainder)
-                    if remainder == 0 {
-                        format!("{}k", k)
-                    } else {
-                        format!("{}k{}", k, remainder)
-                    }
-                } else {
-                    m.pick_total.to_string()
-                };
+            // 1. Trouver l’id depuis le filename
+            if let Some(&monster_id) = filename_to_id.get(&m.monster_img) {
+                // 2. Remap l’id
+                let remapped_id = remap_monster_id(monster_id);
 
-                let entry = format!(
-                    "{}. {} {} picks, **{:.1} %** WR\n",
-                    index + 1,
-                    emoji,
-                    pick_display,
-                    m.win_rate
-                );
-                output.push(entry);
+                // 3. Chercher le bon emoji avec ce com2us_id
+                let emoji_doc = collection
+                    .find_one(doc! { "com2us_id": remapped_id })
+                    .await
+                    .ok()
+                    .flatten();
+
+                if let Some(emoji_doc) = emoji_doc {
+                    if let Ok(id) = emoji_doc.get_str("id") {
+                        let name = emoji_doc.get_str("name").unwrap_or("unit");
+                        let emoji = format!("<:{}:{}>", name, id);
+
+                        let pick_display = if m.pick_total >= 1000 {
+                            let k = m.pick_total / 1000;
+                            let remainder = (m.pick_total % 1000) / 100;
+                            if remainder == 0 {
+                                format!("{}k", k)
+                            } else {
+                                format!("{}k{}", k, remainder)
+                            }
+                        } else {
+                            m.pick_total.to_string()
+                        };
+
+                        let entry = format!(
+                            "{}. {} {} picks, **{:.1} %** WR\n",
+                            index + 1,
+                            emoji,
+                            pick_display,
+                            m.win_rate
+                        );
+                        output.push(entry);
+                    }
+                }
             }
         }
     }
