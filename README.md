@@ -30,11 +30,12 @@ Click on the image to go to the French Youtube Video Guide :
 
 ### ToDo:
 
--   [ ] Create a commande `/get_replays <Monster1> <Monster2> ...` that gives the replays of the last 10 replays containing the monsters in the list.
 -   [ ] Find something that Unaxe can do so that he stops ouin-oui'ing.
 
 ### Completed:
 
+-   [x] Add the `/how_to_build` command to get the best runes/artis for a monster.
+-   [x] Create a commande `/get_replays <Monster1> <Monster2> ...` that gives the replays of the last 10 replays containing the monsters in the list.
 -   [x] Create the command that gives trio cores for a given JSON.
 -   [x] Switch to SWRT for data.
 -   [x] Add replay on player stats.
