@@ -95,7 +95,7 @@ pub async fn get_rta_core(
                 match MONSTER_MAP.get(name) {
                     Some(&id) => Some(id),
                     None => {
-                        let msg = format!("❌ Cannot find '{}', please use the autocomplete feature for a perfect match.", monster_name);
+                        let msg = format!("❌ Cannot find '{}', please use the autocomplete feature for a perfect match.", name);
                         let reply = ctx.send(create_embed_error(&msg)).await?;
                         schedule_message_deletion(reply, ctx).await?;
                         send_log(&ctx, "get_rta_core", false, &msg).await?;
