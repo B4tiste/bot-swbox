@@ -58,7 +58,7 @@ pub async fn how_to_build(
         let embed = format_monster_stats(&monster_name, stats, image_url);
         ctx.send(CreateReply::default().embed(embed)).await?;
     } else {
-        let msg = format!("No data found for monster: **{}**", monster_name);
+        let msg = format!("❌ Cannot find '{}', please use the autocomplete feature for a perfect match.", monster_name);
         let reply = ctx.send(create_embed_error(&msg)).await?;
         schedule_message_deletion(reply, ctx).await?;
         send_log(&ctx, monster_name, false, &msg).await?;
