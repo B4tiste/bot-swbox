@@ -83,7 +83,7 @@ lazy_static! {
             },
             {
             "og_names": "Falthazard",
-            "en_names": ["falzar"],
+            "en_names": ["Falzar"],
             "swarena_id": 11934958,
             "swrt_id": 38089,
             },
