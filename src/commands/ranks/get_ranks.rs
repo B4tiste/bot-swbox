@@ -68,12 +68,12 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
 
     // Creating the embed using the description
     let embed = serenity::CreateEmbed::default()
-        .title("Current ranks tresholds")
+        .title("Current ranks thresholds")
         .color(serenity::Colour::from_rgb(0, 0, 255))
         .thumbnail(thumbnail)
         .description(description)
         .field(
-            "Cutoffs :",
+            "Cutoffs prediction :",
             format!("From [SW-TT](https://sw-tt.com)"),
             false,
         )
