@@ -70,28 +70,22 @@ lazy_static! {
                 "swrt_id": 10871
             },
             {
-                "og_name": "Chiikoup~",
-                "en_names": ["autowin"],
-                "swarena_id": 17461686,
-                "swrt_id": 11401858
-            },
-            {
                 "og_name": "ᴅᴀᴍ~",
                 "en_names": ["Le débilos"],
                 "swarena_id": 2419842,
                 "swrt_id": 17817
             },
             {
-                "og_name": "ҜΞИZФ™",
-                "en_names": ["yaz le fou"],
-                "swarena_id": 155825,
-                "swrt_id": 1353033
-            },
-            {
             "og_names": "?",
             "en_names": ["compte tyteii"],
             "swarena_id": 935484,
             "swrt_id": 31998085,
+            },
+            {
+            "og_names": "Falthazard",
+            "en_names": ["falzar"],
+            "swarena_id": 11934958,
+            "swrt_id": 38089,
             },
         ]
     });
