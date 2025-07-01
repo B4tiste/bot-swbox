@@ -72,12 +72,12 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         .color(serenity::Colour::from_rgb(0, 0, 255))
         .thumbnail(thumbnail)
         .description(description)
-        .field(
-            "Cutoffs prediction :",
-            format!("From [SW-TT](https://sw-tt.com)"),
-            false,
-        )
-        .image("attachment://cutoffs.png")
+        // .field(
+        //     "Cutoffs prediction :",
+        //     format!("From [SW-TT](https://sw-tt.com)"),
+        //     false,
+        // )
+        // .image("attachment://cutoffs.png")
         .footer(CreateEmbedFooter::new(
             "Please use /send_suggestion to report any issue.",
         ));
