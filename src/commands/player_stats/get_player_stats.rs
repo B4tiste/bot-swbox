@@ -79,8 +79,7 @@ pub async fn get_player_stats(
         // Create attachment for the replay image
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
-        let updated_embed =
-            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
+        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
 
         // Edit the message to include loaded data
         reply_handle
@@ -114,7 +113,8 @@ pub async fn get_player_stats(
     })?;
 
     if players.is_empty() {
-        ctx.say("No players found.").await?;
+        ctx.say(format!("No players found for `{}`.", player_name))
+            .await?;
         send_log(
             &ctx,
             "Command: /get_player_stats".to_string(),
@@ -172,8 +172,7 @@ pub async fn get_player_stats(
         // Create attachment for the replay image
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
-        let updated_embed =
-            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
+        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
 
         // Edit the message to include loaded data
         reply_handle
@@ -321,8 +320,7 @@ pub async fn get_player_stats(
         // Create attachment for the replay image
         let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
-        let updated_embed =
-            create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
+        let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
 
         msg.edit(
             poise::Context::Application(ctx),
