@@ -113,6 +113,16 @@ pub fn format_monster_stats(
         }
     }
 
+    embed = embed.field(
+        "⚠️ Disclaimer ⚠️",
+        "Data accuracy is not guaranteed, use at your own risk.",
+        false,
+    );
+
+    embed = embed.footer(CreateEmbedFooter::new(
+        "Please use /send_suggestion to report any issue.",
+    ));
+
     embed
 }
 
