@@ -34,19 +34,19 @@ lazy_static! {
             // Gros joueurs
             {
                 "og_name": "沙比版本策划",
-                "en_names": ["kelianbao", "kelian bao"],
+                "en_names": ["Kelianbao", "Kelian bao"],
                 "swarena_id": 28964534,
                 "swrt_id": 54175
             },
             {
                 "og_name": "未生",
-                "en_names": ["tars"],
+                "en_names": ["Tars"],
                 "swarena_id": 19979062,
                 "swrt_id": 48169
             },
             {
                 "og_name": "鮭  　　　 ",
-                "en_names": ["lest"],
+                "en_names": ["Lest"],
                 "swarena_id": 6489096,
                 "swrt_id": 30389
             },
@@ -58,14 +58,14 @@ lazy_static! {
             },
             {
                 "og_name": "XカブレラX",
-                "en_names": ["cabrera"],
+                "en_names": ["Cabrera"],
                 "swarena_id": 1176597,
                 "swrt_id": 11026
             },
             // Custom
             {
                 "og_name": "Salvandar~",
-                "en_names": ["salvodar"],
+                "en_names": ["Salvodar"],
                 "swarena_id": 1148532,
                 "swrt_id": 10871
             },
@@ -77,7 +77,7 @@ lazy_static! {
             },
             {
             "og_names": "?",
-            "en_names": ["compte tyteii"],
+            "en_names": ["Compte Tyteii"],
             "swarena_id": 935484,
             "swrt_id": 31998085,
             },
@@ -86,6 +86,30 @@ lazy_static! {
             "en_names": ["Falzar"],
             "swarena_id": 11934958,
             "swrt_id": 38089,
+            },
+            {
+            "og_names": "?",
+            "en_names": ["Compte 1piss"],
+            "swarena_id": 4670983,
+            "swrt_id": 26158,
+            },
+            {
+            "og_names": "?",
+            "en_names": ["Compte Villipyty"],
+            "swarena_id": 2669729,
+            "swrt_id": 19043,
+            },
+            {
+            "og_names": "?",
+            "en_names": ["Compte Sapyn"],
+            "swarena_id": 1931431,
+            "swrt_id": 15145,
+            },
+            {
+            "og_names": "?",
+            "en_names": ["Compte Tututuh", "Tuh", "222"],
+            "swarena_id": 10315887,
+            "swrt_id": 35724,
             },
         ]
     });
