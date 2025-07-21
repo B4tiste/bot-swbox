@@ -111,6 +111,12 @@ lazy_static! {
             "swarena_id": 10315887,
             "swrt_id": 35724,
             },
+            {
+            "og_names": "?",
+            "en_names": ["Compte Ruiwen"],
+            "swarena_id": 9398325,
+            "swrt_id": 34690,
+            },
         ]
     });
 }
