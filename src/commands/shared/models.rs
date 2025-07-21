@@ -1,16 +1,16 @@
-use serde::Deserialize;
+// use serde::Deserialize;
 
-#[derive(Deserialize, Clone, Default)]
-pub struct SlugData {
-    pub name: String,
-    pub slug: String,
-}
+// #[derive(Deserialize, Clone, Default)]
+// pub struct SlugData {
+//     pub name: String,
+//     pub slug: String,
+// }
 
-#[derive(Deserialize, Clone, Default)]
-pub struct MonsterGeneralInfoData {
-    pub id: i32,
-    pub image_filename: String,
-}
+// #[derive(Deserialize, Clone, Default)]
+// pub struct MonsterGeneralInfoData {
+//     pub id: i32,
+//     pub image_filename: String,
+// }
 
 // #[derive(Deserialize, Default)]
 // pub struct MonsterRtaInfoData {
@@ -24,12 +24,12 @@ pub struct MonsterGeneralInfoData {
 //     pub lead_rate: f32,
 // }
 
-#[derive(Deserialize, Default)]
-pub struct DuoStatsInfosData {
-    pub b_monster_image_filename: String,
-    pub win_against_rate: String,
-    pub win_together_rate: String,
-}
+// #[derive(Deserialize, Default)]
+// pub struct DuoStatsInfosData {
+//     pub b_monster_image_filename: String,
+//     pub win_against_rate: String,
+//     pub win_together_rate: String,
+// }
 
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum Mode {

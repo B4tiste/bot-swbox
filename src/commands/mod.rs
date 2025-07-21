@@ -1,4 +1,4 @@
-pub mod duo_stats;
+// pub mod duo_stats;
 pub mod help;
 pub mod upload_json;
 pub mod mob_stats;
@@ -10,4 +10,4 @@ pub mod player_stats;
 pub mod leaderboard;
 pub mod rta_core;
 pub mod replays;
-pub mod how_to_build;
+// pub mod how_to_build;

@@ -13,7 +13,7 @@ use std::{collections::HashMap, fs};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 
-use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
+// use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
 use crate::commands::help::help::help;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
 use crate::commands::player_names::track_player_names::track_player_names;
@@ -24,7 +24,7 @@ use crate::commands::player_stats::get_player_stats::get_player_stats;
 use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
 use crate::commands::rta_core::get_rta_core::get_rta_core;
 use crate::commands::replays::get_replays::get_replays;
-use crate::commands::how_to_build::how_to_build::how_to_build;
+// use crate::commands::how_to_build::how_to_build::how_to_build;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -223,7 +223,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 get_ranks(),
                 get_mob_stats(),
                 help(),
-                get_duo_stats(),
+                // get_duo_stats(),
                 send_suggestion(),
                 track_player_names(),
                 upload_json(),
@@ -231,7 +231,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 get_rta_leaderboard(),
                 get_rta_core(),
                 get_replays(),
-                how_to_build(),
+                // how_to_build(),
             ],
             ..Default::default()
         })
