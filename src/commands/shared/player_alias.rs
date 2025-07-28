@@ -122,6 +122,7 @@ lazy_static! {
             "en_names": ["BOT Developer"],
             "swarena_id": 1173973,
             "swrt_id": 11011,
+            }
         ]
     });
 }
