@@ -288,9 +288,12 @@ fn get_filename_to_id_map() -> HashMap<String, i32> {
 
     let mut map = HashMap::new();
     for m in arr {
-        let filename = m["image_filename"].as_str().unwrap().to_string();
-        let com2us_id = m["com2us_id"].as_i64().unwrap() as i32;
-        map.insert(filename, com2us_id);
+        let obtainable = m["obtainable"].as_bool().unwrap_or(false);
+        if obtainable {
+            let filename = m["image_filename"].as_str().unwrap().to_string();
+            let com2us_id = m["com2us_id"].as_i64().unwrap() as i32;
+            map.insert(filename, com2us_id);
+        }
     }
     map
 }
