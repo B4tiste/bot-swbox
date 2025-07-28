@@ -117,6 +117,11 @@ lazy_static! {
             "swarena_id": 9398325,
             "swrt_id": 34690,
             },
+            {
+            "og_names": "B4tiste",
+            "en_names": ["BOT Developer"],
+            "swarena_id": 1173973,
+            "swrt_id": 11011,
         ]
     });
 }
