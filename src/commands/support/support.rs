@@ -14,13 +14,14 @@ pub async fn support(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
     let embed = serenity::CreateEmbed::default()
         .title("Support the Project")
         .color(serenity::Colour::from_rgb(0, 255, 255))
-        .description("If you like this bot and want to support the project, consider donating on [Ko-Fi](https://ko-fi.com/swbox).")
+        .description("If you like this bot and want to support the project, consider donating on **[Ko-Fi](https://ko-fi.com/swbox)**.")
         .field(
             "Commission : Custom Player Alias (3€)",
             "You can add a custom player alias for yourself or someone else. This alias can be used to search for that player using the command, and will also be displayed on the player profile.",
             false,
         )
-        .footer(CreateEmbedFooter::new("Thank you for your support!"));
+        .thumbnail("https://media.tenor.com/337ncxnLbbIAAAAi/kofi-support-me.gif")
+        .footer(CreateEmbedFooter::new("Thank you for your support ! ❤️"));
 
     // Send the embed as a reply to the command
     let reply = CreateReply {
