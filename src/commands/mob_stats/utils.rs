@@ -626,11 +626,11 @@ pub fn remap_monster_id(monster_id: i32) -> i32 {
         (32813, 32113), // Wind Inosuke Hashibira
         (32814, 32114), // Light Inosuke Hashibira
         (32815, 32115), // Dark Inosuke Hashibira
-        (32611, 32011), // Water Nezuko Kamado
-        (32612, 32012), // Fire Nezuko Kamado
-        (32613, 32013), // Wind Nezuko Kamado
-        (32614, 32014), // Light Nezuko Kamado
-        (32615, 32015), // Dark Nezuko Kamado
+        (32611, 31911), // Water Nezuko Kamado
+        (32612, 31912), // Fire Nezuko Kamado
+        (32613, 31913), // Wind Nezuko Kamado
+        (32614, 31914), // Light Nezuko Kamado
+        (32615, 31915), // Dark Nezuko Kamado
         (32511, 31811), // Water Tanjiro Kamado
         (32512, 31812), // Fire Tanjiro Kamado
         (32513, 31813), // Wind Tanjiro Kamado
