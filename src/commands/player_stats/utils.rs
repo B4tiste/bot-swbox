@@ -7,11 +7,11 @@ use mongodb::{bson::doc, Client, Collection};
 use poise::serenity_prelude as serenity;
 use rand::seq::IndexedRandom;
 use serde::Deserialize;
+use serde_json::Value;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use std::collections::HashMap;
-use std::path::PathBuf;
-use serde_json::Value;
 use std::fs;
+use std::path::PathBuf;
 
 use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::ranks::utils::get_rank_info;
@@ -327,7 +327,9 @@ pub async fn format_player_ld_monsters_emojis(details: &PlayerDetail) -> Vec<Str
 
                 if let Some(emoji_doc) = emoji_doc {
                     let natural_stars = emoji_doc.get_i32("natural_stars").unwrap_or(0);
-                    if natural_stars < 5 { continue; }
+                    if natural_stars < 5 {
+                        continue;
+                    }
                     if let Ok(id) = emoji_doc.get_str("id") {
                         let name = emoji_doc.get_str("name").unwrap_or("unit");
                         emojis.push(format!("<:{}:{}>", name, id));
@@ -516,7 +518,12 @@ pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Repl
     Ok(json.data.page.list)
 }
 
-pub async fn create_replay_image(recent_replays: Vec<Replay>, token: &str, rows: i32, cols: i32) -> Result<PathBuf> {
+pub async fn create_replay_image(
+    recent_replays: Vec<Replay>,
+    token: &str,
+    rows: i32,
+    cols: i32,
+) -> Result<PathBuf> {
     let nb_battles = recent_replays.len();
 
     let mut sections: Vec<RgbaImage> = Vec::new();
@@ -767,10 +774,8 @@ async fn create_team_collage_custom_layout(
 
         let (grid_x, grid_y) = grid_slots[i];
         let x = grid_x as u32 * width;
-        let y = if first_pick && i == 0 {
-            ((height * 2) as f32 / 2.0 - (height as f32 / 2.0)).round() as u32
-        } else if !first_pick && i == 4 {
-            ((height * 2) as f32 / 2.0 - (height as f32 / 2.0)).round() as u32
+        let y = if (first_pick && i == 0) || (!first_pick && i == 4) {
+            ((collage.height() - height) / 2).min(collage.height() - height)
         } else {
             grid_y as u32 * height
         };
@@ -837,6 +842,9 @@ async fn load_image_local(
             ))
         }
     }
+
+    // After loading the image, force resize:
+    let img = img.resize_exact(100, 100, image::imageops::FilterType::Lanczos3);
 
     cache.insert(filename.to_string(), img.clone());
     Ok(img)
