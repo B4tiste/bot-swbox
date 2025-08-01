@@ -117,7 +117,7 @@ pub async fn register(
         };
 
         if let Ok(Some(_)) = collection
-            .find_one(doc! { "user_id": &user_id })
+            .find_one(doc! { "hive_id": &hive_id })
             .await
         {
             let error_message = "User already registered with this Hive ID and server.";
