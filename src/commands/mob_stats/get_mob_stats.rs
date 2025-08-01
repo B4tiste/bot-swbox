@@ -4,18 +4,14 @@ use serenity::builder::EditInteractionResponse;
 use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
 use crate::commands::mob_stats::utils::{
-    build_loading_monster_stats_embed,
-    build_monster_stats_embed,
-    create_mob_level_buttons,
-    format_good_teams,
-    format_good_matchups,
-    format_bad_matchups,
-    get_monster_matchups_swrt,
-    get_monster_stats_swrt,
-    get_swrt_settings,
+    build_loading_monster_stats_embed, build_monster_stats_embed, create_mob_level_buttons,
+    format_bad_matchups, format_good_matchups, format_good_teams, get_monster_matchups_swrt,
+    get_monster_stats_swrt, get_swrt_settings,
 };
 use crate::commands::player_stats::utils::{get_emoji_from_filename, get_mob_emoji_collection};
-use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
+use crate::commands::shared::embed_error_handling::{
+    create_embed_error, schedule_message_deletion,
+};
 use crate::commands::shared::logs::send_log;
 use crate::{Data, API_TOKEN, CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 
@@ -80,7 +76,10 @@ pub async fn get_mob_stats(
     let com2us_id = match MONSTER_MAP.get(&monster_name) {
         Some(&id) => id as i32,
         None => {
-            let msg = format!("❌ Cannot find '{}', please use the autocomplete feature for a perfect match.", monster_name);
+            let msg = format!(
+                "❌ Cannot find '{}', please use the autocomplete feature for a perfect match.",
+                monster_name
+            );
             let reply = ctx.send(create_embed_error(&msg)).await?;
             schedule_message_deletion(reply, ctx).await?;
             send_log(&ctx, input_data, false, &msg).await?;
@@ -250,24 +249,28 @@ pub async fn get_mob_stats(
             )
             .await?;
 
-        let new_stats =
-            match get_monster_stats_swrt(com2us_id, season, &token, current_level)
-                .await
-            {
-                Ok(data) => data,
-                Err(e) => {
-                    interaction
-                        .edit_response(
-                            &ctx.serenity_context.http,
-                            EditInteractionResponse::new()
-                                .content(format!("❌ Error fetching data: {}", e))
-                                .components(vec![])
-                                .embeds(vec![]),
-                        )
-                        .await?;
-                    continue;
-                }
-            };
+        let new_stats = match get_monster_stats_swrt(com2us_id, season, &token, current_level).await
+        {
+            Ok(data) => data,
+            Err(e) => {
+                interaction
+                    .edit_response(
+                        &ctx.serenity_context.http,
+                        EditInteractionResponse::new()
+                            .content(format!("❌ Error fetching data: {}", e))
+                            .components(vec![create_mob_level_buttons(
+                                conqueror_id,
+                                guardian_id,
+                                punisher_id,
+                                current_level,
+                                false,
+                            )])
+                            .embeds(vec![]),
+                    )
+                    .await?;
+                continue;
+            }
+        };
 
         let (high_teams, high_matchups, low_matchups) =
             get_monster_matchups_swrt(com2us_id, season, current_level, &token)
