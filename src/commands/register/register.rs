@@ -18,6 +18,10 @@ pub enum Server {
     Asia,
 }
 
+
+/// 📂 Register your Hive ID and server for the coupon tracker.
+///
+/// Usage: `/register <hive_id> <server>`
 #[poise::command(slash_command)]
 pub async fn register(
     ctx: poise::ApplicationContext<'_, Data, Error>,

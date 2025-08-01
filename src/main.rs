@@ -28,7 +28,6 @@ use crate::commands::upload_json::upload_json::upload_json;
 use crate::commands::register::register::register;
 use crate::commands::support::support::support;
 
-use futures::stream::StreamExt;
 use mongodb::{bson::doc, Client as MongoClient};
 use regex::Regex;
 use reqwest::{
@@ -124,20 +123,25 @@ pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
 // ----------------------------------------------------------------------
 
 pub async fn parse_and_apply_coupons(mongo_uri: String) {
+    use futures::stream::StreamExt;
+    use mongodb::bson::doc;
+
     loop {
-        // 1. Télécharger la liste des coupons via la nouvelle fonction (anti-403)
+        // 1. Télécharger la liste des coupons via la fonction fetch_fresh_coupons()
         let coupons_json = match fetch_fresh_coupons().await {
             Ok(j) => j,
-            Err(_) => {
+            Err(e) => {
+                eprintln!("Erreur lors de la récupération des coupons: {:?}", e);
                 tokio::time::sleep(Duration::from_secs(3600)).await;
                 continue;
             }
         };
 
-        // 2. Récupérer la collection coupons & registered_users
+        // 2. Connexion à MongoDB
         let mongo = match MongoClient::with_uri_str(&mongo_uri).await {
             Ok(c) => c,
-            Err(_) => {
+            Err(e) => {
+                eprintln!("Erreur de connexion MongoDB: {:?}", e);
                 tokio::time::sleep(Duration::from_secs(3600)).await;
                 continue;
             }
@@ -146,37 +150,25 @@ pub async fn parse_and_apply_coupons(mongo_uri: String) {
         let coupons_col = db.collection("coupons");
         let users_col = db.collection::<mongodb::bson::Document>("registered_users");
 
-        // 3. Liste des labels de coupons verified du JSON API
-        let api_verified_labels: Vec<String> = coupons_json
-            .get("data")
-            .and_then(|arr| arr.as_array())
-            .unwrap_or(&vec![])
-            .iter()
-            .filter_map(|coupon| {
-                let status = coupon.get("Status")?.as_str()?;
-                let label = coupon.get("Label")?.as_str()?;
-                if status == "verified" { Some(label.to_string()) } else { None }
-            })
-            .collect();
-
-        // 4. Supprimer tous les coupons dans la base qui ne sont plus verified (ou supprimés de l’API)
-        let filter = doc! {
-            "Label": { "$nin": &api_verified_labels }
-        };
-        if let Err(e) = coupons_col.delete_many(filter).await {
-            eprintln!("Erreur lors de la suppression des coupons obsolètes: {:?}", e);
+        // 3. Vider complètement la collection "coupons"
+        if let Err(e) = coupons_col.delete_many(doc! {}).await {
+            eprintln!("Erreur lors du wipe de la collection coupons: {:?}", e);
         }
 
-        // 5. Traiter/insérer tous les nouveaux coupons verified
-        for coupon in coupons_json
+        // 4. Récupérer tous les coupons "verified"
+        let verified_coupons: Vec<_> = coupons_json
             .get("data")
             .and_then(|arr| arr.as_array())
             .unwrap_or(&vec![])
             .iter()
-        {
+            .filter(|coupon| coupon.get("Status").and_then(|v| v.as_str()) == Some("verified"))
+            .cloned()
+            .collect();
+
+        // 5. Appliquer chaque coupon verified à tous les users
+        for coupon in verified_coupons.iter() {
             let label = coupon.get("Label").and_then(|v| v.as_str()).unwrap_or("");
             let status = coupon.get("Status").and_then(|v| v.as_str()).unwrap_or("");
-
             let resources: Vec<String> = coupon
                 .get("Resources")
                 .and_then(|v| v.as_array())
@@ -189,42 +181,23 @@ pub async fn parse_and_apply_coupons(mongo_uri: String) {
                 })
                 .collect();
 
-            if status != "verified" {
-                continue;
-            }
-
-            // Vérifie si déjà en base (insertion unique)
-            if coupons_col
-                .find_one(doc! { "Label": label })
-                .await
-                .unwrap_or(None)
-                .is_some()
-            {
-                continue; // déjà appliqué
-            }
-
-            // Ajoute en base pour ne plus le refaire
-            if let Err(_) = coupons_col
+            // Log en base (cette itération)
+            let _ = coupons_col
                 .insert_one(
-                    doc! { "Label": label, "Status": status, "Resources": resources.clone() }
+                    doc! { "Label": label, "Status": status, "Resources": resources.clone() },
                 )
-                .await
-            {
-                continue;
-            }
+                .await;
 
-            // Applique à tous les users
+            // Appliquer à tous les users
             let mut cursor = users_col.find(doc! {}).await.unwrap();
             while let Some(user) = cursor.next().await {
                 if let Ok(user_doc) = user {
                     let hive_id = user_doc.get_str("hive_id").unwrap_or("");
                     let server = user_doc.get_str("server").unwrap_or("europe");
-                    let _ = user_doc.get_str("user_id").unwrap_or("");
 
-                    // Applique à tous les users
                     let params = [
-                        ("country", "FR"), // ou "EN" selon besoin
-                        ("lang", "fr"),    // ou "en"
+                        ("country", "FR"),
+                        ("lang", "fr"),
                         ("server", server),
                         ("hiveid", hive_id),
                         ("coupon", label),
@@ -232,77 +205,36 @@ pub async fn parse_and_apply_coupons(mongo_uri: String) {
 
                     let client = reqwest::Client::new();
                     let mut headers = reqwest::header::HeaderMap::new();
-
-                    headers.insert(
-                        "Accept",
-                        "application/json, text/javascript, */*; q=0.01"
-                            .parse()
-                            .unwrap(),
-                    );
-                    headers.insert(
-                        "Accept-Language",
-                        "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7".parse().unwrap(),
-                    );
+                    headers.insert("Accept", "application/json, text/javascript, */*; q=0.01".parse().unwrap());
+                    headers.insert("Accept-Language", "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7".parse().unwrap());
                     headers.insert("Connection", "keep-alive".parse().unwrap());
-                    headers.insert(
-                        "Content-Type",
-                        "application/x-www-form-urlencoded; charset=UTF-8"
-                            .parse()
-                            .unwrap(),
-                    );
+                    headers.insert("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8".parse().unwrap());
                     headers.insert("Origin", "https://event.withhive.com".parse().unwrap());
-                    headers.insert(
-                        "Referer",
-                        "https://event.withhive.com/ci/smon/evt_coupon"
-                            .parse()
-                            .unwrap(),
-                    );
+                    headers.insert("Referer", "https://event.withhive.com/ci/smon/evt_coupon".parse().unwrap());
                     headers.insert("Sec-Fetch-Dest", "empty".parse().unwrap());
                     headers.insert("Sec-Fetch-Mode", "cors".parse().unwrap());
                     headers.insert("Sec-Fetch-Site", "same-origin".parse().unwrap());
                     headers.insert("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36".parse().unwrap());
                     headers.insert("X-Requested-With", "XMLHttpRequest".parse().unwrap());
-                    headers.insert(
-                        "sec-ch-ua",
-                        r#""Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138""#
-                            .parse()
-                            .unwrap(),
-                    );
+                    headers.insert("sec-ch-ua", r#""Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138""#.parse().unwrap());
                     headers.insert("sec-ch-ua-mobile", "?0".parse().unwrap());
                     headers.insert("sec-ch-ua-platform", r#""Windows""#.parse().unwrap());
-
-                    headers.insert(
-                        reqwest::header::COOKIE,
-                        "gdpr_section=true; _ga=GA1.1.1229236292.1730271769; _ga_FWV2C4HMXW=GS1.1.1730271768.1.1.1730271786.0.0.0; language=fr".parse().unwrap()
-                    );
+                    headers.insert(reqwest::header::COOKIE, "gdpr_section=true; _ga=GA1.1.1229236292.1730271769; _ga_FWV2C4HMXW=GS1.1.1730271768.1.1.1730271786.0.0.0; language=fr".parse().unwrap());
 
                     let coupon_url = "https://event.withhive.com/ci/smon/evt_coupon/useCoupon";
 
-                    let res = client
+                    let _ = client
                         .post(coupon_url)
                         .headers(headers.clone())
                         .form(&params)
                         .send()
                         .await;
-
-                    let _ = match res {
-                        Ok(resp) => {
-                            if let Ok(json) = resp.json::<serde_json::Value>().await {
-                                matches!(
-                                    json.get("retCode"),
-                                    Some(serde_json::Value::Number(n)) if n.as_i64() == Some(100)
-                                )
-                            } else {
-                                false
-                            }
-                        }
-                        Err(_) => false,
-                    };
                 }
             }
         }
 
-        tokio::time::sleep(Duration::from_secs(3600)).await; // 1 heure
+        // 6. Attendre 1h avant la prochaine exécution
+        tokio::time::sleep(Duration::from_secs(3600)).await;
     }
 }
 
