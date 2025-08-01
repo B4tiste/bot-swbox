@@ -38,14 +38,14 @@ pub async fn update_coupon_list(mongo_uri: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn apply_missing_coupons_to_user(mongo_uri: &str, user_id: &str) -> anyhow::Result<()> {
+pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> anyhow::Result<()> {
     let mongo = MongoClient::with_uri_str(mongo_uri).await?;
     let db = mongo.database("bot-swbox-db");
     let users_col = db.collection::<Document>("registered_users");
     let coupons_col = db.collection::<Document>("coupons");
 
     // 1. Get user
-    let Some(user_doc) = users_col.find_one(doc! { "user_id": user_id }).await? else {
+    let Some(user_doc) = users_col.find_one(doc! { "hive_id": hive_id }).await? else {
         return Ok(()); // User not found
     };
     let hive_id = user_doc.get_str("hive_id")?;
@@ -130,7 +130,7 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, user_id: &str) -> an
     if updated {
         users_col
             .update_one(
-                doc! { "user_id": user_id },
+                doc! { "hive_id": hive_id },
                 doc! { "$set": { "applied_coupons": &applied } },
             )
             .await?;
@@ -144,8 +144,8 @@ pub async fn apply_coupons_to_all_users(mongo_uri: &str) -> anyhow::Result<()> {
     let users_col = db.collection::<Document>("registered_users");
     let mut cursor = users_col.find(doc! {}).await?;
     while let Some(user_doc) = cursor.try_next().await? {
-        let user_id = user_doc.get_str("user_id")?;
-        apply_missing_coupons_to_user(mongo_uri, user_id).await?;
+        let hive_id = user_doc.get_str("hive_id")?;
+        apply_missing_coupons_to_user(mongo_uri, hive_id).await?;
     }
     Ok(())
 }

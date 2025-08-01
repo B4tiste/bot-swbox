@@ -107,10 +107,8 @@ pub async fn register(
             Error::Other(Box::leak(error_message.into_boxed_str()))
         })?;
 
-        let user_id = ctx.author().id.to_string();
 
         let user_doc = doc! {
-            "user_id": user_id.clone(),
             "hive_id": hive_id.clone(),
             "server": server_string,
             "applied_coupons": [],
@@ -136,7 +134,7 @@ pub async fn register(
         // Immediately apply all coupons to this new user (non-blocking)
         let mongo_uri = mongo_uri.clone();
         tokio::spawn(async move {
-            if let Err(e) = apply_missing_coupons_to_user(&mongo_uri, &user_id).await {
+            if let Err(e) = apply_missing_coupons_to_user(&mongo_uri, &hive_id).await {
                 eprintln!("Coupon sync for new user failed: {e:?}");
             }
         });
