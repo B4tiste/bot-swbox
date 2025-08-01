@@ -16,7 +16,7 @@ pub enum Server {
     Asia,
 }
 
-/// Registers to the bot and applies all available coupons to the user.
+/// 📂 Applies all currently available and future coupons to the user.
 ///
 /// Usage: `/register <hive_id> <server>`
 #[poise::command(slash_command)]
