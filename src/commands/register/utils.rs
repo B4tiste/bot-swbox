@@ -122,6 +122,10 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
             .form(&params)
             .send()
             .await;
+
+        // Simulate a random delay to avoid rate limiting (value of 0-1000 ms)
+        tokio::time::sleep(std::time::Duration::from_millis(rand::random::<u64>() % 1000)).await;
+
         // Add as applied (even if failed: to avoid spam)
         applied.push(label.to_string());
         updated = true;
@@ -146,6 +150,9 @@ pub async fn apply_coupons_to_all_users(mongo_uri: &str) -> anyhow::Result<()> {
     while let Some(user_doc) = cursor.try_next().await? {
         let hive_id = user_doc.get_str("hive_id")?;
         apply_missing_coupons_to_user(mongo_uri, hive_id).await?;
+
+        // Simulate a random delay to avoid rate limiting (value of 0-1000 ms)
+        tokio::time::sleep(std::time::Duration::from_millis(rand::random::<u64>() % 1000)).await;
     }
     Ok(())
 }
