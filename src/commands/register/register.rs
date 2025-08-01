@@ -18,7 +18,6 @@ pub enum Server {
     Asia,
 }
 
-
 /// 📂 Register your Hive ID and server for the coupon tracker.
 ///
 /// Usage: `/register <hive_id> <server>`
@@ -131,12 +130,11 @@ pub async fn register(
         };
 
         if let Ok(Some(_)) = collection.find_one(user_doc.clone()).await {
-            let error_message = format!(
-                "You are already registered with Hive ID: **{}** on server: **{}**.",
-                hive_id, server_string
-            );
+            let error_message = "User already registered with this Hive ID and server.";
             ctx.send(create_embed_error(&error_message)).await.ok();
-            return Err(Error::Other(Box::leak(error_message.into_boxed_str())));
+            return Err(Error::Other(Box::leak(
+                error_message.to_string().into_boxed_str(),
+            )));
         }
 
         if let Err(e) = collection.insert_one(user_doc).await {
@@ -145,10 +143,7 @@ pub async fn register(
             return Err(Error::Other(Box::leak(e.to_string().into_boxed_str())));
         }
 
-        let success_message = format!(
-            "You have successfully registered with Hive ID: **{}** on server: **{}**.",
-            hive_id, server_string
-        );
+        let success_message = "You have successfully registered.";
         ctx.say(success_message).await.ok();
     } else {
         let error_message = "Failed to register. Please check your Hive ID and server selection.";
