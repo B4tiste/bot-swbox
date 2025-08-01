@@ -26,6 +26,7 @@ use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::upload_json::upload_json::upload_json;
 // use crate::commands::how_to_build::how_to_build::how_to_build;
 use crate::commands::register::register::register;
+use crate::commands::register::utils::{apply_coupons_to_all_users, update_coupon_list};
 use crate::commands::support::support::support;
 
 use mongodb::{bson::doc, Client as MongoClient};
@@ -62,23 +63,16 @@ struct MonstersFile {
 }
 
 pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
-    // 1. Création du client avec cookie store
     let client = Client::builder().cookie_store(true).build()?;
-
-    // 2. Charger la page d’accueil pour avoir cookies ET le _csrf_token dans le HTML
     let home_url = "https://swq.jp/l/fr-FR/";
     let home_resp = client.get(home_url).send().await?;
     let home_html = home_resp.text().await?;
-
-    // 3. Parser le _csrf_token (dans un input hidden)
     let re = Regex::new(r#""token"\s*:\s*"([a-zA-Z0-9_\-]+)""#).unwrap();
     let csrf_token = re
         .captures(&home_html)
         .and_then(|caps| caps.get(1))
         .map(|m| m.as_str())
         .ok_or_else(|| anyhow::anyhow!("_csrf_token non trouvé dans le JS FW"))?;
-
-    // 4. Headers identiques à la vraie requête
     let mut headers = HeaderMap::new();
     headers.insert(USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36".parse().unwrap());
     headers.insert("accept", "*/*".parse().unwrap());
@@ -101,16 +95,12 @@ pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
     headers.insert("sec-fetch-site", "same-origin".parse().unwrap());
     headers.insert("x-requested-with", "XMLHttpRequest".parse().unwrap());
 
-    // 5. Construire l’URL des coupons avec le vrai token
     let coupons_url = format!(
         "https://swq.jp/_special/rest/Sw/Coupon?_csrf_token={}&_ctx%5Bb%5D=master&_ctx%5Bc%5D=JPY&_ctx%5Bl%5D=fr-FR&_ctx%5Bt%5D=Europe%2FBerlin%3B%2B0200&results_per_page=25",
         csrf_token
     );
 
-    // 6. Faire la requête coupons avec headers+cookies+csrf_token
     let coupons_resp = client.get(&coupons_url).headers(headers).send().await?;
-
-    // 7. Vérification du status
     if !coupons_resp.status().is_success() {
         let status = coupons_resp.status();
         let body = coupons_resp.text().await?;
@@ -205,18 +195,41 @@ pub async fn parse_and_apply_coupons(mongo_uri: String) {
 
                     let client = reqwest::Client::new();
                     let mut headers = reqwest::header::HeaderMap::new();
-                    headers.insert("Accept", "application/json, text/javascript, */*; q=0.01".parse().unwrap());
-                    headers.insert("Accept-Language", "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7".parse().unwrap());
+                    headers.insert(
+                        "Accept",
+                        "application/json, text/javascript, */*; q=0.01"
+                            .parse()
+                            .unwrap(),
+                    );
+                    headers.insert(
+                        "Accept-Language",
+                        "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7".parse().unwrap(),
+                    );
                     headers.insert("Connection", "keep-alive".parse().unwrap());
-                    headers.insert("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8".parse().unwrap());
+                    headers.insert(
+                        "Content-Type",
+                        "application/x-www-form-urlencoded; charset=UTF-8"
+                            .parse()
+                            .unwrap(),
+                    );
                     headers.insert("Origin", "https://event.withhive.com".parse().unwrap());
-                    headers.insert("Referer", "https://event.withhive.com/ci/smon/evt_coupon".parse().unwrap());
+                    headers.insert(
+                        "Referer",
+                        "https://event.withhive.com/ci/smon/evt_coupon"
+                            .parse()
+                            .unwrap(),
+                    );
                     headers.insert("Sec-Fetch-Dest", "empty".parse().unwrap());
                     headers.insert("Sec-Fetch-Mode", "cors".parse().unwrap());
                     headers.insert("Sec-Fetch-Site", "same-origin".parse().unwrap());
                     headers.insert("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36".parse().unwrap());
                     headers.insert("X-Requested-With", "XMLHttpRequest".parse().unwrap());
-                    headers.insert("sec-ch-ua", r#""Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138""#.parse().unwrap());
+                    headers.insert(
+                        "sec-ch-ua",
+                        r#""Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138""#
+                            .parse()
+                            .unwrap(),
+                    );
                     headers.insert("sec-ch-ua-mobile", "?0".parse().unwrap());
                     headers.insert("sec-ch-ua-platform", r#""Windows""#.parse().unwrap());
                     headers.insert(reqwest::header::COOKIE, "gdpr_section=true; _ga=GA1.1.1229236292.1730271769; _ga_FWV2C4HMXW=GS1.1.1730271768.1.1.1730271786.0.0.0; language=fr".parse().unwrap());
@@ -384,10 +397,17 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         }
     });
 
-    // Lancer la tâche pour appliquer les coupons
     let mongo_uri = MONGO_URI.lock().unwrap().clone();
     tokio::spawn(async move {
-        parse_and_apply_coupons(mongo_uri).await;
+        loop {
+            if let Err(e) = update_coupon_list(&mongo_uri).await {
+                eprintln!("Failed to update coupons: {e:?}");
+            }
+            if let Err(e) = apply_coupons_to_all_users(&mongo_uri).await {
+                eprintln!("Failed to apply coupons: {e:?}");
+            }
+            sleep(Duration::from_secs(3600)).await;
+        }
     });
 
     // Télécharger le fichier "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json"
