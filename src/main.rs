@@ -397,6 +397,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         }
     });
 
+    // Lancer une tâche périodique pour mettre à jour la liste des coupons et les appliquer aux utilisateurs
     let mongo_uri = MONGO_URI.lock().unwrap().clone();
     tokio::spawn(async move {
         loop {
