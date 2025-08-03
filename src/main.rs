@@ -26,10 +26,8 @@ use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::upload_json::upload_json::upload_json;
 // use crate::commands::how_to_build::how_to_build::how_to_build;
 // use crate::commands::register::register::register;
-// use crate::commands::register::utils::{apply_coupons_to_all_users, update_coupon_list};
+use crate::commands::register::utils::{apply_coupons_to_all_users, update_coupon_list};
 use crate::commands::support::support::support;
-
-
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -204,18 +202,19 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     });
 
     // Lancer une tâche périodique pour mettre à jour la liste des coupons et les appliquer aux utilisateurs
-    // let mongo_uri = MONGO_URI.lock().unwrap().clone();
-    // tokio::spawn(async move {
-    //     loop {
-    //         if let Err(e) = update_coupon_list(&mongo_uri).await {
-    //             eprintln!("Failed to update coupons: {e:?}");
-    //         }
-    //         if let Err(e) = apply_coupons_to_all_users(&mongo_uri).await {
-    //             eprintln!("Failed to apply coupons: {e:?}");
-    //         }
-    //         sleep(Duration::from_secs(3600)).await;
-    //     }
-    // });
+    let mongo_uri = MONGO_URI.lock().unwrap().clone();
+    tokio::spawn(async move {
+        loop {
+            if let Err(e) = update_coupon_list(&mongo_uri).await {
+                eprintln!("Failed to update coupons: {e:?}");
+            }
+            if let Err(e) = apply_coupons_to_all_users(&mongo_uri).await {
+                eprintln!("Failed to apply coupons: {e:?}");
+            }
+            // Attente de 1 heure avant la prochaine mise à jour
+            sleep(Duration::from_secs(3600)).await;
+        }
+    });
 
     // Télécharger le fichier "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json"
     // et le stocker dans un fichier local

@@ -1,11 +1,11 @@
 use futures::stream::TryStreamExt;
 use mongodb::bson::{doc, Document};
 use mongodb::Client as MongoClient;
+use regex::Regex;
 use reqwest::{
     header::{HeaderMap, USER_AGENT},
     Client,
 };
-use regex::Regex;
 
 pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
     let client = Client::builder().cookie_store(true).build()?;
@@ -90,7 +90,6 @@ pub async fn update_coupon_list(mongo_uri: &str) -> anyhow::Result<()> {
     }
     Ok(())
 }
-
 pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> anyhow::Result<()> {
     let mongo = MongoClient::with_uri_str(mongo_uri).await?;
     let db = mongo.database("bot-swbox-db");
@@ -101,6 +100,7 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
     let Some(user_doc) = users_col.find_one(doc! { "hive_id": hive_id }).await? else {
         return Ok(()); // User not found
     };
+
     let hive_id = user_doc.get_str("hive_id")?;
     let server = user_doc.get_str("server")?;
     let mut applied: Vec<String> = user_doc
@@ -124,6 +124,7 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
             continue;
         }
         // Apply coupon
+
         let params = [
             ("country", "FR"),
             ("lang", "fr"),
@@ -169,15 +170,31 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
         headers.insert("sec-ch-ua-platform", r#""Windows""#.parse().unwrap());
         headers.insert(reqwest::header::COOKIE, "gdpr_section=true; _ga=GA1.1.1229236292.1730271769; _ga_FWV2C4HMXW=GS1.1.1730271768.1.1.1730271786.0.0.0; language=fr".parse().unwrap());
         let coupon_url = "https://event.withhive.com/ci/smon/evt_coupon/useCoupon";
-        let _ = client
+
+        let res = client
             .post(coupon_url)
             .headers(headers.clone())
             .form(&params)
             .send()
             .await;
 
+        match res {
+            Ok(resp) => {
+                // Optionally, you can print the response JSON:
+                let _ = resp.text().await.unwrap_or_else(|_| "N/A".to_string());
+            }
+            Err(e) => {
+                println!(
+                    "[ERROR] Echec application coupon {label} pour {hive_id}: {:?}",
+                    e
+                );
+            }
+        }
+
         // Simulate a random delay to avoid rate limiting between 5 and 10s
-        tokio::time::sleep(std::time::Duration::from_millis(rand::random::<u64>() % 5000 + 5000)).await;
+        let delay_ms = rand::random::<u64>() % 5000 + 5000;
+
+        tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
 
         // Add as applied (even if failed: to avoid spam)
         applied.push(label.to_string());
@@ -203,9 +220,11 @@ pub async fn apply_coupons_to_all_users(mongo_uri: &str) -> anyhow::Result<()> {
     while let Some(user_doc) = cursor.try_next().await? {
         let hive_id = user_doc.get_str("hive_id")?;
         apply_missing_coupons_to_user(mongo_uri, hive_id).await?;
-
         // Simulate a random delay to avoid rate limiting beetween 5 and 10s
-        tokio::time::sleep(std::time::Duration::from_millis(rand::random::<u64>() % 5000 + 5000)).await;
+        let delay_ms = rand::random::<u64>() % 5000 + 5000;
+
+        tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
     }
+
     Ok(())
 }
