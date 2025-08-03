@@ -1,9 +1,62 @@
 use futures::stream::TryStreamExt;
 use mongodb::bson::{doc, Document};
 use mongodb::Client as MongoClient;
+use reqwest::{
+    header::{HeaderMap, USER_AGENT},
+    Client,
+};
+use regex::Regex;
+
+pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
+    let client = Client::builder().cookie_store(true).build()?;
+    let home_url = "https://swq.jp/l/fr-FR/";
+    let home_resp = client.get(home_url).send().await?;
+    let home_html = home_resp.text().await?;
+    let re = Regex::new(r#""token"\s*:\s*"([a-zA-Z0-9_\-]+)""#).unwrap();
+    let csrf_token = re
+        .captures(&home_html)
+        .and_then(|caps| caps.get(1))
+        .map(|m| m.as_str())
+        .ok_or_else(|| anyhow::anyhow!("_csrf_token non trouvé dans le JS FW"))?;
+    let mut headers = HeaderMap::new();
+    headers.insert(USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36".parse().unwrap());
+    headers.insert("accept", "*/*".parse().unwrap());
+    headers.insert(
+        "accept-language",
+        "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7".parse().unwrap(),
+    );
+    headers.insert("priority", "u=1, i".parse().unwrap());
+    headers.insert("referer", home_url.parse().unwrap());
+    headers.insert(
+        "sec-ch-ua",
+        r#""Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138""#
+            .parse()
+            .unwrap(),
+    );
+    headers.insert("sec-ch-ua-mobile", "?0".parse().unwrap());
+    headers.insert("sec-ch-ua-platform", r#""Windows""#.parse().unwrap());
+    headers.insert("sec-fetch-dest", "empty".parse().unwrap());
+    headers.insert("sec-fetch-mode", "cors".parse().unwrap());
+    headers.insert("sec-fetch-site", "same-origin".parse().unwrap());
+    headers.insert("x-requested-with", "XMLHttpRequest".parse().unwrap());
+
+    let coupons_url = format!(
+        "https://swq.jp/_special/rest/Sw/Coupon?_csrf_token={}&_ctx%5Bb%5D=master&_ctx%5Bc%5D=JPY&_ctx%5Bl%5D=fr-FR&_ctx%5Bt%5D=Europe%2FBerlin%3B%2B0200&results_per_page=25",
+        csrf_token
+    );
+
+    let coupons_resp = client.get(&coupons_url).headers(headers).send().await?;
+    if !coupons_resp.status().is_success() {
+        let status = coupons_resp.status();
+        let body = coupons_resp.text().await?;
+        return Err(anyhow::anyhow!("Coupons HTTP status {}: {}", status, body));
+    }
+    let coupons_json = coupons_resp.json::<serde_json::Value>().await?;
+    Ok(coupons_json)
+}
 
 pub async fn update_coupon_list(mongo_uri: &str) -> anyhow::Result<()> {
-    let coupons_json = crate::fetch_fresh_coupons().await?;
+    let coupons_json = fetch_fresh_coupons().await?;
     let mongo = MongoClient::with_uri_str(mongo_uri).await?;
     let db = mongo.database("bot-swbox-db");
     let coupons_col = db.collection::<Document>("coupons");
