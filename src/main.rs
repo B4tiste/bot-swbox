@@ -2,14 +2,14 @@ mod commands;
 
 use anyhow::{Context, Result};
 use lazy_static::lazy_static;
-use poise::serenity_prelude::{ClientBuilder, GatewayIntents};
+use poise::serenity_prelude::{ClientBuilder, GatewayIntents, Context as SerenityContext};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use std::sync::{Arc, Mutex};
 use tokio::time::{sleep, Duration};
 
 // Pour la map des monstres
-use once_cell::sync::Lazy;
+use once_cell::sync::{Lazy, OnceCell};
 use serde::Deserialize;
 use std::{collections::HashMap, fs};
 
@@ -26,7 +26,7 @@ use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::upload_json::upload_json::upload_json;
 // use crate::commands::how_to_build::how_to_build::how_to_build;
 // use crate::commands::register::register::register;
-use crate::commands::register::utils::{apply_coupons_to_all_users, update_coupon_list};
+use crate::commands::register::utils::{apply_coupons_to_all_users, update_coupon_list, notify_new_coupons};
 use crate::commands::support::support::support;
 
 lazy_static! {
@@ -38,6 +38,9 @@ lazy_static! {
     // Variable globale pour stocker le token de l'API
     static ref API_TOKEN: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
 }
+
+// Contexte pour Serenity
+static SERENITY_CTX: OnceCell<SerenityContext> = OnceCell::new();
 
 pub struct Data;
 
@@ -204,15 +207,30 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     // Lancer une tâche périodique pour mettre à jour la liste des coupons et les appliquer aux utilisateurs
     let mongo_uri = MONGO_URI.lock().unwrap().clone();
     tokio::spawn(async move {
+        // Wait for the serenity context to be set
+        while SERENITY_CTX.get().is_none() {
+            sleep(Duration::from_secs(1)).await;
+        }
         loop {
+            // Mettre à jour la liste des coupons
             if let Err(e) = update_coupon_list(&mongo_uri).await {
                 eprintln!("Failed to update coupons: {e:?}");
             }
+
+            // Notifier les nouveaux coupons
+            if let Some(ctx) = SERENITY_CTX.get() {
+                if let Err(e) = notify_new_coupons(ctx, &mongo_uri).await {
+                    eprintln!("Failed to notify new coupons: {e:?}");
+                }
+            } else {
+                eprintln!("Serenity context not ready, skip notify_new_coupons");
+            }
+
+            // Appliquer les coupons à tous les utilisateurs
             if let Err(e) = apply_coupons_to_all_users(&mongo_uri).await {
                 eprintln!("Failed to apply coupons: {e:?}");
             }
-            // Attente de 1 heure avant la prochaine mise à jour
-            sleep(Duration::from_secs(3600)).await;
+            sleep(Duration::from_secs(1800)).await; // Toutes les 30 minutes
         }
     });
 
@@ -256,6 +274,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
+            let _ = SERENITY_CTX.set(ctx.clone());
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data)

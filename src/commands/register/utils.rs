@@ -6,6 +6,7 @@ use reqwest::{
     header::{HeaderMap, USER_AGENT},
     Client,
 };
+use poise::serenity_prelude::{Context as SerenityContext, ChannelId, CreateMessage};
 
 pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
     let client = Client::builder().cookie_store(true).build()?;
@@ -90,6 +91,7 @@ pub async fn update_coupon_list(mongo_uri: &str) -> anyhow::Result<()> {
     }
     Ok(())
 }
+
 pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> anyhow::Result<()> {
     let mongo = MongoClient::with_uri_str(mongo_uri).await?;
     let db = mongo.database("bot-swbox-db");
@@ -224,6 +226,92 @@ pub async fn apply_coupons_to_all_users(mongo_uri: &str) -> anyhow::Result<()> {
         let delay_ms = rand::random::<u64>() % 5000 + 5000;
 
         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+    }
+
+    Ok(())
+}
+
+pub async fn notify_new_coupons(
+    serenity_ctx: &SerenityContext,
+    mongo_uri: &str,
+) -> anyhow::Result<()> {
+    // Connexion Mongo
+    let mongo = MongoClient::with_uri_str(mongo_uri).await?;
+    let db = mongo.database("bot-swbox-db");
+    let sent_coupons_col = db.collection::<Document>("sent_coupons");
+    let coupons_col = db.collection::<Document>("coupons");
+
+    // 1. Derniers coupons envoyés (labels)
+    let last_doc = sent_coupons_col.find_one(doc! { "_id": "sent_coupons" }).await?;
+    let last_labels: Vec<String> = last_doc
+        .and_then(|doc| doc.get_array("labels").ok().cloned())
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+        .collect();
+
+    // 2. Coupons actuellement vérifiés
+    let mut cursor = coupons_col.find(doc! { "status": "verified" }).await?;
+    let mut current_labels = Vec::new();
+    while let Some(doc) = cursor.try_next().await? {
+        if let Some(label) = doc.get_str("label").ok() {
+            current_labels.push(label.to_string());
+        }
+    }
+
+    // 3. Nouveaux coupons ?
+    let just_new: Vec<String> = current_labels
+        .iter()
+        .filter(|label| !last_labels.contains(label))
+        .cloned()
+        .collect();
+
+    // 4. Envoi si nouveaux coupons
+    if !just_new.is_empty() {
+        let cache = &serenity_ctx.cache;
+        let guild_ids = cache.guilds();
+        let mut sample_channels = Vec::new();
+        for guild_id in guild_ids.iter() {
+            if let Some(guild) = cache.guild(guild_id) {
+                for channel in guild.channels.values() {
+                    if channel.name == "sample_text" {
+                        sample_channels.push(ChannelId::from(channel.id));
+                    }
+                }
+            }
+        }
+
+        // if just_new.len >1 => messafe with "s" else "message with no s"
+        let message = if just_new.len() > 1 {
+            format!(
+                "**New codes available !**\n{}\n-# Direct link to apply them : https://event.withhive.com/ci/smon/evt_coupon",
+                just_new
+                    .iter()
+                    .map(|c| format!("- `{}`", c))
+                    .collect::<Vec<_>>()
+                .join("\n")
+            )
+        } else {
+            format!(
+                "**New code available !**\n`{}`\n-# Direct link to apply it : https://event.withhive.com/ci/smon/evt_coupon",
+                just_new[0]
+            )
+        };
+
+        for channel_id in &sample_channels {
+            // Ignore errors (pas de panic si le bot n'a pas les droits dans certains serveurs)
+            let _ = channel_id
+                .send_message(&serenity_ctx.http, CreateMessage::new().content(&message))
+                .await;
+        }
+
+        // 5. Mets à jour la liste des coupons envoyés
+        sent_coupons_col
+            .update_one(
+                doc! { "_id": "sent_coupons" },
+                doc! { "$set": { "labels": &current_labels } }
+            )
+            .await?;
     }
 
     Ok(())
