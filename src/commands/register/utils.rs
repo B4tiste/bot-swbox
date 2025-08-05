@@ -1,12 +1,12 @@
 use futures::stream::TryStreamExt;
 use mongodb::bson::{doc, Document};
 use mongodb::Client as MongoClient;
+use poise::serenity_prelude::{ChannelId, Context as SerenityContext, CreateMessage};
 use regex::Regex;
 use reqwest::{
     header::{HeaderMap, USER_AGENT},
     Client,
 };
-use poise::serenity_prelude::{Context as SerenityContext, ChannelId, CreateMessage};
 
 pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
     let client = Client::builder().cookie_store(true).build()?;
@@ -242,7 +242,9 @@ pub async fn notify_new_coupons(
     let coupons_col = db.collection::<Document>("coupons");
 
     // 1. Derniers coupons envoyés (labels)
-    let last_doc = sent_coupons_col.find_one(doc! { "_id": "sent_coupons" }).await?;
+    let last_doc = sent_coupons_col
+        .find_one(doc! { "_id": "sent_coupons" })
+        .await?;
     let last_labels: Vec<String> = last_doc
         .and_then(|doc| doc.get_array("labels").ok().cloned())
         .unwrap_or_default()
@@ -310,7 +312,7 @@ pub async fn notify_new_coupons(
         sent_coupons_col
             .update_one(
                 doc! { "_id": "sent_coupons" },
-                doc! { "$set": { "labels": &current_labels } }
+                doc! { "$set": { "labels": &current_labels } },
             )
             .await?;
     }
