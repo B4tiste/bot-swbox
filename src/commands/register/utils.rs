@@ -274,7 +274,7 @@ pub async fn notify_new_coupons(
         for guild_id in guild_ids.iter() {
             if let Some(guild) = cache.guild(guild_id) {
                 for channel in guild.channels.values() {
-                    if channel.name == "coupons-swbox" {
+                    if channel.name == "coupons-swbox-test" {
                         sample_channels.push(ChannelId::from(channel.id));
                     }
                 }
@@ -287,13 +287,14 @@ pub async fn notify_new_coupons(
                 "**New codes available !**\n{}\n-# Direct link to apply them : https://event.withhive.com/ci/smon/evt_coupon",
                 just_new
                     .iter()
-                    .map(|c| format!("- `{}`", c))
+                    .map(|c| format!("- `{}` → http://withhive.me/313/{}", c, c))
                     .collect::<Vec<_>>()
                 .join("\n")
             )
         } else {
             format!(
-                "**New code available !**\n`{}`\n-# Direct link to apply it : https://event.withhive.com/ci/smon/evt_coupon",
+                "**New code available !**\n`{}` → http://withhive.me/313/{} \n-# Direct link to apply it : https://event.withhive.com/ci/smon/evt_coupon",
+                just_new[0],
                 just_new[0]
             )
         };
