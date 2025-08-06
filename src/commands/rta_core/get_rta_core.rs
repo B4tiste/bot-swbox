@@ -273,9 +273,9 @@ pub async fn get_rta_core(
                             // si on a au moins 1 monstre Light/Dark (hors exclusions), on calcule le boost
                             if light_dark_count > 0 {
                                 let boost = match light_dark_count {
-                                    1 => 0.2,
-                                    2 => 0.3,
-                                    3 => 0.5,
+                                    1 => 0.4,
+                                    2 => 0.6,
+                                    3 => 0.8,
                                     _ => 0.0, // dans l'improbable cas de >3, pas de boost supplémentaire
                                 };
                                 score *= 1.0 + boost;
