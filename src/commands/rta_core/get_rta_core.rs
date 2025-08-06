@@ -135,7 +135,8 @@ pub async fn get_rta_core(
                 .chain(&tierlist_data.c_monster)
             {
                 let total = m.pick_total as f32;
-                let late_sum = (m.fourth_pick_total
+                let late_sum = (m.third_pick_total
+                    + m.fourth_pick_total
                     + m.fifth_pick_total
                     + m.last_pick_total) as f32;
                 let ratio = if total > 0.0 { late_sum / total } else { 0.0 };
