@@ -6,8 +6,8 @@ use moka::future::Cache;
 use crate::commands::rta_core::models::MonsterDuoStat;
 use crate::commands::rta_core::utils::get_monster_duos;
 
-/// Clé : (monster_id, season, level)
-type DuoKey = (u32, i64, i32);
+/// Clé : (monster_id, season, version, level)
+type DuoKey = (u32, i64, String, i32);
 
 /// On stocke un Result<Vec<MonsterDuoStat>, String> pour propager l’erreur
 static DUO_CACHE: Lazy<Cache<DuoKey, Result<Vec<MonsterDuoStat>, String>>> =
@@ -22,16 +22,17 @@ static DUO_CACHE: Lazy<Cache<DuoKey, Result<Vec<MonsterDuoStat>, String>>> =
 pub async fn get_monster_duos_cached(
     token: &str,
     season: i64,
+    version: &str,
     monster_id: u32,
     level: i32,
 ) -> Result<Vec<MonsterDuoStat>, String> {
-    let key = (monster_id, season, level);
+    let key = (monster_id, season, version.to_string(), level);
 
     // Loader qui renvoie un Result<…, String>
     let loader = {
         let token = token.to_string();
         async move {
-            get_monster_duos(&token, season, monster_id, level)
+            get_monster_duos(&token, season, &version, monster_id, level)
                 .await
                 .map_err(|e| format!("Erreur highdata: {}", e))
         }

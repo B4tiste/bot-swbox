@@ -104,16 +104,43 @@ pub async fn get_tierlist_data(api_level: i32, token: &str) -> Result<TierListDa
     Ok(tierlist_data)
 }
 
+pub async fn get_swrt_version(token: &str) -> Result<String, String> {
+    let url = "https://m.swranking.com/api/setting/settingMap";
+
+    let client = Client::new();
+    let response = client
+        .get(url)
+        .header("Authentication", token)
+        .header("Referer", "https://m.swranking.com/")
+        .header("User-Agent", "Mozilla/5.0")
+        .send()
+        .await
+        .map_err(|_| "Failed get settings".to_string())?;
+
+    let json = response
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|_| "Failed to parse settings JSON".to_string())?;
+
+    let version_str = json["data"]["nowVersion"]
+        .as_str()
+        .ok_or("Missing nowVersion".to_string())?;
+
+    Ok(version_str.to_string())
+}
+
 /// Récupère les duos (highOneWithTwoList) pour un monstre donné
 pub async fn get_monster_duos(
     token: &str,
     season: i64,
+    version: &str,
     monster_id: u32,
     level: i32,
 ) -> Result<Vec<MonsterDuoStat>> {
+    println!("Fetching duos for monster_id: {}, season: {}, version: {}, level: {}", monster_id, season, version, level);
     let url = format!(
-        "https://m.swranking.com/api/monster/highdata?pageNum=1&pageSize=20&monsterId={}&season={}&version=&level={}&factor=0.01&real=0",
-        monster_id, season, level
+        "https://m.swranking.com/api/monster/highdata?pageNum=1&pageSize=20&monsterId={}&season={}&version={}&level={}&factor=0.01&real=0",
+        monster_id, season, version, level
     );
     let client = Client::new();
     let resp = client

@@ -5,7 +5,7 @@ use crate::commands::rta_core::cache::get_monster_duos_cached;
 use crate::commands::rta_core::models::MonstersFile;
 use crate::commands::rta_core::models::{Mode, Rank, Trio};
 use crate::commands::rta_core::utils::{
-    filter_monster, get_emoji_from_id, get_monsters_from_json_bytes, get_tierlist_data,
+    filter_monster, get_emoji_from_id, get_monsters_from_json_bytes, get_tierlist_data, get_swrt_version,
 };
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
@@ -156,6 +156,19 @@ pub async fn get_rta_core(
                 }
             };
 
+            // Récupération de la version SWRT
+            let version = match get_swrt_version(&token).await {
+                Ok(version) => version,
+                Err(e) => {
+                    let err = format!("Impossible de récupérer la version : {}", e);
+                    ctx.send(create_embed_error(&err)).await.ok();
+                    send_log(&ctx, "get_rta_core", false, &err).await.ok();
+                    return Ok(());
+                }
+            };
+
+            println!("Version SWRT: {}", version);
+
             // Préparation des IDs de monstres de la box
             let player_box_ids: HashSet<u32> = monsters.iter().map(|m| m.unit_master_id).collect();
             // Préparation des IDs core
@@ -199,7 +212,7 @@ pub async fn get_rta_core(
                     Rank::G3 => 3,
                 };
                 if let Ok(duos) =
-                    get_monster_duos_cached(&token, season, base.monster_id, rank_duos).await
+                    get_monster_duos_cached(&token, season, &version, base.monster_id, rank_duos).await
                 {
                     for duo in duos {
                         let (b, o, t) = (base.monster_id, duo.team_one_id, duo.team_two_id);
