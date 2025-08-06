@@ -168,8 +168,6 @@ pub async fn get_rta_core(
                 }
             };
 
-            println!("Version SWRT: {}", version);
-
             // Préparation des IDs de monstres de la box
             let player_box_ids: HashSet<u32> = monsters.iter().map(|m| m.unit_master_id).collect();
             // Préparation des IDs core
