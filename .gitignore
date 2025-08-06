@@ -1,5 +1,7 @@
 /target
+target/
 .shuttle*
 Secrets*.toml
 /test
+# /test-project
 replay.png

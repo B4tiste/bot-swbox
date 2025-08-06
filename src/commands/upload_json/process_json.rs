@@ -46,11 +46,11 @@ fn extract_rune(rune: &Value) -> Option<Rune> {
     if let Some(sec_eff) = rune.get("sec_eff") {
         let sec_eff_array = sec_eff.as_array()?;
         for sec_eff in sec_eff_array {
-            let sec_eff_array = sec_eff.as_array()?;
-            let stat_id = get_rune_stat_id_by_id(sec_eff_array[0].as_u64()? as u32);
-            let value = sec_eff_array[1].as_f64()? as f32;
-            let has_been_replaced = sec_eff_array[2].as_u64()? == 1;
-            let boost_value = sec_eff_array[3].as_u64()? as f32;
+            let sec_eff_array_p = sec_eff.as_array()?;
+            let stat_id = get_rune_stat_id_by_id(sec_eff_array_p[0].as_u64()? as u32);
+            let value = sec_eff_array_p[1].as_f64()? as f32;
+            let has_been_replaced = sec_eff_array_p[2].as_u64()? == 1;
+            let boost_value = sec_eff_array_p[3].as_u64()? as f32;
             secondary_properties.push(Property::new(
                 stat_id,
                 value,
