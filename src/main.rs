@@ -199,8 +199,8 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                     eprintln!("Erreur lors du login: {:?}", e);
                 }
             }
-            // Rafraîchir le token toutes les 30 minutes
-            sleep(Duration::from_secs(1800)).await;
+            // Rafraîchir le token toutes les heures
+            sleep(Duration::from_secs(3600)).await;
         }
     });
 
