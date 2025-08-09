@@ -137,7 +137,6 @@ pub async fn get_monster_duos(
     monster_id: u32,
     level: i32,
 ) -> Result<Vec<MonsterDuoStat>> {
-    println!("Fetching duos for monster_id: {}, season: {}, version: {}, level: {}", monster_id, season, version, level);
     let url = format!(
         "https://m.swranking.com/api/monster/highdata?pageNum=1&pageSize=20&monsterId={}&season={}&version={}&level={}&factor=0.01&real=0",
         monster_id, season, version, level
