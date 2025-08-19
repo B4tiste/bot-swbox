@@ -2,7 +2,11 @@ mod commands;
 
 use anyhow::{Context, Result};
 use lazy_static::lazy_static;
-use poise::serenity_prelude::{ClientBuilder, GatewayIntents, Context as SerenityContext};
+use poise::serenity_prelude::{ClientBuilder, Context as SerenityContext, GatewayIntents};
+use reqwest::header::{
+    HeaderMap, HeaderValue, ACCEPT, ACCEPT_LANGUAGE, CONNECTION, CONTENT_TYPE, ORIGIN, REFERER,
+    USER_AGENT,
+};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use std::sync::{Arc, Mutex};
@@ -26,7 +30,9 @@ use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::upload_json::upload_json::upload_json;
 // use crate::commands::how_to_build::how_to_build::how_to_build;
 // use crate::commands::register::register::register;
-use crate::commands::register::utils::{apply_coupons_to_all_users, update_coupon_list, notify_new_coupons};
+use crate::commands::register::utils::{
+    apply_coupons_to_all_users, notify_new_coupons, update_coupon_list,
+};
 use crate::commands::support::support::support;
 
 lazy_static! {
@@ -84,64 +90,91 @@ static MONSTER_MAP: Lazy<HashMap<String, u32>> = Lazy::new(|| {
 
 /// Fonction asynchrone qui se connecte au service web et retourne le token
 async fn login(username: String, password: String) -> Result<String> {
-    // Calculer le hash MD5 du mot de passe
+    // 1) Hash MD5 du mot de passe (comme ta version)
     let md5_password = format!("{:x}", md5::compute(password));
 
-    let login_url = "https://m.swranking.com/api/login";
+    // 2) Client avec cookie store pour gérer JSESSIONID
+    let client = reqwest::Client::builder()
+        .cookie_store(true)
+        .timeout(std::time::Duration::from_secs(20))
+        .build()
+        .context("Failed to build reqwest client with cookie store")?;
 
-    let client = reqwest::Client::new();
+    // 3) Pré-vol: GET la page pour récupérer JSESSIONID
+    //    (le cookie est stocké automatiquement dans le cookie store)
+    client
+        .get("https://m.swranking.com/")
+        .header(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"))
+        .send()
+        .await
+        .context("Preflight GET failed")?
+        .error_for_status()
+        .context("Preflight GET returned non-success")?;
 
-    // Construire les headers pour la requête
-    let mut headers = reqwest::header::HeaderMap::new();
-    // Correction ici : "*/*" au lieu de "*/"
-    headers.insert("Accept", "*/*".parse()?);
+    // 4) Headers identiques/suffisants pour mimer la requête curl
+    let mut headers = HeaderMap::new();
+    headers.insert(ACCEPT, HeaderValue::from_static("*/*"));
     headers.insert(
-        "Accept-Language",
-        "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7".parse()?,
+        ACCEPT_LANGUAGE,
+        HeaderValue::from_static("fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7"),
     );
-    headers.insert("Connection", "keep-alive".parse()?);
-    headers.insert("Content-Type", "application/x-www-form-urlencoded".parse()?);
-    headers.insert("Origin", "https://m.swranking.com".parse()?);
-    headers.insert("Referer", "https://m.swranking.com/".parse()?);
-    headers.insert("Sec-Fetch-Dest", "empty".parse()?);
-    headers.insert("Sec-Fetch-Mode", "cors".parse()?);
-    headers.insert("Sec-Fetch-Site", "same-origin".parse()?);
+    headers.insert(CONNECTION, HeaderValue::from_static("keep-alive"));
     headers.insert(
-        "User-Agent",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"
-            .parse()?,
+        CONTENT_TYPE,
+        HeaderValue::from_static("application/x-www-form-urlencoded"),
     );
+    headers.insert(ORIGIN, HeaderValue::from_static("https://m.swranking.com"));
+    headers.insert(
+        REFERER,
+        HeaderValue::from_static("https://m.swranking.com/"),
+    );
+    headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"));
 
-    // Construire le corps de la requête
+    // Headers "client-hint" + Authentication:null que le serveur semble attendre
+    headers.insert(
+        "Authentication",
+        HeaderValue::from_static("null"), // oui, littéral "null"
+    );
+    headers.insert(
+        "sec-ch-ua",
+        HeaderValue::from_static(
+            r#""Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139""#,
+        ),
+    );
+    headers.insert("sec-ch-ua-mobile", HeaderValue::from_static("?0"));
+    headers.insert(
+        "sec-ch-ua-platform",
+        HeaderValue::from_static(r#""Windows""#),
+    );
+    headers.insert("Sec-Fetch-Dest", HeaderValue::from_static("empty"));
+    headers.insert("Sec-Fetch-Mode", HeaderValue::from_static("cors"));
+    headers.insert("Sec-Fetch-Site", HeaderValue::from_static("same-origin"));
+
+    // 5) Corps de la requête (form-urlencoded)
     let params = [("username", username), ("password", md5_password)];
 
-    let response = client
-        .post(login_url)
+    // 6) POST /api/login — les cookies (dont JSESSIONID) seront renvoyés automatiquement
+    let resp = client
+        .post("https://m.swranking.com/api/login")
         .headers(headers)
         .form(&params)
         .send()
-        .await?;
+        .await
+        .context("POST /api/login failed")?
+        .error_for_status()
+        .context("POST /api/login returned non-success")?;
 
-    if response.status().is_success() {
-        let json: serde_json::Value = response.json().await?;
-        if json.get("enMessage").and_then(|v| v.as_str()) == Some("Success") {
-            let token = json
-                .get("data")
-                .and_then(|data| data.get("token"))
-                .and_then(|t| t.as_str())
-                .ok_or_else(|| anyhow::anyhow!("Token non trouvé dans la réponse"))?;
-            Ok(token.to_string())
-        } else {
-            Err(anyhow::anyhow!("Login failed: {:?}", json.get("enMessage")))
-        }
+    // 7) Parse JSON + extraction du token (comme ta version)
+    let json: serde_json::Value = resp.json().await.context("Invalid JSON body")?;
+    if json.get("enMessage").and_then(|v| v.as_str()) == Some("Success") {
+        let token = json
+            .get("data")
+            .and_then(|d| d.get("token"))
+            .and_then(|t| t.as_str())
+            .ok_or_else(|| anyhow::anyhow!("Token non trouvé dans la réponse"))?;
+        Ok(token.to_owned())
     } else {
-        let status = response.status();
-        let text = response.text().await?;
-        Err(anyhow::anyhow!(
-            "Request failed with status code {}: {}",
-            status,
-            text
-        ))
+        Err(anyhow::anyhow!("Login failed: {:?}", json.get("enMessage")))
     }
 }
 
