@@ -27,6 +27,3 @@ jobs:
             MONGO_URI = '${{ secrets.MONGO_URI }}'
             USERNAME = '${{ secrets.USERNAME }}'
             PASSWORD = '${{ secrets.PASSWORD }}'
-
-      - name: Hercules Insights
-        uses: src-d/hercules@v10.7.2
