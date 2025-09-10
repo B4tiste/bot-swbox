@@ -359,6 +359,12 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
                 // 2. Remap l’id
                 let remapped_id = remap_monster_id(monster_id);
 
+                // Debug
+                // println!(
+                //     "DEBUG: Processing monster_img='{}', monster_id={}, remapped_id={}",
+                //     m.monster_img, monster_id, remapped_id
+                // );
+
                 // 3. Chercher le bon emoji avec ce com2us_id
                 let emoji_doc = collection
                     .find_one(doc! { "com2us_id": remapped_id })
@@ -366,10 +372,22 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
                     .ok()
                     .flatten();
 
+                // Debug
+                // println!(
+                //     "DEBUG: Emoji document for remapped_id {}: {:?}",
+                //     remapped_id, emoji_doc
+                // );
+
                 if let Some(emoji_doc) = emoji_doc {
                     if let Ok(id) = emoji_doc.get_str("id") {
                         let name = emoji_doc.get_str("name").unwrap_or("unit");
                         let emoji = format!("<:{}:{}>", name, id);
+
+                        // Debug
+                        // println!(
+                        //     "DEBUG: Created emoji for monster_img='{}', monster_id={}, remapped_id={}, name='{}', id='{}', emoji='{}'",
+                        //     m.monster_img, monster_id, remapped_id, name, id, emoji
+                        // );
 
                         let pick_display = if m.pick_total >= 1000 {
                             let k = m.pick_total / 1000;
