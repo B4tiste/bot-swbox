@@ -72,7 +72,7 @@ pub async fn get_player_stats(
             ))
         })?;
 
-        let replay_image_path = create_replay_image(recent_replays, &token, 3, 2)
+        let replay_image_path = create_replay_image(recent_replays, 3, 2)
             .await
             .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
@@ -165,7 +165,7 @@ pub async fn get_player_stats(
                 ))
             })?;
 
-        let replay_image_path = create_replay_image(recent_replays, &token, 3, 2)
+        let replay_image_path = create_replay_image(recent_replays, 3, 2)
             .await
             .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
@@ -313,7 +313,7 @@ pub async fn get_player_stats(
                 ))
             })?;
 
-        let replay_image_path = create_replay_image(recent_replays, &token, 3, 2)
+        let replay_image_path = create_replay_image(recent_replays, 3, 2)
             .await
             .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 

@@ -15,7 +15,7 @@ use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
 use crate::commands::shared::logs::send_log;
-use crate::{Data, API_TOKEN, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
+use crate::{Data, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 
 // Import de la map des monstres
 use crate::MONSTER_MAP;
@@ -82,17 +82,6 @@ pub async fn get_replays(
         }
     }
 
-    // Token pour les requetes
-    let token = {
-        let guard = API_TOKEN.lock().unwrap();
-        guard.clone().ok_or_else(|| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Missing API token",
-            ))
-        })?
-    };
-
     // Remap des IDs si nécessaire
     for id in &mut monster_ids {
         *id = remap_monster_id(*id);
@@ -137,7 +126,7 @@ pub async fn get_replays(
     player_names.sort();
     player_names.dedup();
 
-    let replay_image_path = create_replay_image(replays, &token, 4, 4)
+    let replay_image_path = create_replay_image(replays, 4, 4)
         .await
         .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
@@ -252,7 +241,7 @@ pub async fn get_replays(
         new_player_names.dedup();
 
         // Créer la nouvelle image
-        let new_replay_image_path = match create_replay_image(new_replays, &token, 4, 4).await {
+        let new_replay_image_path = match create_replay_image(new_replays, 4, 4).await {
             Ok(path) => path,
             Err(e) => {
                 interaction
