@@ -220,16 +220,26 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         .get("PASSWORD")
         .context("'PASSWORD' was not found")?;
 
-    // Lancer une tâche périodique pour rafraîchir le token de l'API
+    // Lancer une tâche périodique pour rafraîchir le token de l'API avec retry (max 5)
     tokio::spawn(async move {
         loop {
-            match login(username.clone(), password.clone()).await {
-                Ok(token) => {
-                    *API_TOKEN.lock().unwrap() = Some(token);
-                    println!("Token de l'API rafraîchi avec succès");
-                }
-                Err(e) => {
-                    eprintln!("Erreur lors du login: {:?}", e);
+            let mut retry_count = 0;
+            loop {
+                match login(username.clone(), password.clone()).await {
+                    Ok(token) => {
+                        *API_TOKEN.lock().unwrap() = Some(token);
+                        println!("Token de l'API rafraîchi avec succès");
+                        break;
+                    }
+                    Err(e) => {
+                        retry_count += 1;
+                        eprintln!("Erreur lors du login (tentative {}/5): {:?}", retry_count, e);
+                        if retry_count >= 5 {
+                            eprintln!("Échec du login après 5 tentatives, attente avant nouvel essai...");
+                            break;
+                        }
+                        sleep(Duration::from_secs(5)).await;
+                    }
                 }
             }
             // Rafraîchir le token toutes les heures
