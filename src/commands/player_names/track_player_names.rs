@@ -2,7 +2,10 @@ use crate::commands::player_names::modal::{
     PlayerNamesInfosModalById, PlayerNamesInfosModalByName,
 };
 use crate::commands::player_names::models::{PlayerNamesModalData, PlayerSearchInput};
-use crate::commands::player_names::utils::{get_player_all_names, handle_modal, resolve_player_id};
+use crate::commands::player_names::utils::{
+    get_current_detail_from_swrt, get_player_all_names, get_swrt_id_from_db_by_player_id,
+    handle_modal, resolve_player_id,
+};
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
@@ -10,6 +13,9 @@ use crate::commands::shared::logs::send_log;
 use crate::Data;
 use poise::serenity_prelude::{CreateEmbed, Error};
 use poise::CreateReply;
+
+const DEFAULT_LOGO: &str =
+    "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
 
 /// 📂 Displays the different usernames this player may have had (SWARENA profile required).
 ///
@@ -42,6 +48,7 @@ pub async fn track_player_names(
         Err(_) => ("Error obtaining modal".to_string(), false),
     };
 
+    // 1) Résoudre l’ID "SWArena" (correspond au playerId dans ta collection)
     let player_id = match resolve_player_id(ctx, modal_result).await {
         Ok(Some(id)) => id,
         Ok(None) => {
@@ -54,24 +61,81 @@ pub async fn track_player_names(
         }
     };
 
+    // 2) DB → swrtPlayerId
+    let mut current_name: Option<String> = None;
+    let mut head_img_url: Option<String> = None;
+
+    if let Ok(parsed_player_id) = player_id.parse::<i64>() {
+        match get_swrt_id_from_db_by_player_id(parsed_player_id).await {
+            Ok(swrt_id) => {
+                // 3) SWRanking → current name + headImg
+                match get_current_detail_from_swrt(swrt_id).await {
+                    Ok((name, head_img)) => {
+                        current_name = Some(name);
+                        head_img_url = head_img;
+                    }
+                    Err(e) => {
+                        // log doux mais on continue (fallback sur logo par défaut)
+                        send_log(
+                            &ctx,
+                            format!("player_id={parsed_player_id}"),
+                            false,
+                            format!("SWRanking detail error: {e}"),
+                        )
+                        .await
+                        .ok();
+                    }
+                }
+            }
+            Err(e) => {
+                // log doux mais on continue
+                send_log(
+                    &ctx,
+                    format!("player_id={parsed_player_id}"),
+                    false,
+                    format!("DB lookup error: {e}"),
+                )
+                .await
+                .ok();
+            }
+        }
+    }
+
+    // 4) Recherche des pseudos SWArena (existant)
     let player_all_names = get_player_all_names(player_id.clone()).await;
+
+    // Petit helper pour bâtir l’embed (sans "Current in-game name")
+    let base_embed = |title: &str, description: String| {
+        CreateEmbed::default()
+            .title(title)
+            .description(description)
+            .thumbnail(
+                head_img_url
+                    .clone()
+                    .unwrap_or_else(|| DEFAULT_LOGO.to_string()),
+            )
+    };
+
     match player_all_names {
         Ok(names) if names.is_empty() => {
-            let embed = CreateEmbed::default()
-                .title("Username not found")
-                .description(format!(
+            let mut embed = base_embed(
+                "Username not found",
+                format!(
                     "We couldn't find any usernames for the player with ID **{}**.",
                     player_id
-                ))
-                .field(
-                    "Tips",
-                    "Check if the ID is correct or try another account.",
-                    false,
-                )
-                .color(0xff0000)
-                .thumbnail(
-                    "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true",
-                );
+                ),
+            )
+            .field(
+                "Tips",
+                "Check if the ID is correct or try another account.",
+                false,
+            )
+            .color(0xff0000);
+
+            // 👉 Ajouter le current name à la fin (s’il existe)
+            if let Some(ref cname) = current_name {
+                embed = embed.field("Current in-game name", cname, true);
+            }
 
             let create_reply = CreateReply {
                 embeds: vec![embed],
@@ -81,19 +145,19 @@ pub async fn track_player_names(
 
             send_log(&ctx, input_data, false, "No names found").await?;
         }
+
         Ok(names) if names.len() == 1 => {
-            let embed = CreateEmbed::default()
-                .title("Username found")
-                .description(format!(
-                    "The username for the player with ID **{}** is:",
-                    player_id
-                ))
-                .field("Username", &names[0], true)
-                .field("Total names", "1", true)
-                .color(0x00ff00)
-                .thumbnail(
-                    "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true",
-                );
+            let mut embed = base_embed(
+                "Username found",
+                format!("The username for the player with ID **{}** is:", player_id),
+            )
+            .field("Username", &names[0], true)
+            .color(0x00ff00);
+
+            // 👉 Ajouter le current name après l’historique
+            if let Some(ref cname) = current_name {
+                embed = embed.field("Current in-game name", cname, true);
+            }
 
             let create_reply = CreateReply {
                 embeds: vec![embed],
@@ -109,25 +173,28 @@ pub async fn track_player_names(
             )
             .await?;
         }
+
         Ok(names) => {
             let formatted_names = names
                 .iter()
-                .map(|name| format!("- {}", name))
-                .collect::<Vec<String>>()
+                .map(|n| format!("- {}", n))
+                .collect::<Vec<_>>()
                 .join("\n");
 
-            let embed = CreateEmbed::default()
-                .title("Usernames found")
-                .description(format!(
+            let mut embed = base_embed(
+                "Usernames found",
+                format!(
                     "The usernames for the player with ID **{}** are:",
                     player_id
-                ))
-                .field("Usernames", formatted_names, false)
-                .field("Total names", &names.len().to_string(), true)
-                .color(0x00ff00)
-                .thumbnail(
-                    "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true",
-                );
+                ),
+            )
+            .field("Usernames", formatted_names, false)
+            .color(0x00ff00);
+
+            // 👉 Ajouter le current name après la liste des pseudos
+            if let Some(ref cname) = current_name {
+                embed = embed.field("Current in-game name", cname, true);
+            }
 
             let create_reply = CreateReply {
                 embeds: vec![embed],
@@ -148,7 +215,6 @@ pub async fn track_player_names(
             let embed = create_embed_error("Error retrieving usernames.");
             let reply = ctx.send(embed).await?;
             schedule_message_deletion(reply, ctx).await?;
-
             send_log(&ctx, input_data, false, "Error retrieving usernames.").await?;
         }
     }

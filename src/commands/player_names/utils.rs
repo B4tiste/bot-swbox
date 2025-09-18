@@ -2,6 +2,9 @@ use futures::future;
 use poise::serenity_prelude::Error;
 use poise::Modal;
 
+use mongodb::{bson::doc, Client};
+use crate::MONGO_URI;
+
 use crate::{
     commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion},
     Data,
@@ -143,4 +146,73 @@ pub async fn get_player_all_names(player_id: String) -> Result<Vec<String>, Stri
     }
 
     Ok(player_names)
+}
+
+pub async fn get_swrt_id_from_db_by_player_id(player_id: i64) -> Result<i64, String> {
+    let mongo_uri = {
+        let guard = MONGO_URI.lock().map_err(|_| "Failed to lock MONGO_URI".to_string())?;
+        guard.clone()
+    };
+
+    let client = Client::with_uri_str(&mongo_uri)
+        .await
+        .map_err(|e| format!("Mongo connection error: {e}"))?;
+
+    let coll = client
+        .database("bot-swbox-db")
+        .collection::<mongodb::bson::Document>("players");
+
+    let filter = doc! { "playerId": player_id };
+    let doc = coll
+        .find_one(filter)
+        .await
+        .map_err(|e| format!("Mongo query error: {e}"))?
+        .ok_or_else(|| "Player not found in DB".to_string())?;
+
+    let swrt_player_id = doc
+        .get_i64("swrtPlayerId")
+        .or_else(|_| doc.get_i32("swrtPlayerId").map(|v| v as i64))
+        .map_err(|_| "Missing swrtPlayerId in DB document".to_string())?;
+
+    Ok(swrt_player_id)
+}
+
+pub async fn get_current_detail_from_swrt(swrt_player_id: i64) -> Result<(String, Option<String>), String> {
+    // Retourne (playerName, headImg)
+    // On peut réutiliser la fonction existante get_user_detail(...) mais pour éviter
+    // une dépendance circulaire, on fait un appel léger ici.
+    let token = {
+        use crate::API_TOKEN;
+        let guard = API_TOKEN.lock().map_err(|_| "Failed to lock API_TOKEN".to_string())?;
+        guard.clone().ok_or_else(|| "Missing API token".to_string())?
+    };
+
+    let url = format!("https://m.swranking.com/api/player/detail?swrtPlayerId={}", swrt_player_id);
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("Authentication", token)
+        .header("Content-Type", "application/json")
+        .send()
+        .await
+        .map_err(|e| format!("SWRanking request error: {e}"))?;
+
+    if !res.status().is_success() {
+        return Err(format!("SWRanking status {}", res.status()));
+    }
+
+    let v: serde_json::Value = res.json().await.map_err(|_| "Failed to parse SWRanking JSON".to_string())?;
+
+    let player = v["data"]["player"].clone();
+    if player.is_null() {
+        return Err("Missing 'data.player' in SWRanking response".to_string());
+    }
+
+    let name = player["playerName"]
+        .as_str()
+        .ok_or("Missing playerName")?
+        .to_string();
+
+    let head_img = player["headImg"].as_str().map(|s| s.to_string());
+    Ok((name, head_img))
 }
