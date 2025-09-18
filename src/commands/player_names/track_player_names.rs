@@ -148,7 +148,7 @@ pub async fn track_player_names(
                 "Username found",
                 format!("The username for the player with ID **{}** is:", player_id),
             )
-            .field("Username", &names[0], true)
+            .field("Past Username", &names[0], true)
             .color(0x00ff00);
 
             // 👉 Ajouter le current name après l’historique
@@ -185,7 +185,7 @@ pub async fn track_player_names(
                     player_id
                 ),
             )
-            .field("Usernames", formatted_names, false)
+            .field("Past Usernames", formatted_names, false)
             .color(0x00ff00);
 
             // 👉 Ajouter le current name après la liste des pseudos
