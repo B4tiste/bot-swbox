@@ -6,9 +6,6 @@ use crate::commands::player_names::utils::{
     get_current_detail_from_swrt, get_player_all_names, get_swrt_id_from_db_by_player_id,
     handle_modal, resolve_player_id,
 };
-use crate::commands::shared::embed_error_handling::{
-    create_embed_error, schedule_message_deletion,
-};
 use crate::commands::shared::logs::send_log;
 use crate::Data;
 use poise::serenity_prelude::{CreateEmbed, Error};
@@ -211,11 +208,41 @@ pub async fn track_player_names(
             .await?;
         }
 
-        Err(_) => {
-            let embed = create_embed_error("Error retrieving usernames.");
-            let reply = ctx.send(embed).await?;
-            schedule_message_deletion(reply, ctx).await?;
-            send_log(&ctx, input_data, false, "Error retrieving usernames.").await?;
+        Err(e) => {
+            // Fallback: on envoie un embed "partiel" avec le current name si disponible
+            let mut embed = base_embed(
+                "Couldn't retrieve username history",
+                "We couldn't fetch the username history from SWArena right now.".to_string(),
+            )
+            .field(
+                "Info",
+                "This player never reached G1, hence no public profile on SWArena.",
+                false,
+            )
+            .color(0xffa500); // orange "warning"
+
+            // 👉 Toujours ajouter le current name s’il existe (récupéré via DB → SWRanking)
+            if let Some(ref cname) = current_name {
+                embed = embed.field("Current in-game name", cname, true);
+            }
+
+            // Si on n'a même pas le current name, on garde quand même un message d’erreur convivial
+            // (le thumbnail reste le logo par défaut via base_embed)
+
+            let create_reply = CreateReply {
+                embeds: vec![embed],
+                ..Default::default()
+            };
+            ctx.send(create_reply).await?;
+
+            // Logging plus informatif
+            send_log(
+                &ctx,
+                input_data,
+                current_name.is_some(), // succès partiel si on a au moins le current name
+                format!("Username history fetch error: {e}"),
+            )
+            .await?;
         }
     }
 
