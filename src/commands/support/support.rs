@@ -20,6 +20,11 @@ pub async fn support(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
             "You can add a custom player alias for yourself or someone else. This alias can be used to search for that player using the command, and will also be displayed on the player profile.",
             false,
         )
+        .field(
+            "Community Discord",
+            "Join our community on [Discord](https://discord.gg/AfANrTVaDJ) to share feedback, get support, and connect with others!",
+            false,
+        )
         .thumbnail("https://media.tenor.com/337ncxnLbbIAAAAi/kofi-support-me.gif")
         .footer(CreateEmbedFooter::new("Thank you for your support ! ❤️"));
 

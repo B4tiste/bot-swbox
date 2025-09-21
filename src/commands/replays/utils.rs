@@ -108,7 +108,7 @@ pub fn create_replays_embed(
             false,
         )
         .footer(CreateEmbedFooter::new(
-            "Use /send_suggestion to report issues.",
+            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
         ))
 }
 

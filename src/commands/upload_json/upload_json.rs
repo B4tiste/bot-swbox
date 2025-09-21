@@ -322,7 +322,7 @@ pub async fn upload_json(
         )
         .color(0x00FF00)
         .footer(CreateEmbedFooter::new(
-            "Please use /send_suggestion to report any issue.",
+            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
         ));
 
     // Ajouter le thumbnail uniquement si ce n'est pas anonymisé

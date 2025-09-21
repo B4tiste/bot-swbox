@@ -255,7 +255,7 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
             false,
         )
         .footer(CreateEmbedFooter::new(
-            "Use /send_suggestion to report issues.",
+            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
         ))
         .color(serenity::Colour::from_rgb(0, 255, 0))
 }

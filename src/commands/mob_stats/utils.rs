@@ -334,7 +334,7 @@ pub async fn build_monster_stats_embed(
             true,
         )
         .footer(serenity::builder::CreateEmbedFooter::new(
-            "Use /send_suggestion to report issues.",
+            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
         ))
 }
 
@@ -401,7 +401,7 @@ pub async fn build_loading_monster_stats_embed(
             true,
         )
         .footer(serenity::builder::CreateEmbedFooter::new(
-            "Use /send_suggestion to report issues.",
+            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
         ))
 }
 

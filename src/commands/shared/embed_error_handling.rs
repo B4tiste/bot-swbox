@@ -12,7 +12,7 @@ pub fn create_embed_error(error_message: &str) -> CreateReply {
         .description(error_message)
         .color(0xff0000)
         .footer(CreateEmbedFooter::new(
-            "This message will be deleted in 60 seconds.",
+            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
         ))
         .thumbnail("https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true");
     CreateReply {

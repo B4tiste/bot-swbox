@@ -79,7 +79,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         )
         .image("attachment://cutoffs.png")
         .footer(CreateEmbedFooter::new(
-            "Please use /send_suggestion to report any issue.",
+            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
         ));
 
     let attachements = serenity::CreateAttachment::bytes(image_bytes.to_vec(), "cutoffs.png");

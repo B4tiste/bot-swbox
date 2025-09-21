@@ -476,7 +476,7 @@ pub fn create_player_embed(
             }
         )
         .footer(CreateEmbedFooter::new(
-            "Please use /send_suggestion to report any issue.",
+            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
         ))
 }
 

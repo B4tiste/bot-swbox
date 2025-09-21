@@ -56,9 +56,14 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
         "[BP Archive](https://bp-archive.netlify.app/)",
         false,
     );
+    embed = embed.field(
+        "Discord server",
+        "https://discord.gg/AfANrTVaDJ",
+        false,
+    );
 
     embed = embed.footer(CreateEmbedFooter::new(
-        "Please use /send_suggestion to report any issue.",
+        "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
     ));
 
     // Send the embed reply
