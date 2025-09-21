@@ -140,6 +140,12 @@ lazy_static! {
                 "en_names": ["track mat 2"],
                 "swarena_id": 5743823,
                 "swrt_id": 28752,
+            },
+            {
+                "og_names": "Pinkroid",
+                "en_names": ["#FreePinkroid"],
+                "swarena_id": 2196070,
+                "swrt_id": 16494,
             }
         ]
     });
