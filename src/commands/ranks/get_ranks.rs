@@ -74,7 +74,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         .description(description)
         .field(
             "Cutoffs prediction :",
-            format!("From [SW-TT](https://sw-tt.com). I'm not responsible for any inaccuracy."),
+            format!("From [SW-TT](https://sw-tt.com) (I'm not responsible for any inaccuracy from the predictions)"),
             false,
         )
         .image("attachment://cutoffs.png")
