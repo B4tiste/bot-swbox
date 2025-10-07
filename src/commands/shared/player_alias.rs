@@ -146,6 +146,12 @@ lazy_static! {
                 "en_names": ["#FreePinkroid"],
                 "swarena_id": 2196070,
                 "swrt_id": 16494,
+            },
+            {
+                "og_names": "?",
+                "en_names": ["Compte Zinthos"],
+                "swarena_id": 7729068,
+                "swrt_id": 32489,
             }
         ]
     });
