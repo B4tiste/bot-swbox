@@ -152,6 +152,12 @@ lazy_static! {
                 "en_names": ["Compte Zinthos"],
                 "swarena_id": 7729068,
                 "swrt_id": 32489,
+            },
+            {
+                "og_names": "?",
+                "en_names": ["Compte montage"],
+                "swarena_id": 2759178,
+                "swrt_id": 19482,
             }
         ]
     });
