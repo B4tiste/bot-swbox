@@ -6,13 +6,16 @@ use serenity::{
     Error,
 };
 
-use crate::commands::player_stats::utils::{
-    create_player_embed, create_replay_image, format_player_ld_monsters_emojis,
-    format_player_monsters, get_rank_emojis_for_score, get_recent_replays, get_user_detail,
-    search_users,
-};
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
+use crate::commands::{
+    player_stats::utils::{
+        create_player_embed, create_replay_image, format_player_ld_monsters_emojis,
+        format_player_monsters, get_rank_emojis_for_score, get_recent_replays, get_user_detail,
+        search_users,
+    },
+    shared::{logs::get_server_name, models::LoggerDocument},
+};
 use crate::{Data, API_TOKEN};
 
 /// 📂 Displays the RTA stats of the given player. (LD & most used monsters)
@@ -93,12 +96,13 @@ pub async fn get_player_stats(
             )
             .await?;
 
-        send_log(
-            &ctx,
-            "Command: /get_player_stats".to_string(),
+        send_log(LoggerDocument::new(
+            &ctx.author().name,
+            &"get_player_stats".to_string(),
+            &get_server_name(&ctx).await?,
             true,
-            format!("Displayed stats for alias '{}'", player_name),
-        )
+            chrono::Utc::now().timestamp(),
+        ))
         .await?;
 
         return Ok(());
@@ -115,12 +119,13 @@ pub async fn get_player_stats(
     if players.is_empty() {
         ctx.say(format!("No players found for `{}`.", player_name))
             .await?;
-        send_log(
-            &ctx,
-            "Command: /get_player_stats".to_string(),
+        send_log(LoggerDocument::new(
+            &ctx.author().name,
+            &"get_player_stats".to_string(),
+            &get_server_name(&ctx).await?,
             false,
-            format!("No players found for '{}'", player_name),
-        )
+            chrono::Utc::now().timestamp(),
+        ))
         .await?;
         return Ok(());
     }
@@ -186,12 +191,13 @@ pub async fn get_player_stats(
             )
             .await?;
 
-        send_log(
-            &ctx,
-            "Command: /get_player_stats".to_string(),
+        send_log(LoggerDocument::new(
+            &ctx.author().name,
+            &"get_player_stats".to_string(),
+            &get_server_name(&ctx).await?,
             true,
-            format!("Displayed stats for '{}'", players[0].name),
-        )
+            chrono::Utc::now().timestamp(),
+        ))
         .await?;
 
         return Ok(());
@@ -333,21 +339,23 @@ pub async fn get_player_stats(
         )
         .await?;
 
-        send_log(
-            &ctx,
-            "Command: /get_player_stats".to_string(),
+        send_log(LoggerDocument::new(
+            &ctx.author().name,
+            &"get_player_stats".to_string(),
+            &get_server_name(&ctx).await?,
             true,
-            format!("Displayed stats after selection for '{}'", player_name),
-        )
+            chrono::Utc::now().timestamp(),
+        ))
         .await?;
     } else {
         ctx.say("⏰ Time expired or no selection.").await?;
-        send_log(
-            &ctx,
-            "Command: /get_player_stats".to_string(),
+        send_log(LoggerDocument::new(
+            &ctx.author().name,
+            &"get_player_stats".to_string(),
+            &get_server_name(&ctx).await?,
             false,
-            format!("Timeout or no selection for '{}'", player_name),
-        )
+            chrono::Utc::now().timestamp(),
+        ))
         .await?;
     }
 

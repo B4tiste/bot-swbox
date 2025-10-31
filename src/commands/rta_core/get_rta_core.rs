@@ -5,12 +5,14 @@ use crate::commands::rta_core::cache::get_monster_duos_cached;
 use crate::commands::rta_core::models::MonstersFile;
 use crate::commands::rta_core::models::{Mode, Rank, Trio};
 use crate::commands::rta_core::utils::{
-    filter_monster, get_emoji_from_id, get_monsters_from_json_bytes, get_tierlist_data, get_swrt_version,
+    filter_monster, get_emoji_from_id, get_monsters_from_json_bytes, get_swrt_version,
+    get_tierlist_data,
 };
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
-use crate::commands::shared::logs::send_log;
+use crate::commands::shared::logs::{get_server_name, send_log};
+use crate::commands::shared::models::LoggerDocument;
 use crate::{Data, API_TOKEN};
 use poise::serenity_prelude::{Attachment, Error};
 use std::collections::HashMap;
@@ -49,7 +51,14 @@ pub async fn get_rta_core(
         let err = "No file provided. Please attach a JSON file.";
         let reply = ctx.send(create_embed_error(err)).await?;
         schedule_message_deletion(reply, ctx).await?;
-        send_log(&ctx, "Command: /get_rta_core", false, err).await?;
+        send_log(LoggerDocument::new(
+            &ctx.author().name,
+            &"get_rta_core".to_string(),
+            &get_server_name(&ctx).await?,
+            false,
+            chrono::Utc::now().timestamp(),
+        ))
+        .await?;
         return Ok(());
     }
 
@@ -58,7 +67,14 @@ pub async fn get_rta_core(
         let err = "The provided file is not a JSON file.";
         let reply = ctx.send(create_embed_error(err)).await?;
         schedule_message_deletion(reply, ctx).await?;
-        send_log(&ctx, "Command: /get_rta_core", false, err).await?;
+        send_log(LoggerDocument::new(
+            &ctx.author().name,
+            &"get_rta_core".to_string(),
+            &get_server_name(&ctx).await?,
+            false,
+            chrono::Utc::now().timestamp(),
+        ))
+        .await?;
         return Ok(());
     }
 
@@ -69,7 +85,14 @@ pub async fn get_rta_core(
             let err_msg = format!("Impossible de télécharger : {}", e);
             let reply = ctx.send(create_embed_error(&err_msg)).await?;
             schedule_message_deletion(reply, ctx).await?;
-            send_log(&ctx, "Command: /get_rta_core", false, &err_msg).await?;
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"get_rta_core".to_string(),
+                &get_server_name(&ctx).await?,
+                false,
+                chrono::Utc::now().timestamp(),
+            ))
+            .await?;
             return Ok(());
         }
     };
@@ -98,7 +121,14 @@ pub async fn get_rta_core(
                         let msg = format!("❌ Cannot find '{}', please use the autocomplete feature for a perfect match.", name);
                         let reply = ctx.send(create_embed_error(&msg)).await?;
                         schedule_message_deletion(reply, ctx).await?;
-                        send_log(&ctx, "get_rta_core", false, &msg).await?;
+                        send_log(LoggerDocument::new(
+                            &ctx.author().name,
+                            &"get_rta_core".to_string(),
+                            &get_server_name(&ctx).await?,
+                            false,
+                            chrono::Utc::now().timestamp(),
+                        ))
+                        .await?;
                         return Ok(());
                     }
                 }
@@ -119,7 +149,14 @@ pub async fn get_rta_core(
                     let err_msg = format!("Impossible de récupérer les données : {}", e);
                     let reply = ctx.send(create_embed_error(&err_msg)).await?;
                     schedule_message_deletion(reply, ctx).await?;
-                    send_log(&ctx, "Command: /get_rta_core", false, &err_msg).await?;
+                    send_log(LoggerDocument::new(
+                        &ctx.author().name,
+                        &"get_rta_core".to_string(),
+                        &get_server_name(&ctx).await?,
+                        false,
+                        chrono::Utc::now().timestamp(),
+                    ))
+                    .await?;
                     return Ok(());
                 }
             };
@@ -152,7 +189,14 @@ pub async fn get_rta_core(
                 Err(e) => {
                     let err = format!("Impossible de récupérer la saison : {}", e);
                     ctx.send(create_embed_error(&err)).await.ok();
-                    send_log(&ctx, "get_rta_core", false, &err).await.ok();
+                    send_log(LoggerDocument::new(
+                        &ctx.author().name,
+                        &"get_rta_core".to_string(),
+                        &get_server_name(&ctx).await?,
+                        false,
+                        chrono::Utc::now().timestamp(),
+                    ))
+                    .await?;
                     0
                 }
             };
@@ -163,7 +207,14 @@ pub async fn get_rta_core(
                 Err(e) => {
                     let err = format!("Impossible de récupérer la version : {}", e);
                     ctx.send(create_embed_error(&err)).await.ok();
-                    send_log(&ctx, "get_rta_core", false, &err).await.ok();
+                    send_log(LoggerDocument::new(
+                        &ctx.author().name,
+                        &"get_rta_core".to_string(),
+                        &get_server_name(&ctx).await?,
+                        false,
+                        chrono::Utc::now().timestamp(),
+                    ))
+                    .await?;
                     return Ok(());
                 }
             };
@@ -211,7 +262,8 @@ pub async fn get_rta_core(
                     Rank::G3 => 3,
                 };
                 if let Ok(duos) =
-                    get_monster_duos_cached(&token, season, &version, base.monster_id, rank_duos).await
+                    get_monster_duos_cached(&token, season, &version, base.monster_id, rank_duos)
+                        .await
                 {
                     for duo in duos {
                         let (b, o, t) = (base.monster_id, duo.team_one_id, duo.team_two_id);
@@ -305,7 +357,14 @@ pub async fn get_rta_core(
                         }
                     }
                 } else {
-                    send_log(&ctx, "get_rta_core", false, "Erreur highdata").await?;
+                    send_log(LoggerDocument::new(
+                        &ctx.author().name,
+                        &"get_rta_core".to_string(),
+                        &get_server_name(&ctx).await?,
+                        false,
+                        chrono::Utc::now().timestamp(),
+                    ))
+                    .await?;
                 }
             }
 
@@ -388,15 +447,29 @@ pub async fn get_rta_core(
                     ));
                 }
             }
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"get_rta_core".to_string(),
+                &get_server_name(&ctx).await?,
+                true,
+                chrono::Utc::now().timestamp(),
+            ))
+            .await?;
             ctx.say(msg).await?;
         }
         Err(e) => {
             let err_msg = format!("Erreur : {}", e);
             let reply = ctx.send(create_embed_error(&err_msg)).await?;
             schedule_message_deletion(reply, ctx).await?;
-            send_log(&ctx, "Command: /get_rta_core", false, &err_msg).await?;
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"get_rta_core".to_string(),
+                &get_server_name(&ctx).await?,
+                false,
+                chrono::Utc::now().timestamp(),
+            ))
+            .await?;
         }
     }
-
     Ok(())
 }
