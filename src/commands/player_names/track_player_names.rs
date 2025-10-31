@@ -40,7 +40,7 @@ pub async fn track_player_names(
         }
     };
 
-    let (input_data, _input_status) = match &modal_result {
+    let (_input_data, _input_status) = match &modal_result {
         Ok(Some(data)) => (format!("{:?}", data), true),
         Ok(None) => ("No input provided".to_string(), false),
         Err(_) => ("Error obtaining modal".to_string(), false),
@@ -86,7 +86,7 @@ pub async fn track_player_names(
                         current_name = Some(name);
                         head_img_url = head_img;
                     }
-                    Err(e) => {
+                    Err(_e) => {
                         // log doux mais on continue (fallback sur logo par défaut)
                         send_log(LoggerDocument::new(
                             &ctx.author().name,
@@ -99,7 +99,7 @@ pub async fn track_player_names(
                     }
                 }
             }
-            Err(e) => {
+            Err(_e) => {
                 // log doux mais on continue
                 send_log(LoggerDocument::new(
                     &ctx.author().name,
@@ -232,7 +232,7 @@ pub async fn track_player_names(
             .await?;
         }
 
-        Err(e) => {
+        Err(_e) => {
             // Fallback: on envoie un embed "partiel" avec le current name si disponible
             let mut embed = base_embed(
                 "Couldn't retrieve username history",

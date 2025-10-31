@@ -61,12 +61,6 @@ pub async fn get_replays(
     }
 
     let user_id = ctx.author().id;
-    let input_data = format!(
-        "User ID: {}\nMonsters: {}",
-        user_id,
-        monster_names.join(", ")
-    );
-    let monster_names_for_log = monster_names.clone();
 
     for name in &monster_names {
         match MONSTER_MAP.get(name) {

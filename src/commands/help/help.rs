@@ -85,7 +85,7 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
             ))
             .await?;
         }
-        Err(err) => {
+        Err(_err) => {
             send_log(LoggerDocument::new(
                 &ctx.author().name,
                 &"help".to_string(),

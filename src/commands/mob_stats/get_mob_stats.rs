@@ -71,7 +71,6 @@ pub async fn get_mob_stats(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let input_data = format!("Monster name: {:?}", monster_name);
     let user_id = ctx.author().id;
 
     // 1️⃣ Récupérer l'ID depuis la map
