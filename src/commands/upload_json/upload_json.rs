@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
-use crate::commands::shared::logs::send_log;
-use crate::commands::shared::models::Mode;
+use crate::commands::shared::logs::{get_server_name, send_log};
+use crate::commands::shared::models::{LoggerDocument, Mode};
 use crate::commands::upload_json::process_json::process_json;
 use crate::Data;
 use mongodb::{bson::doc, Client, Collection};
@@ -25,8 +25,7 @@ use serenity::builder::CreateEmbedFooter;
 pub async fn upload_json(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     file: Attachment,
-    #[description = "Select the mode (defaults to Classic)"]
-    mode: Option<Mode>,
+    #[description = "Select the mode (defaults to Classic)"] mode: Option<Mode>,
 ) -> Result<(), Error> {
     // Defer the response to avoid the 3 seconds timeout
     ctx.defer().await?;
@@ -35,12 +34,13 @@ pub async fn upload_json(
         let error_message = "No file provided. Please attach a JSON file.";
         let reply = ctx.send(create_embed_error(&error_message)).await?;
         schedule_message_deletion(reply, ctx).await?;
-        send_log(
-            &ctx,
-            "Command: /upload_json".to_string(),
+        send_log(LoggerDocument::new(
+            &ctx.author().name,
+            &"upload_json".to_string(),
+            &get_server_name(&ctx).await?,
             false,
-            error_message.to_string(),
-        )
+            chrono::Utc::now().timestamp(),
+        ))
         .await?;
         return Ok(());
     }
@@ -49,12 +49,13 @@ pub async fn upload_json(
         let error_message = "The provided file is not a JSON file.";
         let reply = ctx.send(create_embed_error(&error_message)).await?;
         schedule_message_deletion(reply, ctx).await?;
-        send_log(
-            &ctx,
-            "Command: /upload_json".to_string(),
+        send_log(LoggerDocument::new(
+            &ctx.author().name,
+            &"upload_json".to_string(),
+            &get_server_name(&ctx).await?,
             false,
-            error_message.to_string(),
-        )
+            chrono::Utc::now().timestamp(),
+        ))
         .await?;
         return Ok(());
     }
@@ -65,12 +66,13 @@ pub async fn upload_json(
             let error_message = format!("Failed to download the file: {}", e);
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
-            send_log(
-                &ctx,
-                "Command: /upload_json".to_string(),
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"upload_json".to_string(),
+                &get_server_name(&ctx).await?,
                 false,
-                error_message,
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
             return Ok(());
         }
@@ -82,12 +84,13 @@ pub async fn upload_json(
             let error_message = format!("Failed to read the file content: {}", e);
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
-            send_log(
-                &ctx,
-                "Command: /upload_json".to_string(),
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"upload_json".to_string(),
+                &get_server_name(&ctx).await?,
                 false,
-                error_message,
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
             return Ok(());
         }
@@ -99,12 +102,13 @@ pub async fn upload_json(
             let error_message = format!("Failed to parse JSON: {}", e);
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
-            send_log(
-                &ctx,
-                "Command: /upload_json".to_string(),
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"upload_json".to_string(),
+                &get_server_name(&ctx).await?,
                 false,
-                error_message,
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
             return Ok(());
         }
@@ -347,12 +351,13 @@ pub async fn upload_json(
 
     ctx.send(reply).await?;
 
-    send_log(
-        &ctx,
-        "Command: /upload_json".to_string(),
+    send_log(LoggerDocument::new(
+        &ctx.author().name,
+        &"upload_json".to_string(),
+        &get_server_name(&ctx).await?,
         true,
-        format!("JSON processed successfully"),
-    )
+        chrono::Utc::now().timestamp(),
+    ))
     .await?;
 
     // Préparation des données pour MongoDB

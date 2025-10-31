@@ -1,4 +1,4 @@
-use crate::{commands::shared::logs::send_log, Data};
+use crate::{Data, commands::shared::{logs::{get_server_name, send_log}, models::LoggerDocument}};
 use poise::{
     serenity_prelude::{self as serenity, Error},
     CreateReply,
@@ -76,21 +76,23 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
 
     match send_result {
         Ok(_) => {
-            send_log(
-                &ctx,
-                "Command: /help".to_string(),
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"help".to_string(),
+                &get_server_name(&ctx).await?,
                 true,
-                "Embed sent".to_string(),
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
         }
         Err(err) => {
-            send_log(
-                &ctx,
-                "Command: /help".to_string(),
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"help".to_string(),
+                &get_server_name(&ctx).await?,
                 false,
-                format!("Error sending embed: {:?}", err),
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
         }
     }

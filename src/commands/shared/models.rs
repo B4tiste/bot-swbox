@@ -31,6 +31,8 @@
 //     pub win_together_rate: String,
 // }
 
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum Mode {
     Classic,
@@ -39,3 +41,23 @@ pub enum Mode {
     NoSpeedDetailAndAnonymized,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LoggerDocument {
+    pub username: String,
+    pub command_name: String,
+    pub server_name: String,
+    pub command_result: bool,
+    pub created_at: i64
+}
+
+impl LoggerDocument {
+    pub fn new(username: &str, command_name: &str, server_name: &str, command_result: bool, created_at: i64) -> Self {
+        Self {
+            username: username.to_string(),
+            command_name: command_name.to_string(),
+            server_name: server_name.to_string(),
+            command_result,
+            created_at,
+        }
+    }
+}

@@ -6,7 +6,8 @@ use crate::commands::player_names::utils::{
     get_current_detail_from_swrt, get_player_all_names, get_swrt_id_from_db_by_player_id,
     handle_modal, resolve_player_id,
 };
-use crate::commands::shared::logs::send_log;
+use crate::commands::shared::logs::{get_server_name, send_log};
+use crate::commands::shared::models::LoggerDocument;
 use crate::Data;
 use poise::serenity_prelude::{CreateEmbed, Error};
 use poise::CreateReply;
@@ -49,11 +50,25 @@ pub async fn track_player_names(
     let player_id = match resolve_player_id(ctx, modal_result).await {
         Ok(Some(id)) => id,
         Ok(None) => {
-            send_log(&ctx, input_data, false, "No ID found").await?;
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"track_player_names".to_string(),
+                &get_server_name(&ctx).await?,
+                false,
+                chrono::Utc::now().timestamp(),
+            ))
+            .await?;
             return Ok(());
         }
         Err(_) => {
-            send_log(&ctx, input_data, false, "Error resolving ID").await?;
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"track_player_names".to_string(),
+                &get_server_name(&ctx).await?,
+                false,
+                chrono::Utc::now().timestamp(),
+            ))
+            .await?;
             return Ok(());
         }
     };
@@ -73,27 +88,27 @@ pub async fn track_player_names(
                     }
                     Err(e) => {
                         // log doux mais on continue (fallback sur logo par défaut)
-                        send_log(
-                            &ctx,
-                            format!("player_id={parsed_player_id}"),
+                        send_log(LoggerDocument::new(
+                            &ctx.author().name,
+                            &"track_player_names".to_string(),
+                            &get_server_name(&ctx).await?,
                             false,
-                            format!("SWRanking detail error: {e}"),
-                        )
-                        .await
-                        .ok();
+                            chrono::Utc::now().timestamp(),
+                        ))
+                        .await?;
                     }
                 }
             }
             Err(e) => {
                 // log doux mais on continue
-                send_log(
-                    &ctx,
-                    format!("player_id={parsed_player_id}"),
+                send_log(LoggerDocument::new(
+                    &ctx.author().name,
+                    &"track_player_names".to_string(),
+                    &get_server_name(&ctx).await?,
                     false,
-                    format!("DB lookup error: {e}"),
-                )
-                .await
-                .ok();
+                    chrono::Utc::now().timestamp(),
+                ))
+                .await?;
             }
         }
     }
@@ -140,7 +155,14 @@ pub async fn track_player_names(
             };
             ctx.send(create_reply).await?;
 
-            send_log(&ctx, input_data, false, "No names found").await?;
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"track_player_names".to_string(),
+                &get_server_name(&ctx).await?,
+                false,
+                chrono::Utc::now().timestamp(),
+            ))
+            .await?;
         }
 
         Ok(names) if names.len() == 1 => {
@@ -162,12 +184,13 @@ pub async fn track_player_names(
             };
             ctx.send(create_reply).await?;
 
-            send_log(
-                &ctx,
-                input_data,
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"track_player_names".to_string(),
+                &get_server_name(&ctx).await?,
                 true,
-                format!("Name found: {}", names[0].clone()),
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
         }
 
@@ -199,12 +222,13 @@ pub async fn track_player_names(
             };
             ctx.send(create_reply).await?;
 
-            send_log(
-                &ctx,
-                input_data,
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"track_player_names".to_string(),
+                &get_server_name(&ctx).await?,
                 true,
-                format!("Names found: {}", names.join(", ")),
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
         }
 
@@ -236,12 +260,13 @@ pub async fn track_player_names(
             ctx.send(create_reply).await?;
 
             // Logging plus informatif
-            send_log(
-                &ctx,
-                input_data,
-                current_name.is_some(), // succès partiel si on a au moins le current name
-                format!("Username history fetch error: {e}"),
-            )
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"track_player_names".to_string(),
+                &get_server_name(&ctx).await?,
+                current_name.is_some(),
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
         }
     }

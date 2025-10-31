@@ -10,7 +10,9 @@ use crate::commands::player_stats::utils::{
     create_player_embed, format_player_ld_monsters_emojis, format_player_monsters,
     get_rank_emojis_for_score, get_user_detail,
 };
+use crate::commands::shared::logs::get_server_name;
 use crate::commands::shared::logs::send_log;
+use crate::commands::shared::models::LoggerDocument;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
 use crate::{Data, API_TOKEN};
 
@@ -124,7 +126,7 @@ pub async fn get_rta_leaderboard(
                                 ld_emojis,
                                 top_monsters,
                                 rank_emojis.clone(),
-                                2
+                                2,
                             );
 
                             followup
@@ -209,12 +211,13 @@ pub async fn get_rta_leaderboard(
         )
         .await?;
 
-    send_log(
-        &ctx,
-        "Command: /get_leaderboard".to_string(),
+    send_log(LoggerDocument::new(
+        &ctx.author().name,
+        &"get_leaderboard".to_string(),
+        &get_server_name(&ctx).await?,
         true,
-        format!("Displayed leaderboard page {}", page),
-    )
+        chrono::Utc::now().timestamp(),
+    ))
     .await?;
 
     Ok(())

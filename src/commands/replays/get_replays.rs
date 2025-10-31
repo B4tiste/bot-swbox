@@ -3,8 +3,8 @@ use poise::CreateReply;
 use serenity::builder::{EditAttachments, EditInteractionResponse};
 use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
-use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::mob_stats::get_mob_stats::autocomplete_monster;
+use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::player_stats::utils::create_replay_image;
 use crate::commands::replays::utils::{
     create_loading_replays_embed, create_replay_level_buttons, create_replays_embed,
@@ -14,7 +14,9 @@ use crate::commands::replays::utils::{
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
+use crate::commands::shared::logs::get_server_name;
 use crate::commands::shared::logs::send_log;
+use crate::commands::shared::models::LoggerDocument;
 use crate::{Data, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 
 // Import de la map des monstres
@@ -76,7 +78,14 @@ pub async fn get_replays(
                 );
                 let reply = ctx.send(create_embed_error(&msg)).await?;
                 schedule_message_deletion(reply, ctx).await?;
-                send_log(&ctx, input_data, false, &msg).await?;
+                send_log(LoggerDocument::new(
+                    &ctx.author().name,
+                    &"get_replays".to_string(),
+                    &get_server_name(&ctx).await?,
+                    false,
+                    chrono::Utc::now().timestamp(),
+                ))
+                .await?;
                 return Ok(());
             }
         }
@@ -279,16 +288,13 @@ pub async fn get_replays(
             .await?;
     }
 
-    send_log(
-        &ctx,
-        "Command: /get_replays".to_string(),
+    send_log(LoggerDocument::new(
+        &ctx.author().name,
+        &"get_replays".to_string(),
+        &get_server_name(&ctx).await?,
         true,
-        format!(
-            "User ID: {}\nMonsters: {}",
-            user_id,
-            monster_names_for_log.join(", ")
-        ),
-    )
+        chrono::Utc::now().timestamp(),
+    ))
     .await?;
 
     Ok(())

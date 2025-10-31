@@ -3,7 +3,10 @@ use poise::{
     CreateReply, Modal,
 };
 
-use crate::commands::shared::logs::send_log;
+use crate::commands::shared::{
+    logs::{get_server_name, send_log},
+    models::LoggerDocument,
+};
 use crate::commands::suggestion::modal::SuggestionModal;
 use crate::{
     commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion},
@@ -21,12 +24,13 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
         Err(_) => {
             let error_message = "Error executing the modal.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
-            send_log(
-                &ctx,
-                "Command: /send_suggestion".to_string(),
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"send_suggestion".to_string(),
+                &get_server_name(&ctx).await?,
                 false,
-                error_message,
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
@@ -54,23 +58,25 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
 
     match suggestion_result {
         Ok(_) => {
-            send_log(
-                &ctx,
-                format!("Input: {:?}", modal_data),
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"send_suggestion".to_string(),
+                &get_server_name(&ctx).await?,
                 true,
-                format!("Suggestion sent: {:?}", embed),
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
         }
         Err(_) => {
             let error_message = "Error sending the suggestion.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
-            send_log(
-                &ctx,
-                format!("Input: {:?}", modal_data),
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"send_suggestion".to_string(),
+                &get_server_name(&ctx).await?,
                 false,
-                error_message,
-            )
+                chrono::Utc::now().timestamp(),
+            ))
             .await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
@@ -90,12 +96,13 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
     let reply_handle = ctx.send(reply).await?;
     schedule_message_deletion(reply_handle, ctx).await?;
 
-    send_log(
-        &ctx,
-        format!("Input: {:?}", modal_data),
+    send_log(LoggerDocument::new(
+        &ctx.author().name,
+        &"send_suggestion".to_string(),
+        &get_server_name(&ctx).await?,
         true,
-        "Confirmation sent to the user".to_string(),
-    )
+        chrono::Utc::now().timestamp(),
+    ))
     .await?;
 
     Ok(())

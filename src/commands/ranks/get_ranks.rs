@@ -1,5 +1,6 @@
 use crate::commands::ranks::utils::{get_prediction_info, get_rank_info, ENABLE_PREDICTION};
-use crate::commands::shared::logs::send_log;
+use crate::commands::shared::logs::{get_server_name, send_log};
+use crate::commands::shared::models::LoggerDocument;
 use crate::{
     commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion},
     Data,
@@ -25,13 +26,13 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
             let error_message = "Unable to retrieve ELO information.";
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
-            send_log(
-                &ctx,
-                "Command: /ranks".to_string(),
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"get_ranks".to_string(),
+                &get_server_name(&ctx).await?,
                 false,
-                error_message.to_string(),
-            )
-            .await?;
+                chrono::Utc::now().timestamp(),
+            )).await?;
             return Ok(());
         }
     };
@@ -119,13 +120,13 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
 
     ctx.send(reply).await?;
 
-    send_log(
-        &ctx,
-        "Command: /ranks".to_string(),
-        true,
-        "Embed sent".to_string(),
-    )
-    .await?;
+    send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"get_ranks".to_string(),
+                &get_server_name(&ctx).await?,
+                true,
+                chrono::Utc::now().timestamp(),
+            )).await?;
 
     Ok(())
 }
