@@ -362,7 +362,7 @@ pub async fn notify_new_coupons(
         for guild_id in guild_ids.iter() {
             if let Some(guild) = cache.guild(guild_id) {
                 for channel in guild.channels.values() {
-                    if channel.name == "coupons-swbox" {
+                    if channel.name.contains("coupons-swbox") {
                         sample_channels.push(ChannelId::from(channel.id));
                     }
                 }
