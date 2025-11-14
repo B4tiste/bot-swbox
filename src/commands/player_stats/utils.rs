@@ -407,7 +407,7 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     output
 }
 
-/// Creates an embed for player info without the replay list
+/// Creates an embed for player info display
 pub fn create_player_embed(
     details: &PlayerDetail,
     ld_emojis: Vec<String>,
@@ -415,24 +415,59 @@ pub fn create_player_embed(
     rank_emojis: String,
     has_image: i32,
 ) -> CreateEmbed {
-    let format_emojis = |mut list: Vec<String>| {
-        let mut result = list.join(" ");
-        while result.len() > 1020 && !list.is_empty() {
-            list.pop();
-            result = list.join(" ");
+    let format_emojis_with_split = |list: Vec<String>| -> Vec<(String, String)> {
+        let full_text = list.join(" ");
+
+        if full_text.len() <= 1020 {
+            let display = if full_text.is_empty() {
+                "None".to_string()
+            } else {
+                full_text
+            };
+            return vec![("".to_string(), display)];
         }
-        if result.len() >= 1020 {
-            result.push_str(" …");
+
+        // Split into two parts
+        let mut part1 = Vec::new();
+        let mut part2 = Vec::new();
+        let mid = list.len() / 2;
+
+        for (i, item) in list.iter().enumerate() {
+            if i < mid {
+                part1.push(item.clone());
+            } else {
+                part2.push(item.clone());
+            }
         }
-        if result.is_empty() {
-            "None".to_string()
-        } else {
-            result
+
+        let mut part1_text = part1.join(" ");
+        let mut part2_text = part2.join(" ");
+
+        // Trim if still too long
+        while part1_text.len() > 1020 && !part1.is_empty() {
+            part1.pop();
+            part1_text = part1.join(" ");
         }
+        if part1_text.len() >= 1020 {
+            part1_text.push_str(" …");
+        }
+
+        while part2_text.len() > 1020 && !part2.is_empty() {
+            part2.pop();
+            part2_text = part2.join(" ");
+        }
+        if part2_text.len() >= 1020 {
+            part2_text.push_str(" …");
+        }
+
+        vec![
+            ("(1/2)".to_string(), part1_text),
+            ("(2/2)".to_string(), part2_text),
+        ]
     };
 
-    let ld_display = format_emojis(ld_emojis.clone());
-    let top_display = format_emojis(top_monsters);
+    let ld_fields = format_emojis_with_split(ld_emojis);
+    let top_fields = format_emojis_with_split(top_monsters);
 
     // Créer une liste de gif qui seront choisis aléatoirement pour l'image de fond
     let gifs = vec![
@@ -444,7 +479,7 @@ pub fn create_player_embed(
 
     let random_gif = gifs.choose(&mut rand::rng()).unwrap_or(&gifs[0]);
 
-    CreateEmbed::default()
+    let mut embed = CreateEmbed::default()
         .title(format!(
             ":flag_{}: {} (id: {}) {} RTA Statistics (Regular Season only)",
             details.player_country.to_lowercase(),
@@ -462,9 +497,29 @@ pub fn create_player_embed(
         .field("Elo", details.player_score.unwrap_or(0).to_string(), true)
         .field("Rank", details.player_rank.unwrap_or(0).to_string(), true)
         .field("🏆 Approx. Rank", rank_emojis, true)
-        .field("Matches Played", details.season_count.unwrap_or(0).to_string(), true)
-        .field("✨ LD Monsters (RTA only)", ld_display, false)
-        .field("🔥 Most Used Units Winrate", top_display, false)
+        .field("Matches Played", details.season_count.unwrap_or(0).to_string(), true);
+
+    // Add LD fields
+    for (suffix, text) in ld_fields {
+        let field_name = if suffix.is_empty() {
+            "✨ LD Monsters (RTA only)".to_string()
+        } else {
+            format!("✨ LD Monsters (RTA only) {}", suffix)
+        };
+        embed = embed.field(field_name, text, false);
+    }
+
+    // Add top monsters fields
+    for (suffix, text) in top_fields {
+        let field_name = if suffix.is_empty() {
+            "🔥 Most Used Units Winrate".to_string()
+        } else {
+            format!("🔥 Most Used Units Winrate {}", suffix)
+        };
+        embed = embed.field(field_name, text, false);
+    }
+
+    embed
         .image(
             if has_image == 1 {
                 "attachment://replay.png"
