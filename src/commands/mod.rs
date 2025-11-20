@@ -13,3 +13,4 @@ pub mod replays;
 // pub mod how_to_build;
 pub mod support;
 pub mod register;
+pub mod meta;
