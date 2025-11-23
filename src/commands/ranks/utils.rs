@@ -2,7 +2,7 @@ use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 use serde::Deserialize;
 
 /// Global toggle for prediction gathering (set to false to disable)
-pub const ENABLE_PREDICTION: bool = false;
+pub const ENABLE_PREDICTION: bool = true;
 
 // ---------- Live thresholds (JSON API) ----------
 
