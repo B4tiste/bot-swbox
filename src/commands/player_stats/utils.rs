@@ -1,4 +1,4 @@
-use ab_glyph::{FontArc, PxScale};
+use ab_glyph::{FontArc, PxScale, Font, ScaleFont};
 use anyhow::{anyhow, Context, Result};
 use image::GenericImage;
 use image::{DynamicImage, ImageBuffer, Rgba, RgbaImage};
@@ -12,6 +12,7 @@ use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use chrono::NaiveDateTime;
 
 use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::ranks::utils::get_rank_info;
@@ -131,6 +132,9 @@ pub struct Replay {
 
     #[serde(rename = "status")]
     pub status: u32,
+
+    #[serde(rename = "createDate")]
+    pub date: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -656,29 +660,34 @@ pub async fn create_replay_image(
             .copy_from(&img2, img1.width() + spacing, 0)
             .unwrap();
 
-        let p1_banner = create_name_banner(
-            format!(
-                "{} - {}",
-                battle.player_one.player_score,
-                battle.player_one.player_name
-            )
-            .as_str(),
-            img1.width(),
+        // Left text: score + player 1 name
+        let left_text = format!(
+            "{} - {}",
+            battle.player_one.player_score,
+            battle.player_one.player_name
+        );
+
+        // Right text: player 2 name + score
+        let right_text = format!(
+            "{} - {}",
+            battle.player_two.player_name,
+            battle.player_two.player_score
+        );
+
+        // Center text: date only, formatted as DD-MM-YYYY
+        let date_text = NaiveDateTime::parse_from_str(&battle.date, "%Y-%m-%d %H:%M:%S")
+            .map(|dt| dt.date().format("%d-%m-%Y").to_string())
+            .unwrap_or_else(|_| battle.date.clone()); // fallback if parsing fails
+
+        let match_banner = create_match_banner(
+            &left_text,
+            &date_text,
+            &right_text,
+            combined_width,
             Rgba([0, 0, 0, 0]),
         );
 
-        let p2_banner = create_name_banner(
-            format!(
-                "{} - {}",
-                battle.player_two.player_name,
-                battle.player_two.player_score
-            )
-            .as_str(),
-            img2.width(),
-            Rgba([0, 0, 0, 0]),
-        );
-
-        let banner_height = p1_banner.height().max(p2_banner.height());
+        let banner_height = match_banner.height();
         let section_inner_height = banner_height + final_image.height();
         let section_inner_width = combined_width;
 
@@ -702,10 +711,7 @@ pub async fn create_replay_image(
             Rgba([0, 0, 0, 0]),
         );
 
-        inner.copy_from(&p1_banner, 0, 0).unwrap();
-        inner
-            .copy_from(&p2_banner, img1.width() + spacing, 0)
-            .unwrap();
+        inner.copy_from(&match_banner, 0, 0).unwrap();
         inner.copy_from(&final_image, 0, banner_height).unwrap();
 
         // Intégrer zone intérieure centrée dans la bordure
@@ -896,30 +902,77 @@ async fn load_image_local(
     Ok(img)
 }
 
-fn create_name_banner(text: &str, width: u32, color: Rgba<u8>) -> RgbaImage {
+fn create_match_banner(
+    left_text: &str,
+    center_text: &str,
+    right_text: &str,
+    width: u32,
+    color: Rgba<u8>,
+) -> RgbaImage {
     let height = 40;
-    let mut image = ImageBuffer::from_pixel(width, height, color); // Couleur de fond (semi-transparente)
+    let mut image = ImageBuffer::from_pixel(width, height, color);
 
     const FONT_BYTES: &[u8] = include_bytes!("NotoSansCJK-Regular.otf");
     let font = FontArc::try_from_vec(FONT_BYTES.to_vec()).expect("Police invalide");
 
     let scale = PxScale::from(26.0);
-    let text_width = (text.len() as u32 * 8).min(width);
-    let x = ((width - text_width).max(0)) as i32 / 2;
+    let margin = 8.0_f32;
+    let width_f = width as f32;
+
+    // On découpe grossièrement en 3 zones (gauche / centre / droite)
+    let max_left_width = width_f / 3.0 - margin * 2.0;
+    let max_center_width = width_f / 3.0 - margin * 2.0;
+    let max_right_width = width_f / 3.0 - margin * 2.0;
+
+    // Texte ajusté pour ne pas dépasser la zone
+    let left = fit_text_to_width(&font, scale, left_text, max_left_width);
+    let center = fit_text_to_width(&font, scale, center_text, max_center_width);
+    let right = fit_text_to_width(&font, scale, right_text, max_right_width);
+
+    let center_w = text_width(&font, scale, &center);
+    let right_w = text_width(&font, scale, &right);
+
     let y = 8;
 
+    // LEFT : collé à gauche
+    let left_x: i32 = margin as i32;
     draw_bold_text_mut(
         &mut image,
         Rgba([255, 255, 255, 255]),
-        x,
+        left_x,
         y,
         scale,
         &font,
-        text,
+        &left,
+    );
+
+    // CENTER : centré
+    let center_x: i32 = ((width_f - center_w) / 2.0).round() as i32;
+    draw_bold_text_mut(
+        &mut image,
+        Rgba([255, 255, 255, 255]),
+        center_x,
+        y,
+        scale,
+        &font,
+        &center,
+    );
+
+    // RIGHT : aligné à droite
+    let right_x: i32 = (width_f - right_w - margin).round() as i32;
+    draw_bold_text_mut(
+        &mut image,
+        Rgba([255, 255, 255, 255]),
+        right_x,
+        y,
+        scale,
+        &font,
+        &right,
     );
 
     image
 }
+
 
 fn draw_bold_text_mut(
     image: &mut RgbaImage,
@@ -936,4 +989,47 @@ fn draw_bold_text_mut(
     for (dx, dy) in offsets.iter() {
         draw_text_mut(image, color, x + dx, y + dy, scale, font, text);
     }
+}
+
+fn text_width(font: &FontArc, scale: PxScale, text: &str) -> f32 {
+    let scaled = font.as_scaled(scale);
+    let mut pen = 0.0f32;
+    let mut prev_id = None;
+
+    for ch in text.chars() {
+        let g = scaled.glyph_id(ch);
+        if let Some(pid) = prev_id {
+            pen += scaled.kern(pid, g);
+        }
+        pen += scaled.h_advance(g);
+        prev_id = Some(g);
+    }
+
+    pen
+}
+
+fn fit_text_to_width(font: &FontArc, scale: PxScale, text: &str, max_width: f32) -> String {
+    let s: String = text.to_string();
+
+    if text_width(font, scale, &s) <= max_width {
+        return s;
+    }
+
+    // On rogne progressivement jusqu'à ce que ça rentre, puis on ajoute "…"
+    let mut chars: Vec<char> = s.chars().collect();
+    if chars.is_empty() {
+        return s;
+    }
+
+    // Garder au moins quelques caractères
+    while !chars.is_empty() && text_width(font, scale, &chars.iter().collect::<String>()) > max_width {
+        chars.pop();
+    }
+
+    let mut result: String = chars.iter().collect();
+    if !result.is_empty() {
+        result.push('…');
+    }
+
+    result
 }
