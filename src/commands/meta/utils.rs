@@ -61,7 +61,7 @@ pub fn create_meta_embed(
         .color(serenity::Colour::from_rgb(255, 255, 255))
         .thumbnail(thumbnail)
         .description(format!(
-            "Displaying the current meta for rank {}.\n\nLast updated: {}",
+            "Displaying the current meta for rank **{}**.\n\nLast updated: **{}**",
             level_label, date
         ))
         .field("SSS", sss_line, false)
