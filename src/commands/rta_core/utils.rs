@@ -1,11 +1,14 @@
-use crate::commands::rta_core::models::{Monster, MonsterEntry, MonstersFile, TierListData, MonsterDuoStat};
+use crate::commands::mob_stats::utils::remap_monster_id;
+use crate::commands::rta_core::models::{
+    Monster, MonsterDuoStat, MonsterEntry, MonstersFile, TierListData,
+};
 use anyhow::{Context, Result};
+use chrono::NaiveDate;
+use mongodb::{bson::doc, Collection};
+use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::fs;
-use reqwest::Client;
-use mongodb::{bson::doc, Collection};
-use crate::commands::mob_stats::utils::remap_monster_id;
 
 /// Lit le JSON dynamique (upload), extrait les unit_master_id,
 /// puis charge monsters.json et renvoie les Monster correspondants.
@@ -24,7 +27,11 @@ pub fn get_monsters_from_json_bytes(
         .context("Champ unit_list introuvable ou pas un tableau")?;
     let wanted_ids: HashSet<u32> = unit_list
         .iter()
-        .filter_map(|u| u.get("unit_master_id")?.as_u64().map(|id| remap_monster_id(id as i32) as u32))
+        .filter_map(|u| {
+            u.get("unit_master_id")?
+                .as_u64()
+                .map(|id| remap_monster_id(id as i32) as u32)
+        })
         .collect();
 
     // 3) Lire et parser monsters.json
@@ -54,7 +61,7 @@ pub fn get_monsters_from_json_bytes(
             }
         })
         .map(|m| Monster {
-            unit_master_id: m.com2us_id
+            unit_master_id: m.com2us_id,
         })
         .collect();
 
@@ -85,6 +92,16 @@ pub async fn get_tierlist_data(api_level: i32, token: &str) -> Result<TierListDa
     // I want to return the data field of the json, but only the field listed above
     let data = json.get("data").ok_or("Missing data field")?;
 
+    let date_str = data
+        .get("createDate")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing createDate field")?;
+
+    // Parse and format the date
+    let formatted_date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+        .map(|date| date.format("%d-%m-%Y").to_string())
+        .unwrap_or_else(|_| date_str.to_string()); // Fallback to original if parsing fails
+
     let tierlist_data = TierListData {
         level: data.get("level").and_then(|v| v.as_u64()).unwrap_or(0) as u8,
         sss_monster: serde_json::from_value(data.get("sssMonster").cloned().unwrap_or_default())
@@ -99,6 +116,7 @@ pub async fn get_tierlist_data(api_level: i32, token: &str) -> Result<TierListDa
             .unwrap_or_default(),
         c_monster: serde_json::from_value(data.get("cmonster").cloned().unwrap_or_default())
             .unwrap_or_default(),
+        date: Some(formatted_date),
     };
 
     Ok(tierlist_data)
@@ -161,22 +179,34 @@ pub async fn get_monster_duos(
 pub fn filter_monster(tierlist_data: &TierListData, monsters: &[Monster]) -> TierListData {
     let mut filtered_tierlist = tierlist_data.clone();
     filtered_tierlist.sss_monster.retain(|m| {
-        monsters.iter().any(|monster| monster.unit_master_id == m.monster_id)
+        monsters
+            .iter()
+            .any(|monster| monster.unit_master_id == m.monster_id)
     });
     filtered_tierlist.ss_monster.retain(|m| {
-        monsters.iter().any(|monster| monster.unit_master_id == m.monster_id)
+        monsters
+            .iter()
+            .any(|monster| monster.unit_master_id == m.monster_id)
     });
     filtered_tierlist.s_monster.retain(|m| {
-        monsters.iter().any(|monster| monster.unit_master_id == m.monster_id)
+        monsters
+            .iter()
+            .any(|monster| monster.unit_master_id == m.monster_id)
     });
     filtered_tierlist.a_monster.retain(|m| {
-        monsters.iter().any(|monster| monster.unit_master_id == m.monster_id)
+        monsters
+            .iter()
+            .any(|monster| monster.unit_master_id == m.monster_id)
     });
     filtered_tierlist.b_monster.retain(|m| {
-        monsters.iter().any(|monster| monster.unit_master_id == m.monster_id)
+        monsters
+            .iter()
+            .any(|monster| monster.unit_master_id == m.monster_id)
     });
     filtered_tierlist.c_monster.retain(|m| {
-        monsters.iter().any(|monster| monster.unit_master_id == m.monster_id)
+        monsters
+            .iter()
+            .any(|monster| monster.unit_master_id == m.monster_id)
     });
 
     filtered_tierlist

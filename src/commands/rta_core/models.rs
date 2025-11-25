@@ -56,6 +56,8 @@ pub struct TierListData {
     pub b_monster: Vec<MonsterStat>,
     #[serde(rename = "cmonster")]
     pub c_monster: Vec<MonsterStat>,
+    #[serde(rename = "createDate")]
+    pub date: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]

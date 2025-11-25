@@ -44,7 +44,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         None
     };
 
-    let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
+    let thumbnail = "https://raw.githubusercontent.com/B4tiste/landing-page-bot/refs/heads/main/src/assets/images/old_bot_logo.gif";
 
     // ----- Build the single section (live + optional prediction inline) -----
 
