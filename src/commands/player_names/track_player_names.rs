@@ -13,7 +13,7 @@ use poise::serenity_prelude::{CreateEmbed, Error};
 use poise::CreateReply;
 
 const DEFAULT_LOGO: &str =
-    "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
+    "https://raw.githubusercontent.com/B4tiste/landing-page-bot/refs/heads/main/src/assets/images/old_bot_logo.gif";
 
 /// 📂 Displays the different usernames this player may have had (SWARENA profile required).
 ///

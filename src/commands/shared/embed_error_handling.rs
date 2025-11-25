@@ -14,7 +14,7 @@ pub fn create_embed_error(error_message: &str) -> CreateReply {
         .footer(CreateEmbedFooter::new(
             "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
         ))
-        .thumbnail("https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true");
+        .thumbnail("https://raw.githubusercontent.com/B4tiste/landing-page-bot/refs/heads/main/src/assets/images/old_bot_logo.gif");
     CreateReply {
         embeds: vec![embed],
         ..Default::default()
