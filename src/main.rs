@@ -18,7 +18,7 @@ use serde::Deserialize;
 use std::{collections::HashMap, fs};
 
 // use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
-use crate::commands::help::help::help;
+use crate::commands::help::command::help;
 use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
 use crate::commands::player_names::track_player_names::track_player_names;
