@@ -61,6 +61,11 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
         "https://discord.gg/AfANrTVaDJ",
         false,
     );
+    embed = embed.field(
+        "Tutorial video for setup and use",
+        "https://www.youtube.com/watch?v=U6CxFH6WFKU",
+        false,
+    );
 
     embed = embed.footer(CreateEmbedFooter::new(
         "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",

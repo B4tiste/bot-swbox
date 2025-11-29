@@ -90,7 +90,7 @@ pub fn create_loading_meta_embed(level: i32) -> CreateEmbed {
         ))
 }
 
-/// Boutons pour changer de niveau de méta (P1-P3, G1-G2, G3)
+/// Boutons pour changer de niveau de méta
 pub fn create_meta_level_buttons(
     guardian_id: u64,
     punisher_id: u64,
