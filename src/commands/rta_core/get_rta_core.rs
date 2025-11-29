@@ -41,7 +41,7 @@ pub async fn get_rta_core(
         guard.clone().ok_or_else(|| {
             Error::from(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                "Missing API token",
+                "Missing API Token, please contact **b4tiste** on Discord : <https://discord.gg/AfANrTVaDJ>.",
             ))
         })?
     };

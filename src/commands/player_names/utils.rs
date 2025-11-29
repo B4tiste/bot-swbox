@@ -190,7 +190,7 @@ pub async fn get_current_detail_from_swrt(swrt_player_id: i64) -> Result<(String
     let token = {
         use crate::API_TOKEN;
         let guard = API_TOKEN.lock().map_err(|_| "Failed to lock API_TOKEN".to_string())?;
-        guard.clone().ok_or_else(|| "Missing API token".to_string())?
+        guard.clone().ok_or_else(|| "Missing API Token, please contact **b4tiste** on Discord : <https://discord.gg/AfANrTVaDJ>.".to_string())?
     };
 
     let url = format!("https://m.swranking.com/api/player/detail?swrtPlayerId={}", swrt_player_id);
