@@ -212,7 +212,12 @@ pub async fn get_player_stats(
             } else {
                 serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country))
             };
-            let description = format!("Elo: {}", player.player_score.unwrap_or(0));
+
+            let description = format!(
+                "Elo : {} - Server : {}",
+                player.player_score.unwrap_or(0),
+                server_code_to_tag(player.player_server)
+            );
 
             CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string())
                 .description(description)
@@ -369,4 +374,16 @@ fn country_code_to_flag_emoji(country_code: &str) -> String {
         .filter(|c| c.is_ascii_alphabetic())
         .map(|c| char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap_or('∅'))
         .collect()
+}
+
+fn server_code_to_tag(code: i32) -> &'static str {
+    match code {
+        1 => "Korea",
+        2 => "Japan",
+        3 => "China",
+        4 => "Global",
+        5 => "Asia",
+        6 => "Europe",
+        _ => "??",
+    }
 }
