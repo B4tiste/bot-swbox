@@ -23,13 +23,20 @@ use crate::MONGO_URI;
 pub struct Player {
     #[serde(rename = "playerName")]
     pub name: String,
+
     #[serde(rename = "swrtPlayerId")]
     pub swrt_player_id: i64,
+
     #[serde(rename = "playerCountry")]
     pub player_country: String,
+
     #[serde(rename = "playerScore")]
     pub player_score: Option<i32>,
+
+    #[serde(rename = "playerServer")]
+    pub player_server: i32, // 1..6 : KR, JP, CN, GB, AS, EU
 }
+
 
 #[derive(Debug, Deserialize)]
 struct SearchResponse {
@@ -1033,3 +1040,4 @@ fn fit_text_to_width(font: &FontArc, scale: PxScale, text: &str, max_width: f32)
 
     result
 }
+
