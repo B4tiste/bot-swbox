@@ -258,7 +258,7 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
             false,
         )
         .footer(CreateEmbedFooter::new(
-            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
+            "Data is gathered from m.swranking.com",
         ))
         .color(serenity::Colour::from_rgb(0, 255, 0))
 }

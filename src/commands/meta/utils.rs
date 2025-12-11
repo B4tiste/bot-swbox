@@ -70,7 +70,7 @@ pub fn create_meta_embed(
         .field("A", a_line, false)
         .field("B", b_line, false)
         .footer(CreateEmbedFooter::new(
-            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
+            "Data is gathered from m.swranking.com",
         ))
 }
 

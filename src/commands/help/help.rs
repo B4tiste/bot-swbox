@@ -66,6 +66,11 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
         "https://www.youtube.com/watch?v=U6CxFH6WFKU",
         false,
     );
+    embed = embed.field(
+        "Data Sources",
+        "[swranking](https://m.swranking.com/) & [SWarena](https://swarena.gg/)",
+        false,
+    );
 
     embed = embed.footer(CreateEmbedFooter::new(
         "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",

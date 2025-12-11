@@ -110,7 +110,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         .thumbnail(thumbnail)
         .description(full_description)
         .footer(CreateEmbedFooter::new(
-            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
+            "Data is gathered from m.swranking.com",
         ));
 
     let reply = CreateReply {

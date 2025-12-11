@@ -108,7 +108,7 @@ pub fn create_replays_embed(
             false,
         )
         .footer(CreateEmbedFooter::new(
-            "Join our community on discord.gg/AfANrTVaDJ to share feedback, get support, and connect with others!",
+            "Data is gathered from m.swranking.com",
         ))
 }
 

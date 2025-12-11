@@ -67,7 +67,7 @@ pub fn format_monster_stats(
         ))
         .color(serenity::Colour::from_rgb(120, 153, 255))
         .footer(CreateEmbedFooter::new(
-            "Please use /send_suggestion to report any issue.",
+            "Data is gathered from m.swranking.com",
         ))
         .field(
             "Stats",
@@ -120,7 +120,7 @@ pub fn format_monster_stats(
     );
 
     embed = embed.footer(CreateEmbedFooter::new(
-        "Please use /send_suggestion to report any issue.",
+        "Data is gathered from m.swranking.com",
     ));
 
     embed
