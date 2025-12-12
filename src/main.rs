@@ -35,6 +35,7 @@ use crate::commands::register::utils::{
     apply_coupons_to_all_users, notify_new_coupons, update_coupon_list,
 };
 use crate::commands::support::support::support;
+use crate::commands::claim_membership::claim_membership::claim_membership;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -312,6 +313,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 get_replays(),
                 support(),
                 get_meta(),
+                claim_membership(),
                 // get_duo_stats(),
                 // how_to_build(),
                 // register(),

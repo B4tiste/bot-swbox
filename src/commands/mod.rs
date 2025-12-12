@@ -14,3 +14,4 @@ pub mod replays;
 pub mod support;
 pub mod register;
 pub mod meta;
+pub mod claim_membership;
