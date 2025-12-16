@@ -10,31 +10,48 @@ use serenity::builder::CreateEmbedFooter;
 /// Usage: `/support`
 #[poise::command(slash_command)]
 pub async fn support(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
-    // Create the embed that provides support information
     let embed = serenity::CreateEmbed::default()
-        .title("Support the Project")
+        .title("Support SWbox")
         .color(serenity::Colour::from_rgb(0, 255, 255))
-        .description("As of Friday 19th of December 2025, the hosting service used to keep the BOT online has removed their free tier. Therefore, the project now needs money to run. If you like this bot and want to support the project, please consider donating on **[Ko-Fi](https://ko-fi.com/swbox)**.")
+        .description(
+            "SWbox is a free, community-driven Discord bot.\n\
+            Due to the removal of the free hosting tier, the project now has a fixed monthly cost.\n\
+            If you enjoy using SWbox and want to help keep it online, consider supporting the project on **[Ko-Fi](https://ko-fi.com/swbox)** 💙",
+        )
         .field(
-            "Custom Commission : Custom Player Alias (3€)",
-            "You can add a custom player alias for yourself or someone else. This alias can be used to search for that player using the command, and will also be displayed on the player profile.",
+            "🥉 Conqueror — 1€ / month",
+            "One coffee a month to keep SWbox online.\n",
             false,
         )
         .field(
-            "Community Discord",
+            "🥈 Punisher — 3€ / month",
+            "Extra support to help SWbox grow.",
+            false,
+        )
+        .field(
+            "🥇 Guardian — 5€ / month",
+            "Strong support to secure SWbox’s future.",
+            false,
+        )
+        .field(
+            "🎨 Custom Commission — Custom Player Alias (3€)",
+            "Add a custom player alias for yourself or someone else.\n\
+            The alias can be used in commands and will be displayed on the player profile.",
+            false,
+        )
+        .field(
+            "💬 Community Discord",
             "Join our community on [Discord](https://discord.gg/AfANrTVaDJ) to share feedback, get support, and connect with others!",
             false,
         )
         .thumbnail("https://media.tenor.com/337ncxnLbbIAAAAi/kofi-support-me.gif")
-        .footer(CreateEmbedFooter::new("Thank you for your support ! ❤️"));
+        .footer(CreateEmbedFooter::new("Thank you for supporting SWbox ❤️"));
 
-    // Send the embed as a reply to the command
     let reply = CreateReply {
-        embeds: vec![embed.clone()],
+        embeds: vec![embed],
         ..Default::default()
     };
 
     let _ = ctx.send(reply).await;
-
     Ok(())
 }
