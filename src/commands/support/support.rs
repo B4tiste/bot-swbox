@@ -44,7 +44,7 @@ pub async fn support(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
             "Join our community on [Discord](https://discord.gg/AfANrTVaDJ) to share feedback, get support, and connect with others!",
             false,
         )
-        .thumbnail("https://media.tenor.com/337ncxnLbbIAAAAi/kofi-support-me.gif")
+        .thumbnail("https://bot-swbox.netlify.app/assets/images/old_bot_logo.gif")
         .footer(CreateEmbedFooter::new("Thank you for supporting SWbox ❤️"));
 
     let reply = CreateReply {
