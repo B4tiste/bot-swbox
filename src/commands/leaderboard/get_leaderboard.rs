@@ -10,6 +10,8 @@ use crate::commands::player_stats::utils::{
     create_player_embed, format_player_ld_monsters_emojis, format_player_monsters,
     get_rank_emojis_for_score, get_user_detail,
 };
+use crate::commands::shared::command_tracker::{track_and_check_command_limit, get_command_usage_today};
+use crate::commands::shared::embed_error_handling::create_embed_error;
 use crate::commands::shared::logs::get_server_name;
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::models::LoggerDocument;
@@ -25,6 +27,26 @@ pub async fn get_rta_leaderboard(
     ctx.defer().await?;
 
     let user_id = ctx.author().id;
+    let discord_id = user_id.to_string();
+
+    // Check command limit and track usage
+    let can_proceed = track_and_check_command_limit(&discord_id, "get_rta_leaderboard")
+        .await
+        .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, format!("{e:?}"))))?;
+
+    if !can_proceed {
+        let (used, limit, _) = get_command_usage_today(&discord_id)
+            .await
+            .unwrap_or((0, 100, false));
+
+        ctx.send(create_embed_error(&format!(
+            "❌ Daily command limit reached ({}/{}). \n\
+            Upgrade to membership for unlimited commands: <https://ko-fi.com/b4tiste/tiers>",
+            used, limit
+        )))
+        .await?;
+        return Ok(());
+    }
     let mut page = page.unwrap_or(1).max(1);
 
     let token = {
