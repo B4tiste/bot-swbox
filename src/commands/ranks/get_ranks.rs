@@ -99,6 +99,8 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         }
     }
 
+    full_description.push_str("\n⚠️ SWbox is not responsible for any data inaccuracy ⚠️");
+
     // Single embed; no image/attachments
     let embed = serenity::CreateEmbed::default()
         .title(if ENABLE_PREDICTION {
