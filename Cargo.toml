@@ -10,7 +10,7 @@ poise = "0.6.1"
 serenity = { version = "0.12.4", default-features = false, features = ["client", "gateway", "rustls_backend"] }
 tokio = "1.48.0"
 log = "0.4.29"
-reqwest = { version = "0.12.26", features = ["json", "blocking", "rustls-tls", "cookies"] }
+reqwest = { version = "0.12.26", default-features = false, features = ["json", "blocking", "cookies", "rustls-tls"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 lazy_static = "1.5.0"
