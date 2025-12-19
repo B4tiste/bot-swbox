@@ -29,6 +29,7 @@ use crate::commands::rta_core::get_rta_core::get_rta_core;
 use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::upload_json::upload_json::upload_json;
 use crate::commands::meta::meta::get_meta;
+use crate::commands::best_pve_teams::best_pve_teams::best_pve_teams;
 // use crate::commands::how_to_build::how_to_build::how_to_build;
 // use crate::commands::register::register::register;
 use crate::commands::register::utils::{
@@ -312,6 +313,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 get_replays(),
                 support(),
                 get_meta(),
+                best_pve_teams(),
                 // get_duo_stats(),
                 // how_to_build(),
                 // register(),
