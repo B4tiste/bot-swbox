@@ -3,3 +3,4 @@
 Secrets*.toml
 /test
 replay.png
+.env
