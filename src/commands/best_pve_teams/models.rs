@@ -70,7 +70,7 @@ impl Dungeon {
         match self {
             Dungeon::GiantsKeep => 8011,
             Dungeon::DragonsLair => 9011,
-            Dungeon::Necropolis => 6021,
+            Dungeon::Necropolis => 6011,
             Dungeon::SteelFortress => 9511,
             Dungeon::PunishersCrypt => 9512,
             Dungeon::SpiritualRealm => 9513,
