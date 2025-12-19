@@ -10,25 +10,6 @@ use serenity::builder::CreateEmbedFooter;
 /// Usage: `/help`
 #[poise::command(slash_command)]
 pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
-    // let thumbnail = "https://github.com/B4tiste/SWbox/blob/master/src/assets/logo.png?raw=true";
-
-    // Print the list of guilds (servers) the bot is in to the console
-    // Access the cache from the serenity client
-    let cache = &ctx.serenity_context().cache;
-    let guild_ids = cache.guilds(); // récupère tous les IDs de serveurs
-    println!(
-        "Bot is in the following servers ({} total):",
-        guild_ids.len()
-    );
-
-    // Iterate over all guild IDs from the cache
-    for guild_id in guild_ids.iter() {
-        // Retrieve the full guild from the cache using the guild ID.
-        if let Some(guild) = cache.guild(guild_id) {
-            println!("{} (ID: {})", guild.name, guild_id);
-        }
-    }
-
     // Create the embed that lists the commands
     let mut embed = serenity::CreateEmbed::default()
         .title("Commands")
