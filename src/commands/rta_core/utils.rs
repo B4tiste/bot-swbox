@@ -89,7 +89,6 @@ pub async fn get_tierlist_data(api_level: i32, token: &str) -> Result<TierListDa
         .await
         .map_err(|_| "Failed to parse JSON".to_string())?;
 
-    // I want to return the data field of the json, but only the field listed above
     let data = json.get("data").ok_or("Missing data field")?;
 
     let date_str = data
