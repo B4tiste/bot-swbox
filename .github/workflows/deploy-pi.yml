@@ -32,9 +32,10 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.PI_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.PI_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p ${{ secrets.PI_PORT }} -H "${{ secrets.PI_HOST }}" >> ~/.ssh/known_hosts
 
-          rsync -av --progress -e "ssh -i ~/.ssh/id_ed25519" \
+          rsync -av --progress \
+            -e "ssh -p ${{ secrets.PI_PORT }} -i ~/.ssh/id_ed25519" \
             target/aarch64-unknown-linux-gnu/release/shuttle-bot-swbox-rust \
             ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/tmp/shuttle-bot-swbox-rust
 
@@ -45,5 +46,6 @@ jobs:
           host: ${{ secrets.PI_HOST }}
           username: ${{ secrets.PI_USER }}
           key: ${{ secrets.PI_SSH_KEY }}
+          port: ${{ secrets.PI_PORT }}
           script: |
             sudo /usr/local/sbin/deploy-discordbot
