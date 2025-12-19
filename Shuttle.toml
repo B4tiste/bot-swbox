@@ -1,4 +1,0 @@
-[build]
-assets = [
-    "assets/*"  # This copies the assets to the runtime image
-]

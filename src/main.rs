@@ -2,13 +2,14 @@ mod commands;
 
 use anyhow::{Context, Result};
 use lazy_static::lazy_static;
+use dotenvy::dotenv;
+use std::env;
 use poise::serenity_prelude::{ClientBuilder, Context as SerenityContext, GatewayIntents};
 use reqwest::header::{
     HeaderMap, HeaderValue, ACCEPT, ACCEPT_LANGUAGE, CONNECTION, CONTENT_TYPE, ORIGIN, REFERER,
     USER_AGENT,
 };
-use shuttle_runtime::SecretStore;
-use shuttle_serenity::ShuttleSerenity;
+
 use std::sync::{Arc, Mutex};
 use tokio::time::{sleep, Duration};
 
@@ -179,49 +180,34 @@ async fn login(username: String, password: String) -> Result<String> {
     }
 }
 
-#[shuttle_runtime::main]
-async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
-    let discord_token = secret_store
-        .get("DISCORD_TOKEN")
-        .context("'DISCORD_TOKEN' was not found")?;
+fn env_required(key: &str) -> Result<String> {
+    env::var(key).with_context(|| format!("Missing required env var: {key}"))
+}
 
-    let guardian_emoji_id = secret_store
-        .get("GUARDIAN_EMOJI_ID")
-        .context("'GUARDIAN_EMOJI_ID' was not found")?;
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Charge un fichier .env si présent (pratique en local / raspberry)
+    let _ = dotenv();
 
-    let punisher_emoji_id = secret_store
-        .get("PUNISHER_EMOJI_ID")
-        .context("'PUNISHER_EMOJI_ID' was not found")?;
-
-    let conqueror_emoji_id = secret_store
-        .get("CONQUEROR_EMOJI_ID")
-        .context("'CONQUEROR_EMOJI_ID' was not found")?;
-
-    let log_channel_id = secret_store
-        .get("LOG_CHANNEL_ID")
-        .context("'LOG_CHANNEL_ID' was not found")?
-        .parse::<u64>()
-        .context("'LOG_CHANNEL_ID' is not a valid number")?;
-
-    let mongo_uri = secret_store
-        .get("MONGO_URI")
-        .context("'MONGO_URI' was not found")?;
+    let discord_token = env_required("DISCORD_TOKEN")?;
+    let guardian_emoji_id = env_required("GUARDIAN_EMOJI_ID")?;
+    let punisher_emoji_id = env_required("PUNISHER_EMOJI_ID")?;
+    let conqueror_emoji_id = env_required("CONQUEROR_EMOJI_ID")?;
+    let log_channel_id: u64 = env_required("LOG_CHANNEL_ID")?
+        .parse()
+        .context("LOG_CHANNEL_ID must be a valid u64")?;
+    let mongo_uri = env_required("MONGO_URI")?;
 
     *GUARDIAN_EMOJI_ID.lock().unwrap() = guardian_emoji_id;
     *PUNISHER_EMOJI_ID.lock().unwrap() = punisher_emoji_id;
     *CONQUEROR_EMOJI_ID.lock().unwrap() = conqueror_emoji_id;
     *LOG_CHANNEL_ID.lock().unwrap() = log_channel_id;
-    *MONGO_URI.lock().unwrap() = mongo_uri;
+    *MONGO_URI.lock().unwrap() = mongo_uri.clone();
 
-    // Récupérer username et password depuis secret_store
-    let username = secret_store
-        .get("USERNAME")
-        .context("'USERNAME' was not found")?;
-    let password = secret_store
-        .get("PASSWORD")
-        .context("'PASSWORD' was not found")?;
+    let username = env_required("USERNAME")?;
+    let password = env_required("PASSWORD")?;
 
-    // Lancer une tâche périodique pour rafraîchir le token de l'API avec retry (max 5)
+    // Refresh token loop
     tokio::spawn(async move {
         loop {
             let mut retry_count = 0;
@@ -243,59 +229,38 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                     }
                 }
             }
-            // Rafraîchir le token toutes les heures
             sleep(Duration::from_secs(3600)).await;
         }
     });
 
-    // Lancer une tâche périodique pour mettre à jour la liste des coupons et les appliquer aux utilisateurs
-    let mongo_uri = MONGO_URI.lock().unwrap().clone();
+    // Coupon loop
     tokio::spawn(async move {
-        // Wait for the serenity context to be set
         while SERENITY_CTX.get().is_none() {
             sleep(Duration::from_secs(1)).await;
         }
         loop {
-            // Mettre à jour la liste des coupons
             if let Err(e) = update_coupon_list(&mongo_uri).await {
                 eprintln!("Failed to update coupons: {e:?}");
             }
 
-            // Notifier les nouveaux coupons
             if let Some(ctx) = SERENITY_CTX.get() {
                 if let Err(e) = notify_new_coupons(ctx, &mongo_uri).await {
                     eprintln!("Failed to notify new coupons: {e:?}");
                 }
-            } else {
-                eprintln!("Serenity context not ready, skip notify_new_coupons");
             }
 
-            // Appliquer les coupons à tous les utilisateurs
             if let Err(e) = apply_coupons_to_all_users(&mongo_uri).await {
                 eprintln!("Failed to apply coupons: {e:?}");
             }
-            sleep(Duration::from_secs(1800)).await; // Toutes les 30 minutes
+            sleep(Duration::from_secs(1800)).await;
         }
     });
 
-    // Télécharger le fichier "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json"
-    // et le stocker dans un fichier local
+    // Download monsters json (inchangé)
     let monsters_url = "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json";
-    let monsters_response = reqwest::get(monsters_url)
-        .await
-        .context("Failed to download monsters_elements.json")?;
-    let monsters_content = monsters_response
-        .text()
-        .await
-        .context("Failed to read monsters_elements.json content")?;
-    let monsters_file_path = "monsters_elements.json";
-    tokio::fs::write(monsters_file_path, &monsters_content)
-        .await
-        .context("Failed to write monsters_elements.json to file")?;
-    println!(
-        "monsters_elements.json downloaded and saved to {}",
-        monsters_file_path
-    );
+    let monsters_content = reqwest::get(monsters_url).await?.text().await?;
+    tokio::fs::write("monsters_elements.json", &monsters_content).await?;
+    println!("monsters_elements.json downloaded");
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -312,9 +277,6 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 get_replays(),
                 support(),
                 get_meta(),
-                // get_duo_stats(),
-                // how_to_build(),
-                // register(),
             ],
             ..Default::default()
         })
@@ -327,10 +289,13 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         })
         .build();
 
-    let client = ClientBuilder::new(discord_token, GatewayIntents::non_privileged())
+    let mut client = ClientBuilder::new(discord_token, GatewayIntents::non_privileged())
         .framework(framework)
         .await
-        .map_err(shuttle_runtime::CustomError::new)?;
+        .context("Failed to build serenity client")?;
 
-    Ok(client.into())
+    // IMPORTANT : en “Rust classique”, il faut bloquer ici
+    client.start().await.context("Client ended")?;
+
+    Ok(())
 }
