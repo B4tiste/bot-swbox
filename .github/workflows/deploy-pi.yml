@@ -2,7 +2,7 @@ name: Deploy Raspberry Pi (Tailscale)
 
 on:
   push:
-    branches: [ test ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
