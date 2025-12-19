@@ -27,15 +27,16 @@ jobs:
         run: cross build --release --target aarch64-unknown-linux-gnu
 
       # Upload sur la Pi (réseau Tailscale)
-      - name: Upload binary to Pi
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.PI_HOST }}
-          username: ${{ secrets.PI_USER }}
-          key: ${{ secrets.PI_SSH_KEY }}
-          source: "target/aarch64-unknown-linux-gnu/release/shuttle-bot-swbox-rust"
-          target: "/tmp"
-          overwrite: true
+      - name: Upload binary to Pi (rsync)
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.PI_HOST }}" >> ~/.ssh/known_hosts
+
+          rsync -av --progress -e "ssh -i ~/.ssh/id_ed25519" \
+            target/aarch64-unknown-linux-gnu/release/shuttle-bot-swbox-rust \
+            ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/tmp/shuttle-bot-swbox-rust
 
       # Déploiement via ton script root (sudoers autorise seulement ça)
       - name: Deploy + restart service
