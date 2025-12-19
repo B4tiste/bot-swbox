@@ -1,0 +1,48 @@
+name: Deploy Raspberry Pi (Tailscale)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1) Le runner rejoint ton réseau privé Tailscale
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      # 2) Build (ex: Pi 64-bit)
+      - name: Install cross
+        run: cargo install cross --locked
+
+      - name: Build release (aarch64)
+        run: cross build --release --target aarch64-unknown-linux-gnu
+
+      # 3) Copie du binaire vers la Pi via le réseau Tailscale
+      - name: Upload binary to Pi
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PI_HOST }}
+          username: ${{ secrets.PI_USER }}
+          key: ${{ secrets.PI_SSH_KEY }}
+          source: "target/aarch64-unknown-linux-gnu/release/shuttle-bot-swbox-rust"
+          target: "/tmp"
+
+      # 4) Installer + restart systemd
+      - name: Restart service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PI_HOST }}
+          username: ${{ secrets.PI_USER }}
+          key: ${{ secrets.PI_SSH_KEY }}
+          script: |
+            sudo install -m 0755 /tmp/shuttle-bot-swbox-rust /opt/bot/bot
+            sudo chown discordbot:discordbot /opt/bot/bot
+            sudo systemctl restart discordbot
+            sudo journalctl -u discordbot -n 50 --no-pager
