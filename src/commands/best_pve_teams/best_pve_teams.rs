@@ -1,4 +1,6 @@
-use crate::commands::best_pve_teams::utils::{get_dungeon_stats, create_pve_teams_embed};
+use crate::commands::best_pve_teams::utils::{
+    get_dungeon_stats, create_pve_teams_embed, build_monster_name_map
+};
 use crate::commands::best_pve_teams::models::Dungeon;
 use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use crate::commands::shared::embed_error_handling::{
@@ -66,8 +68,8 @@ pub async fn best_pve_teams(
         }
     };
 
-    // Trier le tableau par rank_score décroissant en gardant les 3 premiers
-    let top_n: usize = 3;
+    // Trier le tableau par rank_score décroissant
+    let top_n: usize = 5;
     let mut sorted_data = dungeon_data.clone();
     sorted_data.sort_by(|a, b| b.rank.partial_cmp(&a.rank).unwrap_or(std::cmp::Ordering::Equal));
     let len = sorted_data.len();
@@ -97,7 +99,15 @@ pub async fn best_pve_teams(
         // );
     }
 
-    let embed = create_pve_teams_embed(dungeon_name, dungeon_slug, top, &collection).await;
+    let monster_name_map = build_monster_name_map();
+
+    let embed = create_pve_teams_embed(
+        dungeon_name,
+        dungeon_slug,
+        top,
+        &collection,
+        &monster_name_map,
+    ).await;
 
     let reply = CreateReply {
         embeds: vec![embed],

@@ -1,5 +1,16 @@
 use serde::Deserialize;
 
+#[derive(Debug, Deserialize)]
+pub struct MonstersFile {
+    pub monsters: Vec<MonsterElement>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MonsterElement {
+    pub name: String,
+    pub image_filename: String,
+}
+
 #[derive(Debug, Clone, poise::ChoiceParameter)]
 pub enum Dungeon {
     #[name = "Giant's Keep"]

@@ -2,11 +2,12 @@ use anyhow::{Context, Result};
 use mongodb::bson::{doc, Document};
 use mongodb::Collection;
 use reqwest::Client;
+use std::collections::HashMap;
 
 use poise::serenity_prelude as serenity;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 
-use crate::commands::best_pve_teams::models::{ApiResponse, DungeonTeamData};
+use crate::commands::best_pve_teams::models::{ApiResponse, DungeonTeamData, MonstersFile};
 
 pub async fn get_dungeon_stats(dungeon_id: u32) -> Result<Vec<DungeonTeamData>> {
     let client = Client::new();
@@ -39,6 +40,7 @@ pub async fn create_pve_teams_embed(
     dungeon_slug: &str,
     teams: &[DungeonTeamData],
     collection: &Collection<Document>,
+    monster_name_map: &HashMap<String, String>,
 ) -> CreateEmbed {
     let thumbnail = "https://raw.githubusercontent.com/B4tiste/landing-page-bot/refs/heads/main/src/assets/images/old_bot_logo.gif";
 
@@ -49,28 +51,44 @@ pub async fn create_pve_teams_embed(
         .footer(CreateEmbedFooter::new("Data is gathered from swcalc.cz"));
 
     for (i, team) in teams.iter().enumerate() {
-        // 1) Construire la liste d'emojis
         let mut monsters_line = String::new();
+        let mut missing_names: Vec<String> = Vec::new();
+
         for img_id in &team.members {
             if let Some(emoji) = get_emoji_from_img_id(collection, img_id.clone()).await {
                 monsters_line.push_str(&emoji);
                 monsters_line.push(' ');
+            } else {
+                // emoji manquant -> + NAME
+                let name = monster_name_map
+                    .get(img_id)
+                    .cloned()
+                    .unwrap_or_else(|| img_id.clone()); // fallback si pas trouvé dans le json
+                missing_names.push(name);
             }
         }
+
         if monsters_line.is_empty() {
             monsters_line = "*No emojis found*".to_string();
+        } else {
+            monsters_line = monsters_line.trim_end().to_string();
         }
 
-        // 2) Average lisible (optionnel, mais cool)
+        // Ajoute les "+ NAME" à la suite
+        if !missing_names.is_empty() {
+            for name in missing_names {
+                monsters_line.push_str(&format!(" + {}", name));
+            }
+        }
+
         let avg_str = format_duration(team.average_time_ms);
 
-        // 3) Value multi-lignes
         let value = format!(
             "**Monsters :** {}\n\
              Success rate and average time : **{:.2}** %, **{}**\n\
              Score : {:.2}\n\
              [Runes/Artifacts setup and run time distribution](https://swcalc.cz/team-detail?team={})",
-            monsters_line.trim_end(),
+            monsters_line,
             team.success_rate,
             avg_str,
             team.rank,
@@ -98,6 +116,7 @@ pub async fn create_pve_teams_embed(
     embed
 }
 
+
 // Convertit ms -> mm:ss.mmm (ex: 01:12.345)
 fn format_duration(ms: u32) -> String {
     let total_seconds = ms / 1000;
@@ -120,4 +139,32 @@ pub async fn get_emoji_from_img_id(
     let emoji_name = emoji_doc.get_str("name").ok()?;
 
     Some(format!("<:{}:{}>", emoji_name, emoji_id))
+}
+
+/// Construit une map: "0003_0_1" => "Forest Keeper - Fire"
+pub fn build_monster_name_map() -> HashMap<String, String> {
+    // adapte le chemin à ton projet (ex: assets/monsters_elements.json)
+    let raw = include_str!("../../../monsters_elements.json");
+
+    let parsed: MonstersFile =
+        serde_json::from_str(raw).expect("Failed to parse monsters_elements.json");
+
+    let mut map = HashMap::with_capacity(parsed.monsters.len());
+
+    for m in parsed.monsters {
+        if let Some(core) = core_id_from_image_filename(&m.image_filename) {
+            // si doublon, on garde le premier (ou remplace, comme tu veux)
+            map.entry(core).or_insert(m.name);
+        }
+    }
+
+    map
+}
+
+/// "unit_icon_0003_0_1.png" -> Some("0003_0_1")
+fn core_id_from_image_filename(filename: &str) -> Option<String> {
+    // Tolérant (png/jpg/…)
+    let base = filename.strip_prefix("unit_icon_")?;
+    let core = base.split('.').next()?; // "0003_0_1"
+    Some(core.to_string())
 }
