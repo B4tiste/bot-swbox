@@ -15,7 +15,6 @@ pub async fn support(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
         .color(serenity::Colour::from_rgb(0, 255, 255))
         .description(
             "SWbox is a free, community-driven Discord bot.\n\
-            Due to the removal of the free hosting tier, the project now has a fixed monthly cost.\n\
             If you enjoy using SWbox and want to help keep it online, consider supporting the project on **[Ko-Fi](https://ko-fi.com/swbox)** 💙",
         )
         .field(
