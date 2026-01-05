@@ -47,7 +47,7 @@ pub async fn get_player_stats(
             ))
         })?;
 
-        let rank_emojis = get_rank_emojis_for_score(details.player_score.unwrap_or(0))
+        let rank_emojis = get_rank_emojis_for_score(details.player_level.unwrap_or(0))
             .await
             .unwrap_or_else(|_| "❓".to_string());
 
@@ -140,7 +140,7 @@ pub async fn get_player_stats(
                 ))
             })?;
 
-        let rank_emojis = get_rank_emojis_for_score(details.player_score.unwrap_or(0))
+        let rank_emojis = get_rank_emojis_for_score(details.player_level.unwrap_or(0))
             .await
             .unwrap_or_else(|_| "❓".to_string());
 
@@ -290,7 +290,7 @@ pub async fn get_player_stats(
         })?;
 
         // Embed initial loading state
-        let rank_emojis = get_rank_emojis_for_score(details.player_score.unwrap_or(0))
+        let rank_emojis = get_rank_emojis_for_score(details.player_level.unwrap_or(0))
             .await
             .unwrap_or_else(|_| "❓".to_string());
 

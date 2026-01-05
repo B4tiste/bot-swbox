@@ -15,9 +15,8 @@ use std::path::PathBuf;
 use chrono::NaiveDateTime;
 
 use crate::commands::mob_stats::utils::remap_monster_id;
-use crate::commands::ranks::utils::get_rank_info;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
-use crate::MONGO_URI;
+use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID, MONGO_URI};
 
 #[derive(Debug, Deserialize)]
 pub struct Player {
@@ -56,6 +55,8 @@ pub struct PlayerDetail {
     pub name: String,
     #[serde(rename = "playerScore")]
     pub player_score: Option<i32>,
+    #[serde(rename = "playerLevel")]
+    pub player_level: Option<i32>,
     #[serde(rename = "playerRank")]
     pub player_rank: Option<i32>,
     #[serde(rename = "winRate")]
@@ -204,6 +205,7 @@ pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetai
         .map(|d| PlayerDetail {
             name: d.player.name,
             player_score: d.player.player_score,
+            player_level: d.player.player_level,
             player_rank: d.player.player_rank,
             win_rate: d.player.win_rate,
             head_img: d.player.head_img,
@@ -490,6 +492,19 @@ pub fn create_player_embed(
 
     let random_gif = gifs.choose(&mut rand::rng()).unwrap_or(&gifs[0]);
 
+    // If elo is 0, display N/A, same for rank
+    let elo_display = if details.player_score.unwrap_or(0) == 0 {
+        "N/A".to_string()
+    } else {
+        details.player_score.unwrap_or(0).to_string()
+    };
+
+    let rank_display = if details.player_rank.unwrap_or(0) == 0 {
+        "N/A".to_string()
+    } else {
+        details.player_rank.unwrap_or(0).to_string()
+    };
+
     let mut embed = CreateEmbed::default()
         .title(format!(
             ":flag_{}: {} (id: {}) {} RTA Statistics (Regular Season only)",
@@ -503,10 +518,10 @@ pub fn create_player_embed(
         ))
         .thumbnail(details.head_img.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
-        .description("⚠️ Stats are not 100% accurate ➡️ The very last battle is not included in the elo/rank, and people under/around 1300 (C1) elo will have weird stats (missing games, weird winrates) ⚠️")
+        .description("⚠️ Stats are not 100% accurate ➡️ The very last battle is not included in the elo/rank, and people under/around C1 elo will have weird stats (missing games, weird winrates) ⚠️")
         .field("WinRate", format!("{:.1} %", details.win_rate.unwrap_or(0.0) * 100.0), true)
-        .field("Elo", details.player_score.unwrap_or(0).to_string(), true)
-        .field("Rank", details.player_rank.unwrap_or(0).to_string(), true)
+        .field("Elo", elo_display, true)
+        .field("Rank", rank_display, true)
         .field("🏆 Approx. Rank", rank_emojis, true)
         .field("Matches Played", details.season_count.unwrap_or(0).to_string(), true);
 
@@ -547,12 +562,21 @@ pub fn create_player_embed(
 }
 
 pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
-    let rank_data = get_rank_info().await.map_err(|e| anyhow!(e))?;
+    let conqueror_emote_str = format!("<:conqueror:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());
+    let punisher_emote_str = format!("<:punisher:{}>", PUNISHER_EMOJI_ID.lock().unwrap());
+    let guardian_emote_str = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
 
-    for (emoji, threshold) in rank_data.iter().rev() {
-        if score >= *threshold {
-            return Ok(emoji.clone());
-        }
+    // score can be 3001, 3002, 3003, 3501, 3502, 3503, 4001, 4002, 4003
+    // 3001 = return conqueror_emote_str x1, 3002 = x2, 3003 = x3. Then punisher, then guardian
+    if score >= 4001 {
+        let count = score - 4000;
+        return Ok(guardian_emote_str.repeat(count as usize));
+    } else if score >= 3501 {
+        let count = score - 3500;
+        return Ok(punisher_emote_str.repeat(count as usize));
+    } else if score >= 3001 {
+        let count = score - 3000;
+        return Ok(conqueror_emote_str.repeat(count as usize));
     }
 
     Ok("Unranked".to_string())
