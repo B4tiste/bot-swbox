@@ -47,7 +47,7 @@ pub async fn services(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
         )
         .field(
             "🛒 Marketplace – EU & Global Accounts",
-            "- All types of accounts\n- Wide price range (budget → premium)\n- Starter accounts available",
+            "- All types of accounts\n- Wide price range (budget → premium)\n- Starter accounts available (Free Hive)\n- Blindbox with 1 or 2 LD5",
             false,
         )
         .field(
