@@ -37,7 +37,7 @@ pub async fn services(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
         // fields
         .field(
             "🎮 In-Game Services",
-            "- Boosting\n- Coaching\n- FRR\n- Island decoration\n- And more !",
+            "- Boosting\n- Coaching\n- FRR/Account Reruning \n- Island decoration\n- And more !",
             false,
         )
         .field(
