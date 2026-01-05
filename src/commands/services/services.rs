@@ -41,13 +41,13 @@ pub async fn services(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
             false,
         )
         .field(
-            "🛒 Marketplace – EU & Global Accounts",
-            "- All types of accounts\n- Wide price range (budget → premium)\n- Starter accounts available",
+            "🛍️ Cheap Packs",
+            "- Much cheaper than competitors\n- Up to 33% discount ! Best Value on the Market !",
             false,
         )
         .field(
-            "🛍️ Cheap Packs",
-            "- Much cheaper than competitors\n- Up to 33% discount ! Best Value on the Market !",
+            "🛒 Marketplace – EU & Global Accounts",
+            "- All types of accounts\n- Wide price range (budget → premium)\n- Starter accounts available",
             false,
         )
         .field(
