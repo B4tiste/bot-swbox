@@ -15,3 +15,4 @@ pub mod support;
 pub mod register;
 pub mod meta;
 pub mod best_pve_teams;
+pub mod services;
