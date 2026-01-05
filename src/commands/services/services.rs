@@ -33,7 +33,7 @@ pub async fn services(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
                 .icon_url("https://bot-swbox.netlify.app/assets/images/old_bot_logo.gif"),
         )
         // thumbnail
-        .thumbnail("https://raw.githubusercontent.com/B4tiste/bot-swbox/refs/heads/B4tiste/myshop/Images/myshop_thumbnail.webp")
+        .thumbnail("https://raw.githubusercontent.com/B4tiste/bot-swbox/refs/heads/main/Images/myshop_thumbnail.webp")
         // fields
         .field(
             "🎮 In-Game Services",
@@ -71,7 +71,7 @@ pub async fn services(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
             false,
         )
         // image
-        .image("https://raw.githubusercontent.com/B4tiste/bot-swbox/refs/heads/B4tiste/myshop/Images/myshop.png")
+        .image("https://raw.githubusercontent.com/B4tiste/bot-swbox/refs/heads/main/Images/myshop.png")
         // footer
         .footer(CreateEmbedFooter::new(
             "Join MyShop today and take your Summoners War experience to the next level!",
