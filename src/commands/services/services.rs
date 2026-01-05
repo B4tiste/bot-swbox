@@ -52,7 +52,7 @@ pub async fn services(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
         )
         .field(
             "🔒 Middleman Service",
-            "- Safe & Secure trading procedure\n- Trutsed process for buyers dans sellers",
+            "- Safe & Secure trading procedure\n- Trusted process for buyers and sellers",
             false,
         )
         .field(
