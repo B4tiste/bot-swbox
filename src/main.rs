@@ -37,6 +37,7 @@ use crate::commands::register::utils::{
     apply_coupons_to_all_users, notify_new_coupons, update_coupon_list,
 };
 use crate::commands::support::support::support;
+use crate::commands::services::services::services;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -276,9 +277,10 @@ async fn main() -> Result<()> {
                 get_rta_leaderboard(),
                 get_rta_core(),
                 get_replays(),
-                support(),
                 get_meta(),
                 best_pve_teams(),
+                support(),
+                services(),
                 // get_duo_stats(),
                 // how_to_build(),
                 // register(),
