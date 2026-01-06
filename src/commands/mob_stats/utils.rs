@@ -90,7 +90,14 @@ pub async fn get_monster_matchups_swrt(
     season: i64,
     level: i32,
     token: &str,
-) -> Result<(Vec<MonsterMatchup>, Vec<MonsterMatchup>, Vec<MonsterMatchup>), String> {
+) -> Result<
+    (
+        Vec<MonsterMatchup>,
+        Vec<MonsterMatchup>,
+        Vec<MonsterMatchup>,
+    ),
+    String,
+> {
     let monster_id = remap_monster_id(monster_id); // 🔄 Applique le mapping ici aussi
 
     let url = format!(
@@ -266,7 +273,6 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
 
     truncate_entries_safely(entries, 1024)
 }
-
 
 /// Retourne une chaîne du type "123", "1k" ou "1k2" selon la valeur
 fn format_pick_total(pick_total: i32) -> String {

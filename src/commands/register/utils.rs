@@ -103,7 +103,6 @@ pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
 }
 
 pub async fn update_coupon_list(mongo_uri: &str) -> anyhow::Result<()> {
-
     let coupons_json = fetch_fresh_coupons().await?;
     let mongo = MongoClient::with_uri_str(mongo_uri).await?;
     let db = mongo.database("bot-swbox-db");

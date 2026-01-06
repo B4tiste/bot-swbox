@@ -1,4 +1,10 @@
-use crate::{Data, commands::shared::{logs::{get_server_name, send_log}, models::LoggerDocument}};
+use crate::{
+    commands::shared::{
+        logs::{get_server_name, send_log},
+        models::LoggerDocument,
+    },
+    Data,
+};
 use poise::{
     serenity_prelude::{self as serenity, Error},
     CreateReply,
@@ -37,11 +43,7 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
         "[BP Archive](https://bp-archive.netlify.app/)",
         false,
     );
-    embed = embed.field(
-        "Discord server",
-        "https://discord.gg/AfANrTVaDJ",
-        false,
-    );
+    embed = embed.field("Discord server", "https://discord.gg/AfANrTVaDJ", false);
     embed = embed.field(
         "Tutorial video for setup and use",
         "https://www.youtube.com/watch?v=U6CxFH6WFKU",

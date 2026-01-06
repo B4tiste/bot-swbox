@@ -116,7 +116,6 @@ pub async fn create_pve_teams_embed(
     embed
 }
 
-
 // Convertit ms -> mm:ss.mmm (ex: 01:12.345)
 fn format_duration(ms: u32) -> String {
     let total_seconds = ms / 1000;

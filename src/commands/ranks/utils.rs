@@ -70,18 +70,23 @@ pub async fn get_rank_info() -> Result<Vec<(String, i32)>, String> {
 /// Returns the same (emote_string, score) vector order: C1,C2,C3,P1,P2,P3,G1,G2,G3
 pub async fn get_prediction_info() -> Result<Vec<(String, i32)>, String> {
     let url = "https://swrta.top/predict";
-    let resp = reqwest::get(url).await.map_err(|_| "Error sending the request.".to_string())?;
+    let resp = reqwest::get(url)
+        .await
+        .map_err(|_| "Error sending the request.".to_string())?;
     if !resp.status().is_success() {
         return Err(format!("Non-success status: {}", resp.status()));
     }
-    let html = resp.text().await.map_err(|_| "Error reading response body".to_string())?;
+    let html = resp
+        .text()
+        .await
+        .map_err(|_| "Error reading response body".to_string())?;
 
     // Parse the HTML and extract pairs like ("C1", 1300), ...
     // We use the 'scraper' crate's CSS selectors.
     let document = scraper::Html::parse_document(&html);
     let box_sel = scraper::Selector::parse(".predict_box .point_box").unwrap();
     let rank_sel = scraper::Selector::parse(".rank_icon").unwrap();
-    let val_sel  = scraper::Selector::parse(".col-8").unwrap();
+    let val_sel = scraper::Selector::parse(".col-8").unwrap();
 
     use std::collections::HashMap;
     let mut found: HashMap<String, i32> = HashMap::new();
@@ -109,8 +114,8 @@ pub async fn get_prediction_info() -> Result<Vec<(String, i32)>, String> {
 
     // Build in fixed order, converting to your emote strings
     let conqueror_emote_str = format!("<:conqueror:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());
-    let punisher_emote_str  = format!("<:punisher:{}>",  PUNISHER_EMOJI_ID.lock().unwrap());
-    let guardian_emote_str  = format!("<:guardian:{}>",  GUARDIAN_EMOJI_ID.lock().unwrap());
+    let punisher_emote_str = format!("<:punisher:{}>", PUNISHER_EMOJI_ID.lock().unwrap());
+    let guardian_emote_str = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
 
     fn emotes_for(rank: &str, c: &str, p: &str, g: &str) -> String {
         // rank like "C1", "P3", "G2"
@@ -120,15 +125,22 @@ pub async fn get_prediction_info() -> Result<Vec<(String, i32)>, String> {
             "C" => c.repeat(repeats),
             "P" => p.repeat(repeats),
             "G" => g.repeat(repeats),
-            _   => c.repeat(1),
+            _ => c.repeat(1),
         }
     }
 
-    let order = ["C1","C2","C3","P1","P2","P3","G1","G2","G3"];
-    let mut out: Vec<(String,i32)> = Vec::with_capacity(9);
+    let order = ["C1", "C2", "C3", "P1", "P2", "P3", "G1", "G2", "G3"];
+    let mut out: Vec<(String, i32)> = Vec::with_capacity(9);
     for key in order {
-        let score = *found.get(key).ok_or_else(|| format!("Missing prediction for {key}"))?;
-        let emote = emotes_for(key, &conqueror_emote_str, &punisher_emote_str, &guardian_emote_str);
+        let score = *found
+            .get(key)
+            .ok_or_else(|| format!("Missing prediction for {key}"))?;
+        let emote = emotes_for(
+            key,
+            &conqueror_emote_str,
+            &punisher_emote_str,
+            &guardian_emote_str,
+        );
         out.push((emote, score));
     }
 

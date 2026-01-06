@@ -1,5 +1,6 @@
-use ab_glyph::{FontArc, PxScale, Font, ScaleFont};
+use ab_glyph::{Font, FontArc, PxScale, ScaleFont};
 use anyhow::{anyhow, Context, Result};
+use chrono::NaiveDateTime;
 use image::GenericImage;
 use image::{DynamicImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::drawing::draw_text_mut;
@@ -12,11 +13,10 @@ use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use chrono::NaiveDateTime;
 
 use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
-use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID, MONGO_URI};
+use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, MONGO_URI, PUNISHER_EMOJI_ID};
 
 #[derive(Debug, Deserialize)]
 pub struct Player {
@@ -35,7 +35,6 @@ pub struct Player {
     #[serde(rename = "playerServer")]
     pub player_server: i32, // 1..6 : KR, JP, CN, GB, AS, EU
 }
-
 
 #[derive(Debug, Deserialize)]
 struct SearchResponse {
@@ -546,16 +545,13 @@ pub fn create_player_embed(
     }
 
     embed
-        .image(
-            if has_image == 1 {
-                "attachment://replay.png"
-            } else if has_image  == 0 {
-                random_gif
-            }
-            else {
-                ""
-            }
-        )
+        .image(if has_image == 1 {
+            "attachment://replay.png"
+        } else if has_image == 0 {
+            random_gif
+        } else {
+            ""
+        })
         .footer(CreateEmbedFooter::new(
             "Data is gathered from m.swranking.com",
         ))
@@ -694,15 +690,13 @@ pub async fn create_replay_image(
         // Left text: score + player 1 name
         let left_text = format!(
             "{} - {}",
-            battle.player_one.player_score,
-            battle.player_one.player_name
+            battle.player_one.player_score, battle.player_one.player_name
         );
 
         // Right text: player 2 name + score
         let right_text = format!(
             "{} - {}",
-            battle.player_two.player_name,
-            battle.player_two.player_score
+            battle.player_two.player_name, battle.player_two.player_score
         );
 
         // Center text: date only, formatted as DD-MM-YYYY
@@ -1004,7 +998,6 @@ fn create_match_banner(
     image
 }
 
-
 fn draw_bold_text_mut(
     image: &mut RgbaImage,
     color: Rgba<u8>,
@@ -1053,7 +1046,9 @@ fn fit_text_to_width(font: &FontArc, scale: PxScale, text: &str, max_width: f32)
     }
 
     // Garder au moins quelques caractères
-    while !chars.is_empty() && text_width(font, scale, &chars.iter().collect::<String>()) > max_width {
+    while !chars.is_empty()
+        && text_width(font, scale, &chars.iter().collect::<String>()) > max_width
+    {
         chars.pop();
     }
 
@@ -1064,4 +1059,3 @@ fn fit_text_to_width(font: &FontArc, scale: PxScale, text: &str, max_width: f32)
 
     result
 }
-

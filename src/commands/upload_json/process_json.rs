@@ -191,7 +191,6 @@ pub fn process_json(
     let mut map_score_spd: HashMap<String, HashMap<String, u32>> = HashMap::new(); // Old map
 
     for rune in vec_runes.iter() {
-
         // RTA and Siege spd/eff coefficients
         let set_id = rune.set_id.to_string();
         // let coeff_set = 1; // Old coeff
@@ -208,17 +207,29 @@ pub fn process_json(
         };
         // RTA
         if let Some(set_coeff) = rta_set_eff_coeffs.get(set_id.as_str()) {
-            rta_set_eff_coeff = set_coeff.as_u64().expect("rta_set_eff_coeff should be an integer") as u32;
+            rta_set_eff_coeff = set_coeff
+                .as_u64()
+                .expect("rta_set_eff_coeff should be an integer")
+                as u32;
         }
         if let Some(set_coeff) = rta_set_spd_coeffs.get(set_id.as_str()) {
-            rta_set_spd_coeff = set_coeff.as_u64().expect("rta_set_spd_coeff should be an integer") as u32;
+            rta_set_spd_coeff = set_coeff
+                .as_u64()
+                .expect("rta_set_spd_coeff should be an integer")
+                as u32;
         }
         // Siege
         if let Some(set_coeff) = siege_set_eff_coeffs.get(set_id.as_str()) {
-            siege_set_eff_coeff = set_coeff.as_u64().expect("siege_set_eff_coeff should be an integer") as u32;
+            siege_set_eff_coeff = set_coeff
+                .as_u64()
+                .expect("siege_set_eff_coeff should be an integer")
+                as u32;
         }
         if let Some(set_coeff) = siege_set_spd_coeffs.get(set_id.as_str()) {
-            siege_set_spd_coeff = set_coeff.as_u64().expect("siege_set_spd_coeff should be an integer") as u32;
+            siege_set_spd_coeff = set_coeff
+                .as_u64()
+                .expect("siege_set_spd_coeff should be an integer")
+                as u32;
         }
 
         // Global_efficiency_coeff

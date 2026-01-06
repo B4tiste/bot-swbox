@@ -1,7 +1,7 @@
-use crate::commands::best_pve_teams::utils::{
-    get_dungeon_stats, create_pve_teams_embed, build_monster_name_map
-};
 use crate::commands::best_pve_teams::models::Dungeon;
+use crate::commands::best_pve_teams::utils::{
+    build_monster_name_map, create_pve_teams_embed, get_dungeon_stats,
+};
 use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
@@ -21,7 +21,6 @@ pub async fn best_pve_teams(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     #[description = "Select the dungeon"] dungeon: Dungeon,
 ) -> Result<(), Error> {
-
     // Évite le timeout de 3 s
     ctx.defer().await?;
 
@@ -71,7 +70,11 @@ pub async fn best_pve_teams(
     // Trier le tableau par rank_score décroissant
     let top_n: usize = 5;
     let mut sorted_data = dungeon_data.clone();
-    sorted_data.sort_by(|a, b| b.rank.partial_cmp(&a.rank).unwrap_or(std::cmp::Ordering::Equal));
+    sorted_data.sort_by(|a, b| {
+        b.rank
+            .partial_cmp(&a.rank)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     let len = sorted_data.len();
     let top = &mut sorted_data[..top_n.min(len)];
 
@@ -81,7 +84,10 @@ pub async fn best_pve_teams(
         let successful_runs: Vec<&crate::commands::best_pve_teams::models::RunData> =
             team.runs.iter().filter(|run| run.success).collect();
         let average_time_ms = if !successful_runs.is_empty() {
-            successful_runs.iter().map(|run| run.duration_ms).sum::<u32>()
+            successful_runs
+                .iter()
+                .map(|run| run.duration_ms)
+                .sum::<u32>()
                 / successful_runs.len() as u32
         } else {
             0
@@ -107,7 +113,8 @@ pub async fn best_pve_teams(
         top,
         &collection,
         &monster_name_map,
-    ).await;
+    )
+    .await;
 
     let reply = CreateReply {
         embeds: vec![embed],

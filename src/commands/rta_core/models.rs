@@ -106,8 +106,8 @@ pub struct Trio {
     pub base: u32,
     pub one: u32,
     pub two: u32,
-    pub win_rate: f32,      // ex. 0.55
-    pub pick_total: u32,    // ex. 1432
-    pub weighted_score: f32, // win_rate * pick_total
-    pub emojis: Option<String> // emojis
+    pub win_rate: f32,          // ex. 0.55
+    pub pick_total: u32,        // ex. 1432
+    pub weighted_score: f32,    // win_rate * pick_total
+    pub emojis: Option<String>, // emojis
 }

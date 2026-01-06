@@ -1,14 +1,14 @@
 mod commands;
 
 use anyhow::{Context, Result};
-use lazy_static::lazy_static;
 use dotenvy::dotenv;
-use std::env;
+use lazy_static::lazy_static;
 use poise::serenity_prelude::{ClientBuilder, Context as SerenityContext, GatewayIntents};
 use reqwest::header::{
     HeaderMap, HeaderValue, ACCEPT, ACCEPT_LANGUAGE, CONNECTION, CONTENT_TYPE, ORIGIN, REFERER,
     USER_AGENT,
 };
+use std::env;
 
 use std::sync::{Arc, Mutex};
 use tokio::time::{sleep, Duration};
@@ -19,8 +19,10 @@ use serde::Deserialize;
 use std::{collections::HashMap, fs};
 
 // use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
+use crate::commands::best_pve_teams::best_pve_teams::best_pve_teams;
 use crate::commands::help::help::help;
 use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
+use crate::commands::meta::meta::get_meta;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
 use crate::commands::player_names::track_player_names::track_player_names;
 use crate::commands::player_stats::get_player_stats::get_player_stats;
@@ -29,15 +31,13 @@ use crate::commands::replays::get_replays::get_replays;
 use crate::commands::rta_core::get_rta_core::get_rta_core;
 use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::upload_json::upload_json::upload_json;
-use crate::commands::meta::meta::get_meta;
-use crate::commands::best_pve_teams::best_pve_teams::best_pve_teams;
 // use crate::commands::how_to_build::how_to_build::how_to_build;
 // use crate::commands::register::register::register;
 use crate::commands::register::utils::{
     apply_coupons_to_all_users, notify_new_coupons, update_coupon_list,
 };
-use crate::commands::support::support::support;
 use crate::commands::services::services::services;
+use crate::commands::support::support::support;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -222,9 +222,14 @@ async fn main() -> Result<()> {
                     }
                     Err(e) => {
                         retry_count += 1;
-                        eprintln!("Erreur lors du login (tentative {}/5): {:?}", retry_count, e);
+                        eprintln!(
+                            "Erreur lors du login (tentative {}/5): {:?}",
+                            retry_count, e
+                        );
                         if retry_count >= 5 {
-                            eprintln!("Échec du login après 5 tentatives, attente avant nouvel essai...");
+                            eprintln!(
+                                "Échec du login après 5 tentatives, attente avant nouvel essai..."
+                            );
                             break;
                         }
                         sleep(Duration::from_secs(5)).await;

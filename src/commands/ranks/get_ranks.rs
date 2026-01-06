@@ -32,7 +32,8 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
-            )).await?;
+            ))
+            .await?;
             return Ok(());
         }
     };
@@ -95,7 +96,8 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         if prediction.is_some() {
             full_description.push_str("*Prediction source: <https://swrta.top/predict>*\n");
         } else {
-            full_description.push_str("_Prediction currently unavailable (failed to fetch from swrta.top)._");
+            full_description
+                .push_str("_Prediction currently unavailable (failed to fetch from swrta.top)._");
         }
     }
 
@@ -123,12 +125,13 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
     ctx.send(reply).await?;
 
     send_log(LoggerDocument::new(
-                &ctx.author().name,
-                &"get_ranks".to_string(),
-                &get_server_name(&ctx).await?,
-                true,
-                chrono::Utc::now().timestamp(),
-            )).await?;
+        &ctx.author().name,
+        &"get_ranks".to_string(),
+        &get_server_name(&ctx).await?,
+        true,
+        chrono::Utc::now().timestamp(),
+    ))
+    .await?;
 
     Ok(())
 }

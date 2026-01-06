@@ -2,8 +2,8 @@ use futures::future;
 use poise::serenity_prelude::Error;
 use poise::Modal;
 
-use mongodb::{bson::doc, Client};
 use crate::MONGO_URI;
+use mongodb::{bson::doc, Client};
 
 use crate::{
     commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion},
@@ -156,7 +156,9 @@ pub async fn get_player_all_names(player_id: String) -> Result<Vec<String>, Stri
 
 pub async fn get_swrt_id_from_db_by_player_id(player_id: i64) -> Result<i64, String> {
     let mongo_uri = {
-        let guard = MONGO_URI.lock().map_err(|_| "Failed to lock MONGO_URI".to_string())?;
+        let guard = MONGO_URI
+            .lock()
+            .map_err(|_| "Failed to lock MONGO_URI".to_string())?;
         guard.clone()
     };
 
@@ -183,17 +185,24 @@ pub async fn get_swrt_id_from_db_by_player_id(player_id: i64) -> Result<i64, Str
     Ok(swrt_player_id)
 }
 
-pub async fn get_current_detail_from_swrt(swrt_player_id: i64) -> Result<(String, Option<String>), String> {
+pub async fn get_current_detail_from_swrt(
+    swrt_player_id: i64,
+) -> Result<(String, Option<String>), String> {
     // Retourne (playerName, headImg)
     // On peut réutiliser la fonction existante get_user_detail(...) mais pour éviter
     // une dépendance circulaire, on fait un appel léger ici.
     let token = {
         use crate::API_TOKEN;
-        let guard = API_TOKEN.lock().map_err(|_| "Failed to lock API_TOKEN".to_string())?;
+        let guard = API_TOKEN
+            .lock()
+            .map_err(|_| "Failed to lock API_TOKEN".to_string())?;
         guard.clone().ok_or_else(|| "Missing API Token, please contact **b4tiste** on Discord : <https://discord.gg/AfANrTVaDJ>.".to_string())?
     };
 
-    let url = format!("https://m.swranking.com/api/player/detail?swrtPlayerId={}", swrt_player_id);
+    let url = format!(
+        "https://m.swranking.com/api/player/detail?swrtPlayerId={}",
+        swrt_player_id
+    );
     let client = reqwest::Client::new();
     let res = client
         .get(&url)
@@ -207,7 +216,10 @@ pub async fn get_current_detail_from_swrt(swrt_player_id: i64) -> Result<(String
         return Err(format!("SWRanking status {}", res.status()));
     }
 
-    let v: serde_json::Value = res.json().await.map_err(|_| "Failed to parse SWRanking JSON".to_string())?;
+    let v: serde_json::Value = res
+        .json()
+        .await
+        .map_err(|_| "Failed to parse SWRanking JSON".to_string())?;
 
     let player = v["data"]["player"].clone();
     if player.is_null() {

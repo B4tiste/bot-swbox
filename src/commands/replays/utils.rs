@@ -1,10 +1,10 @@
+use anyhow::{anyhow, Result};
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
-use anyhow::{anyhow, Result};
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 
-use crate::commands::replays::models::Root;
 use crate::commands::player_stats::utils::Replay;
+use crate::commands::replays::models::Root;
 
 pub async fn get_replays_data(ids: &Vec<i32>, level: i32) -> Result<Vec<Replay>> {
     let url = "https://m.swranking.com/api/player/replayallist";
@@ -28,20 +28,26 @@ pub async fn get_replays_data(ids: &Vec<i32>, level: i32) -> Result<Vec<Replay>>
     let json: Root = res.json().await?;
 
     if !status.is_success() {
-        return Err(anyhow!(
-            "Error status {}: {:?}",
-            status,
-            json.data.list
-        ));
+        return Err(anyhow!("Error status {}: {:?}", status, json.data.list));
     }
 
     // If playerOne does have the monster in the ids, swap playerOne with playerTwo
     let mut replays = json.data.list;
     for replay in &mut replays {
-        if replay.player_one.monster_info_list.iter().any(|m| ids.contains(&(m.monster_id as i32))) {
+        if replay
+            .player_one
+            .monster_info_list
+            .iter()
+            .any(|m| ids.contains(&(m.monster_id as i32)))
+        {
             // Player one has the monster, no need to swap
             continue;
-        } else if replay.player_two.monster_info_list.iter().any(|m| ids.contains(&(m.monster_id as i32))) {
+        } else if replay
+            .player_two
+            .monster_info_list
+            .iter()
+            .any(|m| ids.contains(&(m.monster_id as i32)))
+        {
             // Player two has the monster, swap players
             std::mem::swap(&mut replay.player_one, &mut replay.player_two);
             // if replay.status is 1, set it to 2 else if replay.status is 2, set it to 1
@@ -59,7 +65,7 @@ pub async fn get_replays_data(ids: &Vec<i32>, level: i32) -> Result<Vec<Replay>>
 pub fn create_replays_embed(
     monster_names: &Vec<String>,
     level: i32,
-    player_names: &Vec<String>
+    player_names: &Vec<String>,
 ) -> CreateEmbed {
     let level_str = match level {
         1 => "G1-G2",
@@ -69,7 +75,10 @@ pub fn create_replays_embed(
     };
 
     let description = if monster_names.len() == 1 {
-        format!("Recent replays for **{}** - **Level**: {}", monster_names[0], level_str)
+        format!(
+            "Recent replays for **{}** - **Level**: {}",
+            monster_names[0], level_str
+        )
     } else {
         let monsters_list = monster_names
             .iter()
@@ -77,7 +86,10 @@ pub fn create_replays_embed(
             .collect::<Vec<_>>()
             .join("\n");
 
-        format!("Recent replays for:\n{}\n\n**Level**: {}", monsters_list, level_str)
+        format!(
+            "Recent replays for:\n{}\n\n**Level**: {}",
+            monsters_list, level_str
+        )
     };
 
     // Construire la chaîne des joueurs avec format en liste :
@@ -121,7 +133,10 @@ pub fn create_loading_replays_embed(monster_names: &Vec<String>, level: i32) -> 
     };
 
     let description = if monster_names.len() == 1 {
-        format!("Loading replays for **{}** - **Level**: {}", monster_names[0], level_str)
+        format!(
+            "Loading replays for **{}** - **Level**: {}",
+            monster_names[0], level_str
+        )
     } else {
         let monsters_list = monster_names
             .iter()
@@ -129,7 +144,10 @@ pub fn create_loading_replays_embed(monster_names: &Vec<String>, level: i32) -> 
             .collect::<Vec<_>>()
             .join("\n");
 
-        format!("Loading replays for:\n{}\n\n**Level**: {}", monsters_list, level_str)
+        format!(
+            "Loading replays for:\n{}\n\n**Level**: {}",
+            monsters_list, level_str
+        )
     };
 
     CreateEmbed::default()
