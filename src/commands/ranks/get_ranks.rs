@@ -11,7 +11,7 @@ use poise::{
 };
 use serenity::builder::CreateEmbedFooter;
 
-/// 📂 Displays the current scores for ranks (C1 -> G3) with prediction inline (from swrta.top)
+/// 📂 Displays the current scores for ranks (P2 -> G3) with prediction inline (from swrta.top)
 ///
 /// Usage: `/get_ranks`
 #[poise::command(slash_command)]
@@ -47,9 +47,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
 
     let thumbnail = "https://raw.githubusercontent.com/B4tiste/landing-page-bot/refs/heads/main/src/assets/images/old_bot_logo.gif";
 
-    // ----- Build the single section (live + optional prediction inline) -----
-
-    // Helper to turn a rank vector into grouped text, adding `(pred)` when available
+    // Helper: build grouped description for P2,P3 and G1,G2,G3 (with optional prediction)
     fn build_grouped_description(
         live_pairs: &[(String, i32)],
         pred_pairs: &Option<Vec<(String, i32)>>,
@@ -62,15 +60,18 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
             .map(|v| v.iter().map(|(k, v)| (k.as_str(), *v)).collect())
             .unwrap_or_default();
 
-        let groups = ["Conqueror", "Punisher", "Guardian"];
+        // live_pairs order (from utils): P2, P3, G1, G2, G3
+        let groups: [(&str, std::ops::Range<usize>); 2] = [
+            ("Punisher", 0..2), // P2,P3
+            ("Guardian", 2..5), // G1,G2,G3
+        ];
+
         let mut description = String::new();
 
-        for (i, group) in groups.iter().enumerate() {
-            description.push_str(&format!("{group}:\n"));
-            for j in 0..3 {
-                let index = i * 3 + j;
-                let (rank_key, live) = &live_pairs[index];
-
+        for (group, range) in groups {
+            description.push_str(&format!("{group} :\n"));
+            for idx in range {
+                let (rank_key, live) = &live_pairs[idx];
                 if let Some(pred) = pred_map.get(rank_key.as_str()) {
                     description.push_str(&format!("{rank_key} : {live} (→ **{pred}**)\n"));
                 } else {
@@ -79,6 +80,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
             }
             description.push('\n');
         }
+
         description
     }
 
@@ -103,7 +105,6 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
 
     full_description.push_str("\n⚠️ SWbox is not responsible for any data inaccuracy ⚠️");
 
-    // Single embed; no image/attachments
     let embed = serenity::CreateEmbed::default()
         .title(if ENABLE_PREDICTION {
             "Rank thresholds (Live + Prediction)"
