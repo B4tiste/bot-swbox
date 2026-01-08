@@ -118,7 +118,7 @@ pub async fn get_rta_leaderboard(
                             let ld_emojis = format_player_ld_monsters_emojis(&details).await;
                             let top_monsters = format_player_monsters(&details).await;
                             let rank_emojis =
-                                get_rank_emojis_for_score(details.player_score.unwrap_or(0))
+                                get_rank_emojis_for_score(details.player_level.unwrap_or(0))
                                     .await
                                     .unwrap_or_else(|_| "❓".to_string());
                             let embed = create_player_embed(
