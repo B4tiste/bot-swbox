@@ -491,18 +491,7 @@ pub fn create_player_embed(
 
     let random_gif = gifs.choose(&mut rand::rng()).unwrap_or(&gifs[0]);
 
-    // If elo is 0, display N/A, same for rank
-    let elo_display = if details.player_score.unwrap_or(0) == 0 {
-        "N/A".to_string()
-    } else {
-        details.player_score.unwrap_or(0).to_string()
-    };
-
-    let rank_display = if details.player_rank.unwrap_or(0) == 0 {
-        "N/A".to_string()
-    } else {
-        details.player_rank.unwrap_or(0).to_string()
-    };
+    let has_ranked_data = details.player_score.unwrap_or(0) != 0;
 
     let mut embed = CreateEmbed::default()
         .title(format!(
@@ -518,11 +507,27 @@ pub fn create_player_embed(
         .thumbnail(details.head_img.clone().unwrap_or_default())
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .description("⚠️ Stats are not 100% accurate ➡️ The very last battle is not included in the elo/rank, and people under/around C1 elo will have weird stats (missing games, weird winrates) ⚠️")
-        .field("WinRate", format!("{:.1} %", details.win_rate.unwrap_or(0.0) * 100.0), true)
-        .field("Elo", elo_display, true)
-        .field("Rank", rank_display, true)
-        .field("🏆 Approx. Rank", rank_emojis, true)
-        .field("Matches Played", details.season_count.unwrap_or(0).to_string(), true);
+        .field("WinRate", format!("{:.1} %", details.win_rate.unwrap_or(0.0) * 100.0), true);
+
+    // Only add Elo and Rank fields if player has ranked data
+    if has_ranked_data {
+        embed = embed
+            .field("Elo", details.player_score.unwrap_or(0).to_string(), true)
+            .field("Rank", details.player_rank.unwrap_or(0).to_string(), true)
+    }
+
+    // add Approx rank
+    embed = embed.field(
+        "🏆 Approx. Rank",
+        rank_emojis,
+        true
+    );
+
+    embed = embed.field(
+        "Matches Played",
+        details.season_count.unwrap_or(0).to_string(),
+        true,
+    );
 
     // Add LD fields
     for (suffix, text) in ld_fields {
@@ -687,17 +692,25 @@ pub async fn create_replay_image(
             .copy_from(&img2, img1.width() + spacing, 0)
             .unwrap();
 
-        // Left text: score + player 1 name
-        let left_text = format!(
-            "{} - {}",
-            battle.player_one.player_score, battle.player_one.player_name
-        );
+        // Left text: score + player 1 name (or just name if score is 0)
+        let left_text = if battle.player_one.player_score == 0 {
+            battle.player_one.player_name.clone()
+        } else {
+            format!(
+                "{} - {}",
+                battle.player_one.player_score, battle.player_one.player_name
+            )
+        };
 
-        // Right text: player 2 name + score
-        let right_text = format!(
-            "{} - {}",
-            battle.player_two.player_name, battle.player_two.player_score
-        );
+        // Right text: player 2 name + score (or just name if score is 0)
+        let right_text = if battle.player_two.player_score == 0 {
+            battle.player_two.player_name.clone()
+        } else {
+            format!(
+                "{} - {}",
+                battle.player_two.player_name, battle.player_two.player_score
+            )
+        };
 
         // Center text: date only, formatted as DD-MM-YYYY
         let date_text = NaiveDateTime::parse_from_str(&battle.date, "%Y-%m-%d %H:%M:%S")
