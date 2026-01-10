@@ -51,7 +51,7 @@ pub async fn help(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(),
     );
     embed = embed.field(
         "Data Sources",
-        "[swranking](https://m.swranking.com/) & [swarena](https://swarena.gg/)",
+        "[swranking](https://m.swranking.com/), [swarena](https://swarena.gg/) & [lucksack](https://lucksack.gg/)",
         false,
     );
 
