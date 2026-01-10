@@ -3,7 +3,9 @@ use poise::CreateReply;
 use serenity::builder::EditInteractionResponse;
 use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
-use crate::commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion};
+use crate::commands::shared::embed_error_handling::{
+    create_embed_error, schedule_message_deletion,
+};
 use crate::commands::shared::logs::get_server_name;
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::models::LoggerDocument;
@@ -49,7 +51,7 @@ pub async fn autocomplete_lucksack_monster<'a>(
         .take(10)
 }
 
-/// 📂 Look a monster RTA build (LuckSack)
+/// 📂 Look a monster RTA build
 #[poise::command(slash_command)]
 pub async fn how_to_build(
     ctx: poise::ApplicationContext<'_, Data, Error>,
@@ -81,7 +83,7 @@ pub async fn how_to_build(
 
     let server_name = get_server_name(&ctx).await?;
 
-    // ✅ lookup LuckSack : label -> (com2us_id, collab_id?)
+    // lookup LuckSack : label -> (com2us_id, collab_id?)
     let (monster_id, collab_id) = match LUCKSACK_MONSTER_MAP.get(&monster_name) {
         Some(&(id, collab)) => (id, collab),
         None => {
@@ -144,7 +146,7 @@ pub async fn how_to_build(
     // 3 : C1-C3
     let mut current_rank: i32 = 1;
 
-    // ✅ fetch initial avec fallback collab_id si la première requête échoue
+    // fetch initial avec fallback collab_id si la première requête échoue
     // + on garde l'id effectivement utilisé pour les interactions suivantes
     let (build, mut effective_monster_id) =
         match fetch_lucksack_build(monster_id, season, current_rank).await {
@@ -245,7 +247,7 @@ pub async fn how_to_build(
         let build = match fetch_lucksack_build(effective_monster_id, season, current_rank).await {
             Ok(data) => data,
             Err(e) => {
-                // ✅ fallback collab seulement si l'id courant n'est PAS déjà le collab_id
+                // fallback collab seulement si l'id courant n'est PAS déjà le collab_id
                 // (ça évite de re-essayer le même id)
                 if let Some(cid) = collab_id {
                     if cid != effective_monster_id {

@@ -137,6 +137,67 @@ fn stat_short(id: i32) -> &'static str {
     }
 }
 
+fn artifact_effect_name(id: i32) -> &'static str {
+    match id {
+        // Elemental slot artifacts (200-226)
+        200 => "ATK+ Proportional to Lost HP",
+        201 => "DEF+ Proportional to Lost HP",
+        202 => "SPD+ Proportional to Lost HP",
+        203 => "SPD Under Inability",
+        204 => "ATK Increasing Effect",
+        205 => "DEF Increasing Effect",
+        206 => "SPD Increasing Effect",
+        207 => "CRIT Rate Increasing Effect",
+        208 => "Damage by Counterattack",
+        209 => "Damage by Co-op Attack",
+        210 => "Bomb Damage",
+        211 => "Reflect DMG",
+        212 => "Crushing Hit DMG",
+        213 => "Damage Received Under Inability",
+        214 => "CRIT DMG Received",
+        215 => "Life Drain",
+        216 => "HP when Revived",
+        217 => "ATK Bar when Revived",
+        218 => "Additional DMG by HP%",
+        219 => "Additional DMG by ATK%",
+        220 => "Additional DMG by DEF%",
+        221 => "Additional DMG by SPD",
+        222 => "CRIT DMG+ (Enemy HP High)",
+        223 => "CRIT DMG+ (Enemy HP Low)",
+        224 => "Single-target CRIT DMG",
+        225 => "Counter/Co-op CRIT DMG",
+        226 => "ATK/DEF Increasing Effect",
+
+        // Archetype slot artifacts - Element damage (300-309)
+        300 => "DMG Dealt on Fire",
+        301 => "DMG Dealt on Water",
+        302 => "DMG Dealt on Wind",
+        303 => "DMG Dealt on Light",
+        304 => "DMG Dealt on Dark",
+        305 => "DMG Received from Fire",
+        306 => "DMG Received from Water",
+        307 => "DMG Received from Wind",
+        308 => "DMG Received from Light",
+        309 => "DMG Received from Dark",
+
+        // Archetype slot artifacts - Skill effects (400-411)
+        400 => "[Skill 1] CRIT DMG",
+        401 => "[Skill 2] CRIT DMG",
+        402 => "[Skill 3] CRIT DMG",
+        403 => "[Skill 4] CRIT DMG",
+        404 => "[Skill 1] Recovery",
+        405 => "[Skill 2] Recovery",
+        406 => "[Skill 3] Recovery",
+        407 => "[Skill 1] Accuracy",
+        408 => "[Skill 2] Accuracy",
+        409 => "[Skill 3] Accuracy",
+        410 => "[Skill 3/4] CRIT DMG",
+        411 => "First Attack CRIT DMG",
+
+        _ => "Unknown",
+    }
+}
+
 fn rank_label(rank: i32) -> &'static str {
     match rank {
         0 => "G3",
@@ -147,9 +208,29 @@ fn rank_label(rank: i32) -> &'static str {
     }
 }
 
-// ✅ 1 chiffre après la virgule
 fn fmt_pct(x: f32) -> String {
     format!("{:.1}%", x * 100.0)
+}
+
+fn popularity_stars(pickrate: f32, max_pickrate: f32) -> String {
+    if max_pickrate <= 0.0 {
+        return "☆☆☆☆☆".to_string();
+    }
+
+    // Scale relative to the most-picked item
+    let ratio = (pickrate / max_pickrate).clamp(0.0, 1.0);
+
+    // 0.0..5.0 stars
+    let raw = ratio * 5.0;
+
+    // round to nearest whole number
+    let full = raw.round() as usize;
+    let empty = 5usize.saturating_sub(full);
+
+    let mut s = String::new();
+    s.push_str(&"★".repeat(full));
+    s.push_str(&"☆".repeat(empty));
+    s
 }
 
 // ---------------------------
@@ -167,6 +248,9 @@ fn format_top_rune_sets(build: &LucksackBuildResponse, top_n: usize) -> String {
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
+    // Use the most-picked set as the 5★ reference
+    let max_pickrate = sets.first().map(|x| x.pickrate).unwrap_or(0.0);
+
     sets.into_iter()
         .take(top_n)
         .enumerate()
@@ -182,19 +266,21 @@ fn format_top_rune_sets(build: &LucksackBuildResponse, top_n: usize) -> String {
                 (None, None) => primary.to_string(),
             };
 
+            let stars = popularity_stars(s.pickrate, max_pickrate);
+
             format!(
                 "{}. **{}** : {} / {}",
                 i + 1,
                 name,
                 fmt_pct(s.winrate),
-                fmt_pct(s.pickrate),
+                stars
             )
         })
         .collect::<Vec<_>>()
         .join("\n")
 }
 
-// ✅ malus si WR < 50% (score utilisé pour trier)
+// malus si WR < 50% (score utilisé pour trier)
 fn adjusted_slot_score(pickrate: f32, winrate: f32) -> f32 {
     let base = pickrate * winrate;
 
@@ -213,17 +299,24 @@ fn format_top_slots(build: &LucksackBuildResponse, top_n: usize) -> String {
     }
 
     let mut slots = build.slot_stats.clone();
+
+    // Keep your smart sorting logic (WR-weighted)
     slots.sort_by(|a, b| {
         let sa = adjusted_slot_score(a.pickrate, a.winrate);
         let sb = adjusted_slot_score(b.pickrate, b.winrate);
         sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
     });
 
+    // 5★ reference = most-picked slot combination
+    let max_pickrate = slots.iter().map(|s| s.pickrate).fold(0.0_f32, f32::max);
+
     slots
         .into_iter()
         .take(top_n)
         .enumerate()
         .map(|(i, s)| {
+            let stars = popularity_stars(s.pickrate, max_pickrate);
+
             format!(
                 "{}. **{} / {} / {}** : {} / {}",
                 i + 1,
@@ -231,7 +324,41 @@ fn format_top_slots(build: &LucksackBuildResponse, top_n: usize) -> String {
                 stat_short(s.slot_four),
                 stat_short(s.slot_six),
                 fmt_pct(s.winrate),
-                fmt_pct(s.pickrate),
+                stars
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn format_top_artifacts(
+    items: &[crate::commands::how_to_build::models::LucksackArtifactStat],
+    top_n: usize,
+) -> String {
+    if items.is_empty() {
+        return "No artifact data.".to_string();
+    }
+
+    let mut v = items.to_vec();
+    v.sort_by(|a, b| {
+        b.pickrate
+            .partial_cmp(&a.pickrate)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    // Use the most-picked artifact as the 5★ reference
+    let max_pickrate = v.first().map(|x| x.pickrate).unwrap_or(0.0);
+
+    v.into_iter()
+        .take(top_n)
+        .enumerate()
+        .map(|(i, a)| {
+            let stars = popularity_stars(a.pickrate, max_pickrate);
+            format!(
+                "{}. {} : {}",
+                i + 1,
+                artifact_effect_name(a.effect_id),
+                stars
             )
         })
         .collect::<Vec<_>>()
@@ -251,16 +378,36 @@ pub fn build_how_to_build_embed(
     let top_sets = format_top_rune_sets(build, 3);
     let top_slots = format_top_slots(build, 3);
 
+    let top_artifact_type = format_top_artifacts(&build.artifact_type, 5);
+    let top_artifact_arch = format_top_artifacts(&build.artifact_arch, 5);
+
+    // Monster slug is monster_name.split("(")[0] + lowercase and replace spaces with hyphens
+    // e.g. "Vendhan (Fire Indra)" -> "vendhan"
+    let monster_slug = monster_name
+        .split(" (")
+        .next()
+        .unwrap_or(monster_name)
+        .trim()
+        .to_lowercase()
+        .replace(' ', "-");
+
     let mut embed = serenity::CreateEmbed::default()
         .title(format!(
-            "How to build - {} - Season {}",
+            "How to build - {} - Season {} in {}",
             monster_name.split(" - ").next().unwrap_or(monster_name),
-            season
+            season,
+            rank_label(rank)
         ))
-        .description(format!("**Rank**: {}", rank_label(rank)))
+        .description(format!(
+            "See more detailed stats directly on [lucksack.gg/{}](https://lucksack.gg/monster/{})\nData format : Win Rate / Popularity",
+            monster_slug,
+            monster_slug
+        ))
         .color(serenity::Colour::from_rgb(120, 153, 255))
-        .field("Top Rune Sets [WinRate - PickRate]", top_sets, false)
-        .field("Top Slot 2/4/6 [WinRate - PickRate]", top_slots, false)
+        .field("Top Rune Sets", top_sets, false)
+        .field("Top 2/4/6 Slots", top_slots, false)
+        .field("Top Type Artifacts", top_artifact_type, false)
+        .field("Top Artifacts (Archetype)", top_artifact_arch, false)
         .footer(CreateEmbedFooter::new("Data is gathered from lucksack.gg"));
 
     if let Some(url) = image_url {

@@ -9,7 +9,9 @@ pub struct LucksackSeason {
 pub struct LucksackBuildResponse {
     pub rune_sets: Vec<LucksackRuneSet>,
     pub slot_stats: Vec<LucksackSlotStats>,
-    // on ignore le reste pour le moment (artifact_type, artifact_arch, pickphase, stats...)
+
+    pub artifact_type: Vec<LucksackArtifactStat>,
+    pub artifact_arch: Vec<LucksackArtifactStat>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -28,6 +30,12 @@ pub struct LucksackSlotStats {
     pub slot_six: i32,
     pub pickrate: f32,
     pub winrate: f32,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct LucksackArtifactStat {
+    pub effect_id: i32,
+    pub pickrate: f32,
 }
 
 #[derive(Deserialize)]
