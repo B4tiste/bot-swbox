@@ -78,7 +78,6 @@ pub struct LucksackMonsterEntry {
     pub slug: String,
     pub com2us_id: String,
 
-    // ✅ parfois présent
     pub collab_id: Option<String>,
 }
 
@@ -106,7 +105,7 @@ static MONSTER_MAP: Lazy<HashMap<String, u32>> = Lazy::new(|| {
         .collect()
 });
 
-/// ✅ Map LuckSack: label -> (com2us_id, collab_id?)
+/// Map LuckSack: label -> (com2us_id, collab_id?)
 /// - le label est celui affiché dans l’autocomplete
 /// - com2us_id est l’ID par défaut
 /// - collab_id sert de fallback si la requête build échoue
@@ -166,7 +165,10 @@ async fn login(username: String, password: String) -> Result<String> {
         HeaderValue::from_static("application/x-www-form-urlencoded"),
     );
     headers.insert(ORIGIN, HeaderValue::from_static("https://m.swranking.com"));
-    headers.insert(REFERER, HeaderValue::from_static("https://m.swranking.com/"));
+    headers.insert(
+        REFERER,
+        HeaderValue::from_static("https://m.swranking.com/"),
+    );
     headers.insert(
         USER_AGENT,
         HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"),
@@ -305,7 +307,7 @@ async fn main() -> Result<()> {
     tokio::fs::write("monsters_elements.json", &monsters_content).await?;
     println!("monsters_elements.json downloaded");
 
-    // ✅ Download lucksack monsters catalog (avec headers identiques aux autres requêtes LuckSack)
+    // Download lucksack monsters catalog (avec headers identiques aux autres requêtes LuckSack)
     let lucksack_catalog_url = "https://static.lucksack.gg/data/monsters_catalog.json";
     let http = reqwest::Client::new();
 
