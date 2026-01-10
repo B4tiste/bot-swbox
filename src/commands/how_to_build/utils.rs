@@ -1,16 +1,8 @@
-// commands/how_to_build/utils.rs
-use std::{collections::HashMap, path::Path};
-
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 
-use serde_json;
-use std::io;
-
-use crate::commands::how_to_build::models::{
-    LucksackBuildResponse, LucksackSeason, MonsterElementList,
-};
+use crate::commands::how_to_build::models::{LucksackBuildResponse, LucksackSeason};
 use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 
 pub async fn get_latest_lucksack_season() -> Result<i32, String> {
@@ -39,22 +31,6 @@ pub async fn get_latest_lucksack_season() -> Result<i32, String> {
         .filter_map(|s| s.season_number)
         .max()
         .ok_or_else(|| "No valid season_number found".to_string())
-}
-
-// ---------------------------
-// Load image mapping (comme avant)
-// ---------------------------
-pub fn load_monster_images<P: AsRef<Path>>(path: P) -> Result<HashMap<String, String>, io::Error> {
-    let content = std::fs::read_to_string(path)?;
-    let monster_list: MonsterElementList = serde_json::from_str(&content)?;
-
-    let map = monster_list
-        .monsters
-        .into_iter()
-        .map(|m| (m.name.to_lowercase(), m.image_filename))
-        .collect();
-
-    Ok(map)
 }
 
 // ---------------------------

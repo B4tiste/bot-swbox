@@ -74,13 +74,12 @@ pub struct LucksackMonsterEntry {
     pub searchable: bool,
     pub element: String,
     pub image: String,
+    pub collab_image: Option<String>,
     pub slabel: String,
     pub slug: String,
     pub com2us_id: String,
-
     pub collab_id: Option<String>,
 }
-
 /// Map statique: name -> com2us_id, pour awaken_level > 0
 static MONSTER_MAP: Lazy<HashMap<String, u32>> = Lazy::new(|| {
     let data = fs::read_to_string("monsters_elements.json")
@@ -105,26 +104,24 @@ static MONSTER_MAP: Lazy<HashMap<String, u32>> = Lazy::new(|| {
         .collect()
 });
 
-/// Map LuckSack: label -> (com2us_id, collab_id?)
-/// - le label est celui affiché dans l’autocomplete
-/// - com2us_id est l’ID par défaut
-/// - collab_id sert de fallback si la requête build échoue
-pub static LUCKSACK_MONSTER_MAP: Lazy<HashMap<String, (i32, Option<i32>)>> = Lazy::new(|| {
-    let data = fs::read_to_string("monsters_catalog.json")
-        .expect("Impossible de lire monsters_catalog.json");
+pub static LUCKSACK_MONSTER_MAP: Lazy<HashMap<String, (i32, Option<i32>, String, Option<String>)>> =
+    Lazy::new(|| {
+        let data = fs::read_to_string("monsters_catalog.json")
+            .expect("Impossible de lire monsters_catalog.json");
 
-    let list: Vec<LucksackMonsterEntry> =
-        serde_json::from_str(&data).expect("Impossible de parser monsters_catalog.json");
+        let list: Vec<LucksackMonsterEntry> =
+            serde_json::from_str(&data).expect("Impossible de parser monsters_catalog.json");
 
-    list.into_iter()
-        .filter(|m| m.searchable)
-        .filter_map(|m| {
-            let id = m.com2us_id.parse::<i32>().ok()?;
-            let collab = m.collab_id.and_then(|s| s.parse::<i32>().ok());
-            Some((m.label, (id, collab)))
-        })
-        .collect()
-});
+        list.into_iter()
+            .filter(|m| m.searchable)
+            .filter_map(|m| {
+                let id = m.com2us_id.parse::<i32>().ok()?;
+                let collab_id = m.collab_id.as_deref().and_then(|s| s.parse::<i32>().ok());
+
+                Some((m.label, (id, collab_id, m.image, m.collab_image)))
+            })
+            .collect()
+    });
 
 /// Fonction asynchrone qui se connecte au service web et retourne le token
 async fn login(username: String, password: String) -> Result<String> {

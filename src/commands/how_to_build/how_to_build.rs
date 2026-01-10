@@ -13,8 +13,10 @@ use crate::{Data, LUCKSACK_MONSTER_MAP};
 
 use crate::commands::how_to_build::utils::{
     build_how_to_build_embed, create_lucksack_rank_buttons, fetch_lucksack_build,
-    get_latest_lucksack_season, load_monster_images,
+    get_latest_lucksack_season,
 };
+
+const LUCKSACK_IMG_BASE_URL: &str = "https://static.lucksack.gg/images/monsters/";
 
 /// Autocomplete basé sur LUCKSACK_MONSTER_MAP (label)
 pub async fn autocomplete_lucksack_monster<'a>(
@@ -83,9 +85,11 @@ pub async fn how_to_build(
 
     let server_name = get_server_name(&ctx).await?;
 
-    // lookup LuckSack : label -> (com2us_id, collab_id?)
-    let (monster_id, collab_id) = match LUCKSACK_MONSTER_MAP.get(&monster_name) {
-        Some(&(id, collab)) => (id, collab),
+    let (monster_id, collab_id, image, collab_image) = match LUCKSACK_MONSTER_MAP.get(&monster_name)
+    {
+        Some((id, collab, image, collab_image)) => {
+            (*id, *collab, image.clone(), collab_image.clone())
+        }
         None => {
             let msg = format!(
                 "❌ Cannot find '{}', please use the autocomplete feature for a perfect match.",
@@ -107,37 +111,8 @@ pub async fn how_to_build(
         }
     };
 
-    // Image swarfarm : on convertit le label LuckSack en clé "Name - Element"
-    let image_data = match load_monster_images("monsters_elements.json") {
-        Ok(data) => data,
-        Err(_) => {
-            let msg = "❌ Failed to load monster image data".to_string();
-            let reply = ctx.send(create_embed_error(&msg)).await?;
-            schedule_message_deletion(reply, ctx).await?;
-
-            send_log(LoggerDocument::new(
-                &ctx.author().name,
-                &"how_to_build".to_string(),
-                &server_name,
-                false,
-                chrono::Utc::now().timestamp(),
-            ))
-            .await?;
-
-            return Ok(());
-        }
-    };
-
-    let swarfarm_key = lucksack_label_to_swarfarm_key(&monster_name);
-    let image_url = swarfarm_key
-        .as_ref()
-        .and_then(|k| image_data.get(&k.to_lowercase()))
-        .map(|filename| {
-            format!(
-                "https://swarfarm.com/static/herders/images/monsters/{}",
-                filename
-            )
-        });
+    // Thumbnail URL basée sur le champ `image` du monsters_catalog.json
+    let mut image_url: Option<String> = Some(format!("{}{}", LUCKSACK_IMG_BASE_URL, image));
 
     // Lucksack ranks:
     // 0 : G3
@@ -154,7 +129,13 @@ pub async fn how_to_build(
             Err(e1) => {
                 if let Some(cid) = collab_id {
                     match fetch_lucksack_build(cid, season, current_rank).await {
-                        Ok(data) => (data, cid),
+                        Ok(data) => {
+                            // si on bascule sur collab, on peut aussi basculer l'image si collab_image existe
+                            if let Some(ci) = collab_image.clone() {
+                                image_url = Some(format!("{}{}", LUCKSACK_IMG_BASE_URL, ci));
+                            }
+                            (data, cid)
+                        }
                         Err(e2) => {
                             let msg =
                                 format!("❌ Error fetching data: {} (collab retry: {})", e1, e2);
@@ -254,6 +235,10 @@ pub async fn how_to_build(
                         match fetch_lucksack_build(cid, season, current_rank).await {
                             Ok(data) => {
                                 effective_monster_id = cid; // on “bascule” définitivement
+                                                            // et si dispo on bascule aussi l'image collab
+                                if let Some(ci) = collab_image.clone() {
+                                    image_url = Some(format!("{}{}", LUCKSACK_IMG_BASE_URL, ci));
+                                }
                                 data
                             }
                             Err(_) => {
@@ -331,15 +316,4 @@ pub async fn how_to_build(
     .await?;
 
     Ok(())
-}
-
-fn lucksack_label_to_swarfarm_key(label: &str) -> Option<String> {
-    // "51LV3R (Light Hacker)" -> "51LV3R - Light"
-    let (name, rest) = label.split_once(" (")?;
-    let element_word = rest.split_whitespace().next()?; // "Light"
-    Some(format!(
-        "{} - {}",
-        name.trim(),
-        element_word.trim_end_matches(')')
-    ))
 }

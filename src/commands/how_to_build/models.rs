@@ -37,14 +37,3 @@ pub struct LucksackArtifactStat {
     pub effect_id: i32,
     pub pickrate: f32,
 }
-
-#[derive(Deserialize)]
-pub struct MonsterElementData {
-    pub name: String,
-    pub image_filename: String,
-}
-
-#[derive(Deserialize)]
-pub struct MonsterElementList {
-    pub monsters: Vec<MonsterElementData>,
-}
