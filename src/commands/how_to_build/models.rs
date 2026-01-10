@@ -1,0 +1,42 @@
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackSeason {
+    pub season_number: Option<i32>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct LucksackBuildResponse {
+    pub rune_sets: Vec<LucksackRuneSet>,
+    pub slot_stats: Vec<LucksackSlotStats>,
+    // on ignore le reste pour le moment (artifact_type, artifact_arch, pickphase, stats...)
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct LucksackRuneSet {
+    pub primary_set: i32,
+    pub secondary_set: Option<i32>,
+    pub tertiary_set: Option<i32>,
+    pub pickrate: f32,
+    pub winrate: f32,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct LucksackSlotStats {
+    pub slot_two: i32,
+    pub slot_four: i32,
+    pub slot_six: i32,
+    pub pickrate: f32,
+    pub winrate: f32,
+}
+
+#[derive(Deserialize)]
+pub struct MonsterElementData {
+    pub name: String,
+    pub image_filename: String,
+}
+
+#[derive(Deserialize)]
+pub struct MonsterElementList {
+    pub monsters: Vec<MonsterElementData>,
+}

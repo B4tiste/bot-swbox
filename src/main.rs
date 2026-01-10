@@ -21,6 +21,7 @@ use std::{collections::HashMap, fs};
 // use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
 use crate::commands::best_pve_teams::best_pve_teams::best_pve_teams;
 use crate::commands::help::help::help;
+use crate::commands::how_to_build::how_to_build::how_to_build;
 use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
 use crate::commands::meta::meta::get_meta;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
@@ -31,7 +32,6 @@ use crate::commands::replays::get_replays::get_replays;
 use crate::commands::rta_core::get_rta_core::get_rta_core;
 use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::upload_json::upload_json::upload_json;
-// use crate::commands::how_to_build::how_to_build::how_to_build;
 // use crate::commands::register::register::register;
 use crate::commands::register::utils::{
     apply_coupons_to_all_users, notify_new_coupons, update_coupon_list,
@@ -68,6 +68,20 @@ struct MonstersFile {
     pub monsters: Vec<MonsterEntry>,
 }
 
+#[derive(Deserialize, Clone)]
+pub struct LucksackMonsterEntry {
+    pub label: String,
+    pub searchable: bool,
+    pub element: String,
+    pub image: String,
+    pub slabel: String,
+    pub slug: String,
+    pub com2us_id: String,
+
+    // ✅ parfois présent
+    pub collab_id: Option<String>,
+}
+
 /// Map statique: name -> com2us_id, pour awaken_level > 0
 static MONSTER_MAP: Lazy<HashMap<String, u32>> = Lazy::new(|| {
     let data = fs::read_to_string("monsters_elements.json")
@@ -92,6 +106,27 @@ static MONSTER_MAP: Lazy<HashMap<String, u32>> = Lazy::new(|| {
         .collect()
 });
 
+/// ✅ Map LuckSack: label -> (com2us_id, collab_id?)
+/// - le label est celui affiché dans l’autocomplete
+/// - com2us_id est l’ID par défaut
+/// - collab_id sert de fallback si la requête build échoue
+pub static LUCKSACK_MONSTER_MAP: Lazy<HashMap<String, (i32, Option<i32>)>> = Lazy::new(|| {
+    let data = fs::read_to_string("monsters_catalog.json")
+        .expect("Impossible de lire monsters_catalog.json");
+
+    let list: Vec<LucksackMonsterEntry> =
+        serde_json::from_str(&data).expect("Impossible de parser monsters_catalog.json");
+
+    list.into_iter()
+        .filter(|m| m.searchable)
+        .filter_map(|m| {
+            let id = m.com2us_id.parse::<i32>().ok()?;
+            let collab = m.collab_id.and_then(|s| s.parse::<i32>().ok());
+            Some((m.label, (id, collab)))
+        })
+        .collect()
+});
+
 /// Fonction asynchrone qui se connecte au service web et retourne le token
 async fn login(username: String, password: String) -> Result<String> {
     // 1) Hash MD5 du mot de passe (comme ta version)
@@ -108,7 +143,10 @@ async fn login(username: String, password: String) -> Result<String> {
     //    (le cookie est stocké automatiquement dans le cookie store)
     client
         .get("https://m.swranking.com/")
-        .header(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"))
+        .header(
+            USER_AGENT,
+            HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"),
+        )
         .send()
         .await
         .context("Preflight GET failed")?
@@ -128,17 +166,14 @@ async fn login(username: String, password: String) -> Result<String> {
         HeaderValue::from_static("application/x-www-form-urlencoded"),
     );
     headers.insert(ORIGIN, HeaderValue::from_static("https://m.swranking.com"));
+    headers.insert(REFERER, HeaderValue::from_static("https://m.swranking.com/"));
     headers.insert(
-        REFERER,
-        HeaderValue::from_static("https://m.swranking.com/"),
+        USER_AGENT,
+        HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"),
     );
-    headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"));
 
     // Headers "client-hint" + Authentication:null que le serveur semble attendre
-    headers.insert(
-        "Authentication",
-        HeaderValue::from_static("null"), // oui, littéral "null"
-    );
+    headers.insert("Authentication", HeaderValue::from_static("null")); // oui, littéral "null"
     headers.insert(
         "sec-ch-ua",
         HeaderValue::from_static(
@@ -264,10 +299,28 @@ async fn main() -> Result<()> {
     });
 
     // Download monsters json (inchangé)
-    let monsters_url = "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json";
+    let monsters_url =
+        "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json";
     let monsters_content = reqwest::get(monsters_url).await?.text().await?;
     tokio::fs::write("monsters_elements.json", &monsters_content).await?;
     println!("monsters_elements.json downloaded");
+
+    // ✅ Download lucksack monsters catalog (avec headers identiques aux autres requêtes LuckSack)
+    let lucksack_catalog_url = "https://static.lucksack.gg/data/monsters_catalog.json";
+    let http = reqwest::Client::new();
+
+    let lucksack_catalog_content = http
+        .get(lucksack_catalog_url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await?
+        .error_for_status()?
+        .text()
+        .await?;
+
+    tokio::fs::write("monsters_catalog.json", &lucksack_catalog_content).await?;
+    println!("monsters_catalog.json downloaded");
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -286,8 +339,8 @@ async fn main() -> Result<()> {
                 best_pve_teams(),
                 support(),
                 services(),
+                how_to_build(),
                 // get_duo_stats(),
-                // how_to_build(),
                 // register(),
             ],
             ..Default::default()

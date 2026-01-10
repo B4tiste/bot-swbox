@@ -517,11 +517,7 @@ pub fn create_player_embed(
     }
 
     // add Approx rank
-    embed = embed.field(
-        "Approx. Rank",
-        rank_emojis,
-        true
-    );
+    embed = embed.field("Approx. Rank", rank_emojis, true);
 
     embed = embed.field(
         "Matches Played",
