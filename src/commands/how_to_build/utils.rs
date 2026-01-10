@@ -227,6 +227,11 @@ fn popularity_stars(pickrate: f32, max_pickrate: f32) -> String {
     let full = raw.round() as usize;
     let empty = 5usize.saturating_sub(full);
 
+    // println!("{}", &format!(
+    //     "Popularity stars: pickrate={} max={} ratio={} => {} full, {} empty",
+    //     pickrate, max_pickrate, ratio, full, empty
+    // ));
+
     let mut s = String::new();
     s.push_str(&"★".repeat(full));
     s.push_str(&"☆".repeat(empty));
@@ -378,8 +383,8 @@ pub fn build_how_to_build_embed(
     let top_sets = format_top_rune_sets(build, 3);
     let top_slots = format_top_slots(build, 3);
 
-    let top_artifact_type = format_top_artifacts(&build.artifact_type, 5);
-    let top_artifact_arch = format_top_artifacts(&build.artifact_arch, 5);
+    let top_artifact_type = format_top_artifacts(&build.artifact_type, 4);
+    let top_artifact_arch = format_top_artifacts(&build.artifact_arch, 4);
 
     // Monster slug is monster_name.split("(")[0] + lowercase and replace spaces with hyphens
     // e.g. "Vendhan (Fire Indra)" -> "vendhan"
