@@ -137,7 +137,7 @@ pub async fn get_monster_matchups_swrt(
 pub async fn extract_matchups_from_json(
     arr: &serde_json::Value,
     collection: &mongodb::Collection<mongodb::bson::Document>,
-    is_high: bool, // ✅ ajoute ce bool pour différencier les structures
+    is_high: bool,
 ) -> Vec<MonsterMatchup> {
     let mut result = vec![];
 
