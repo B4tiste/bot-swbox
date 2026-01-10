@@ -53,7 +53,7 @@ pub async fn autocomplete_lucksack_monster<'a>(
         .take(10)
 }
 
-/// 📂 Look a monster RTA build
+/// 📂 Shows RTA runes and artifacts data for a given monster
 #[poise::command(slash_command)]
 pub async fn how_to_build(
     ctx: poise::ApplicationContext<'_, Data, Error>,
