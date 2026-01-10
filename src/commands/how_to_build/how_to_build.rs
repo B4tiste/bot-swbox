@@ -121,57 +121,63 @@ pub async fn how_to_build(
     // 3 : C1-C3
     let mut current_rank: i32 = 1;
 
-    // fetch initial avec fallback collab_id si la première requête échoue
-    // + on garde l'id effectivement utilisé pour les interactions suivantes
-    let (build, mut effective_monster_id) =
-        match fetch_lucksack_build(monster_id, season, current_rank).await {
-            Ok(data) => (data, monster_id),
-            Err(e1) => {
-                if let Some(cid) = collab_id {
-                    match fetch_lucksack_build(cid, season, current_rank).await {
-                        Ok(data) => {
-                            // si on bascule sur collab, on peut aussi basculer l'image si collab_image existe
-                            if let Some(ci) = collab_image.clone() {
-                                image_url = Some(format!("{}{}", LUCKSACK_IMG_BASE_URL, ci));
-                            }
-                            (data, cid)
-                        }
-                        Err(e2) => {
-                            let msg =
-                                format!("❌ Error fetching data: {} (collab retry: {})", e1, e2);
-                            let reply = ctx.send(create_embed_error(&msg)).await?;
-                            schedule_message_deletion(reply, ctx).await?;
+    // IMPORTANT: si collab_id existe, on l'utilise en priorité
+    let mut effective_monster_id: i32 = collab_id.unwrap_or(monster_id);
 
-                            send_log(LoggerDocument::new(
-                                &ctx.author().name,
-                                &"how_to_build".to_string(),
-                                &server_name,
-                                false,
-                                chrono::Utc::now().timestamp(),
-                            ))
-                            .await?;
+    // si on utilise l'id collab, on bascule aussi l'image si collab_image existe
+    if collab_id.is_some() {
+        if let Some(ci) = collab_image.clone() {
+            image_url = Some(format!("{}{}", LUCKSACK_IMG_BASE_URL, ci));
+        }
+    }
 
-                            return Ok(());
-                        }
+    // fetch initial (collab prioritaire), fallback sur monster_id si collab échoue
+    let build = match fetch_lucksack_build(effective_monster_id, season, current_rank).await {
+        Ok(data) => data,
+        Err(e1) => {
+            // fallback seulement si on était en collab
+            if collab_id.is_some() && effective_monster_id != monster_id {
+                match fetch_lucksack_build(monster_id, season, current_rank).await {
+                    Ok(data) => {
+                        effective_monster_id = monster_id;
+                        image_url = Some(format!("{}{}", LUCKSACK_IMG_BASE_URL, image));
+                        data
                     }
-                } else {
-                    let msg = format!("❌ Error fetching data: {}", e1);
-                    let reply = ctx.send(create_embed_error(&msg)).await?;
-                    schedule_message_deletion(reply, ctx).await?;
+                    Err(e2) => {
+                        let msg = format!("❌ Error fetching data: {} (fallback: {})", e1, e2);
+                        let reply = ctx.send(create_embed_error(&msg)).await?;
+                        schedule_message_deletion(reply, ctx).await?;
 
-                    send_log(LoggerDocument::new(
-                        &ctx.author().name,
-                        &"how_to_build".to_string(),
-                        &server_name,
-                        false,
-                        chrono::Utc::now().timestamp(),
-                    ))
-                    .await?;
+                        send_log(LoggerDocument::new(
+                            &ctx.author().name,
+                            &"how_to_build".to_string(),
+                            &server_name,
+                            false,
+                            chrono::Utc::now().timestamp(),
+                        ))
+                        .await?;
 
-                    return Ok(());
+                        return Ok(());
+                    }
                 }
+            } else {
+                let msg = format!("❌ Error fetching data: {}", e1);
+                let reply = ctx.send(create_embed_error(&msg)).await?;
+                schedule_message_deletion(reply, ctx).await?;
+
+                send_log(LoggerDocument::new(
+                    &ctx.author().name,
+                    &"how_to_build".to_string(),
+                    &server_name,
+                    false,
+                    chrono::Utc::now().timestamp(),
+                ))
+                .await?;
+
+                return Ok(());
             }
-        };
+        }
+    };
 
     let embed = build_how_to_build_embed(
         &monster_name,
@@ -228,49 +234,29 @@ pub async fn how_to_build(
         let build = match fetch_lucksack_build(effective_monster_id, season, current_rank).await {
             Ok(data) => data,
             Err(e) => {
-                // fallback collab seulement si l'id courant n'est PAS déjà le collab_id
-                // (ça évite de re-essayer le même id)
-                if let Some(cid) = collab_id {
-                    if cid != effective_monster_id {
-                        match fetch_lucksack_build(cid, season, current_rank).await {
-                            Ok(data) => {
-                                effective_monster_id = cid; // on “bascule” définitivement
-                                                            // et si dispo on bascule aussi l'image collab
-                                if let Some(ci) = collab_image.clone() {
-                                    image_url = Some(format!("{}{}", LUCKSACK_IMG_BASE_URL, ci));
-                                }
-                                data
-                            }
-                            Err(_) => {
-                                interaction
-                                    .edit_response(
-                                        &ctx.serenity_context.http,
-                                        EditInteractionResponse::new()
-                                            .content(format!("❌ Error fetching data: {}", e))
-                                            .components(vec![create_lucksack_rank_buttons(
-                                                current_rank,
-                                                false,
-                                            )])
-                                            .embeds(vec![]),
-                                    )
-                                    .await?;
-                                continue;
-                            }
+                // ✅ fallback si on était sur collab_id
+                if collab_id.is_some() && effective_monster_id != monster_id {
+                    match fetch_lucksack_build(monster_id, season, current_rank).await {
+                        Ok(data) => {
+                            effective_monster_id = monster_id;
+                            image_url = Some(format!("{}{}", LUCKSACK_IMG_BASE_URL, image));
+                            data
                         }
-                    } else {
-                        interaction
-                            .edit_response(
-                                &ctx.serenity_context.http,
-                                EditInteractionResponse::new()
-                                    .content(format!("❌ Error fetching data: {}", e))
-                                    .components(vec![create_lucksack_rank_buttons(
-                                        current_rank,
-                                        false,
-                                    )])
-                                    .embeds(vec![]),
-                            )
-                            .await?;
-                        continue;
+                        Err(_) => {
+                            interaction
+                                .edit_response(
+                                    &ctx.serenity_context.http,
+                                    EditInteractionResponse::new()
+                                        .content(format!("❌ Error fetching data: {}", e))
+                                        .components(vec![create_lucksack_rank_buttons(
+                                            current_rank,
+                                            false,
+                                        )])
+                                        .embeds(vec![]),
+                                )
+                                .await?;
+                            continue;
+                        }
                     }
                 } else {
                     interaction
