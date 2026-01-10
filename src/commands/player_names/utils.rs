@@ -58,11 +58,6 @@ pub async fn resolve_player_id(
                     return Ok(None);
                 }
             } else if let Some(name) = modal_data.name {
-                // ✅ BONUS: si l’utilisateur a mis un nombre dans "Name", on le considère comme un ID
-                if name.parse::<i64>().is_ok() {
-                    return Ok(Some(name));
-                }
-
                 // Sinon, on tente la recherche SWArena par nom comme avant
                 match get_player_id_by_name(name).await {
                     Ok(id) => return Ok(Some(id)),
