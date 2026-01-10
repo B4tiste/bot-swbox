@@ -380,8 +380,8 @@ pub fn build_how_to_build_embed(
     build: &LucksackBuildResponse,
     image_url: Option<String>,
 ) -> CreateEmbed {
-    let top_sets = format_top_rune_sets(build, 3);
-    let top_slots = format_top_slots(build, 3);
+    let top_sets = format_top_rune_sets(build, 5);
+    let top_slots = format_top_slots(build, 5);
 
     let top_artifact_type = format_top_artifacts(&build.artifact_type, 4);
     let top_artifact_arch = format_top_artifacts(&build.artifact_arch, 4);
