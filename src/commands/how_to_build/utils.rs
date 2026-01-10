@@ -386,16 +386,6 @@ pub fn build_how_to_build_embed(
     let top_artifact_type = format_top_artifacts(&build.artifact_type, 4);
     let top_artifact_arch = format_top_artifacts(&build.artifact_arch, 4);
 
-    // Monster slug is monster_name.split("(")[0] + lowercase and replace spaces with hyphens
-    // e.g. "Vendhan (Fire Indra)" -> "vendhan"
-    let monster_slug = monster_name
-        .split(" (")
-        .next()
-        .unwrap_or(monster_name)
-        .trim()
-        .to_lowercase()
-        .replace(' ', "-");
-
     let mut embed = serenity::CreateEmbed::default()
         .title(format!(
             "How to build - {} - Season {} in {}",
@@ -403,11 +393,7 @@ pub fn build_how_to_build_embed(
             season,
             rank_label(rank)
         ))
-        .description(format!(
-            "See more detailed stats directly on [lucksack.gg/{}](https://lucksack.gg/monster/{})\nData format : Win Rate / Popularity",
-            monster_slug,
-            monster_slug
-        ))
+        .description("See more detailed stats directly on [lucksack.gg](https://lucksack.gg/)\nData format : Win Rate / Popularity")
         .color(serenity::Colour::from_rgb(120, 153, 255))
         .field("Top Rune Sets", top_sets, false)
         .field("Top 2/4/6 Slots", top_slots, false)
