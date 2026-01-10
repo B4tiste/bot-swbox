@@ -116,7 +116,7 @@ pub fn create_replays_embed(
         .field("Players", players_field, false)  // ← insertion du champ
         .field(
             "ℹ️ Tip",
-            "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",
+            "Use the buttons below to view stats for different RTA ranks (P1-P3, G1-G2, G3).",
             false,
         )
         .footer(CreateEmbedFooter::new(
