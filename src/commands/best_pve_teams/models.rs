@@ -61,19 +61,14 @@ pub struct DungeonTeamData {
 
     pub rank: f64,
 
-    #[serde(deserialize_with = "deserialize_runs")]
-    pub runs: Vec<RunData>,
+    pub success_rate: f64,   // 0..1
+    pub mean_time_ms: f64,   // float
 
+    // champs calculés pour ton embed (format attendu)
     #[serde(default)]
-    pub average_time_ms: u32,
+    pub average_time_ms: u32, // int ms
     #[serde(default)]
-    pub success_rate: f64,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct RunData {
-    pub success: bool,
-    pub duration_ms: u32,
+    pub success_rate_pct: f64, // %
 }
 
 impl Dungeon {
@@ -124,37 +119,6 @@ impl Dungeon {
             Dungeon::DarkBeast => "dark-beast",
         }
     }
-}
-
-fn deserialize_runs<'de, D>(deserializer: D) -> Result<Vec<RunData>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    // Chaque run est un tableau JSON: [ts, success, duration, ignored]
-    let raw: Vec<Vec<serde_json::Value>> = Vec::deserialize(deserializer)?;
-
-    let mut out = Vec::with_capacity(raw.len());
-    for row in raw {
-        if row.len() < 3 {
-            continue; // ou return Err(...) si tu veux être strict
-        }
-
-        let success = row[1]
-            .as_bool()
-            .ok_or_else(|| serde::de::Error::custom("runs[i][1] (success) must be bool"))?;
-
-        let duration_ms = row[2]
-            .as_u64()
-            .ok_or_else(|| serde::de::Error::custom("runs[i][2] (duration) must be u64"))?
-            as u32;
-
-        out.push(RunData {
-            success,
-            duration_ms,
-        });
-    }
-
-    Ok(out)
 }
 
 fn deserialize_members_ids<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>

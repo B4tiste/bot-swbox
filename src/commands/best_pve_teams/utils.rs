@@ -89,7 +89,7 @@ pub async fn create_pve_teams_embed(
              Score : {:.2}\n\
              [Runes/Artifacts setup and run time distribution](https://swcalc.cz/team-detail?team={})",
             monsters_line,
-            team.success_rate,
+            team.success_rate_pct,
             avg_str,
             team.rank,
             team.id,
