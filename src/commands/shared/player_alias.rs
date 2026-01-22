@@ -158,6 +158,12 @@ lazy_static! {
                 "en_names": ["Compte montage"],
                 "swarena_id": 2759178,
                 "swrt_id": 19482,
+            },
+            {
+                "og_names": "?",
+                "en_names": ["Compte Hextro"],
+                "swarena_id": 187546,
+                "swrt_id": 4043,
             }
         ]
     });
