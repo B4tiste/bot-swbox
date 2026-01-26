@@ -164,6 +164,12 @@ lazy_static! {
                 "en_names": ["Compte Hextro"],
                 "swarena_id": 187546,
                 "swrt_id": 4043,
+            },
+            {
+                "og_names": "?",
+                "en_names": ["Compte Tagy"],
+                "swarena_id": 2635681,
+                "swrt_id": 383855,
             }
         ]
     });
