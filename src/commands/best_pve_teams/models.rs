@@ -40,6 +40,12 @@ pub enum Dungeon {
     #[name = "Lumel - Cliff of Tough Beast Men"]
     LumelCliff,
 
+    #[name = "Khalderun - Ruin of Silent Death"]
+    KhalderunRuin,
+
+    #[name = "Sacreon - Castle of Forgotten Heroes"]
+    SacreonCastle,
+
     #[name = "Fire Beast"]
     FireBeast,
 
@@ -61,8 +67,8 @@ pub struct DungeonTeamData {
 
     pub rank: f64,
 
-    pub success_rate: f64,   // 0..1
-    pub mean_time_ms: f64,   // float
+    pub success_rate: f64, // 0..1
+    pub mean_time_ms: f64, // float
 
     // champs calculés pour ton embed (format attendu)
     #[serde(default)]
@@ -83,6 +89,8 @@ impl Dungeon {
             Dungeon::KarzhanForest => 2101,
             Dungeon::ElluniaSanctuary => 1101,
             Dungeon::LumelCliff => 3101,
+            Dungeon::KhalderunRuin => 4101,
+            Dungeon::SacreonCastle => 5101,
             Dungeon::FireBeast => 2001,
             Dungeon::DarkBeast => 5001,
         }
@@ -99,6 +107,8 @@ impl Dungeon {
             Dungeon::KarzhanForest => "Karzhan - Forest of Roaring Beasts",
             Dungeon::ElluniaSanctuary => "Ellunia - Sanctuary of Dreaming Fairies",
             Dungeon::LumelCliff => "Lumel - Cliff of Tough Beast Men",
+            Dungeon::KhalderunRuin => "Khalderun - Ruin of Silent Death",
+            Dungeon::SacreonCastle => "Sacreon - Castle of Forgotten Heroes",
             Dungeon::FireBeast => "Fire Beast",
             Dungeon::DarkBeast => "Dark Beast",
         }
@@ -115,6 +125,8 @@ impl Dungeon {
             Dungeon::KarzhanForest => "karzhan",
             Dungeon::ElluniaSanctuary => "ellunia",
             Dungeon::LumelCliff => "lumel",
+            Dungeon::KhalderunRuin => "khalderun",
+            Dungeon::SacreonCastle => "saceron", // To fix to -> sacreon when Mozzes updates it
             Dungeon::FireBeast => "fire-beast",
             Dungeon::DarkBeast => "dark-beast",
         }
