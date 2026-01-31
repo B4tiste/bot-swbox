@@ -136,7 +136,6 @@ async fn login(username: String, password: String) -> Result<String> {
         .context("Failed to build reqwest client with cookie store")?;
 
     // 3) Pré-vol: GET la page pour récupérer JSESSIONID
-    //    (le cookie est stocké automatiquement dans le cookie store)
     client
         .get("https://m.swranking.com/")
         .header(
@@ -149,7 +148,7 @@ async fn login(username: String, password: String) -> Result<String> {
         .error_for_status()
         .context("Preflight GET returned non-success")?;
 
-    // 4) Headers identiques/suffisants pour mimer la requête curl
+    // 4) Headers identiques/suffisants
     let mut headers = HeaderMap::new();
     headers.insert(ACCEPT, HeaderValue::from_static("*/*"));
     headers.insert(
@@ -171,7 +170,7 @@ async fn login(username: String, password: String) -> Result<String> {
         HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"),
     );
 
-    // Headers "client-hint" + Authentication:null que le serveur semble attendre
+    // Headers "client-hint" + Authentication:null 
     headers.insert("Authentication", HeaderValue::from_static("null")); // oui, littéral "null"
     headers.insert(
         "sec-ch-ua",
@@ -191,7 +190,7 @@ async fn login(username: String, password: String) -> Result<String> {
     // 5) Corps de la requête (form-urlencoded)
     let params = [("username", username), ("password", md5_password)];
 
-    // 6) POST /api/login — les cookies (dont JSESSIONID) seront renvoyés automatiquement
+    // 6) POST /api/login
     let resp = client
         .post("https://m.swranking.com/api/login")
         .headers(headers)
@@ -202,7 +201,7 @@ async fn login(username: String, password: String) -> Result<String> {
         .error_for_status()
         .context("POST /api/login returned non-success")?;
 
-    // 7) Parse JSON + extraction du token (comme ta version)
+    // 7) Parse JSON + extraction du token
     let json: serde_json::Value = resp.json().await.context("Invalid JSON body")?;
     if json.get("enMessage").and_then(|v| v.as_str()) == Some("Success") {
         let token = json
@@ -222,7 +221,7 @@ fn env_required(key: &str) -> Result<String> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Charge un fichier .env si présent (pratique en local / raspberry)
+    // Charge un fichier .env si présent
     let _ = dotenv();
 
     let discord_token = env_required("DISCORD_TOKEN")?;
@@ -297,14 +296,14 @@ async fn main() -> Result<()> {
         }
     });
 
-    // Download monsters json (inchangé)
+    // Download monsters json
     let monsters_url =
         "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json";
     let monsters_content = reqwest::get(monsters_url).await?.text().await?;
     tokio::fs::write("monsters_elements.json", &monsters_content).await?;
     println!("monsters_elements.json downloaded");
 
-    // Download lucksack monsters catalog (avec headers identiques aux autres requêtes LuckSack)
+    // Download lucksack monsters catalog
     let lucksack_catalog_url = "https://static.lucksack.gg/data/monsters_catalog.json";
     let http = reqwest::Client::new();
 
@@ -358,7 +357,6 @@ async fn main() -> Result<()> {
         .await
         .context("Failed to build serenity client")?;
 
-    // IMPORTANT : en “Rust classique”, il faut bloquer ici
     client.start().await.context("Client ended")?;
 
     Ok(())
