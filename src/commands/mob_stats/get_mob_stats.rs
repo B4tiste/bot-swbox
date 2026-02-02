@@ -5,8 +5,8 @@ use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Erro
 
 use crate::commands::mob_stats::utils::{
     build_loading_monster_stats_embed, build_monster_stats_embed, create_mob_level_buttons,
-    format_bad_matchups, format_good_matchups, format_good_teams, get_monster_matchups_swrt,
-    get_monster_stats_swrt, get_swrt_settings, get_emoji_from_filename
+    format_bad_matchups, format_good_matchups, format_good_teams, get_emoji_from_filename,
+    get_monster_matchups_swrt, get_monster_stats_swrt, get_swrt_settings,
 };
 use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use crate::commands::shared::embed_error_handling::{

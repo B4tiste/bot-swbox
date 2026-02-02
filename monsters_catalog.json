@@ -361,6 +361,51 @@
         "com2us_id": "18013"
     },
     {
+        "label": "Aragorn",
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0206_1_1.png",
+        "slabel": "Aragorn",
+        "slug": "water-aragorn",
+        "com2us_id": "34611"
+    },
+    {
+        "label": "Aragorn",
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0206_1_3.png",
+        "slabel": "Aragorn",
+        "slug": "wind-aragorn",
+        "com2us_id": "34613"
+    },
+    {
+        "label": "Aragorn",
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0206_1_5.png",
+        "slabel": "Aragorn",
+        "slug": "dark-aragorn",
+        "com2us_id": "34615"
+    },
+    {
+        "label": "Aragorn",
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0206_1_2.png",
+        "slabel": "Aragorn",
+        "slug": "fire-aragorn",
+        "com2us_id": "34612"
+    },
+    {
+        "label": "Aragorn",
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0206_1_4.png",
+        "slabel": "Aragorn",
+        "slug": "light-aragorn",
+        "com2us_id": "34614"
+    },
+    {
         "label": "Arang (Wind Nine-tailed Fox)",
         "searchable": true,
         "element": "Wind",
@@ -5550,6 +5595,15 @@
         "com2us_id": "19415"
     },
     {
+        "label": "Frodo",
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0203_1_1.png",
+        "slabel": "Frodo",
+        "slug": "water-frodo",
+        "com2us_id": "34311"
+    },
+    {
         "label": "Fuco (Wind Lich)",
         "searchable": true,
         "element": "Wind",
@@ -5615,6 +5669,51 @@
         "slabel": "Ganache",
         "slug": "ganache",
         "com2us_id": "27111"
+    },
+    {
+        "label": "Gandalf",
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0204_1_2.png",
+        "slabel": "Gandalf",
+        "slug": "fire-gandalf",
+        "com2us_id": "34412"
+    },
+    {
+        "label": "Gandalf",
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0204_1_3.png",
+        "slabel": "Gandalf",
+        "slug": "wind-gandalf",
+        "com2us_id": "34413"
+    },
+    {
+        "label": "Gandalf",
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0204_1_1.png",
+        "slabel": "Gandalf",
+        "slug": "water-gandalf",
+        "com2us_id": "34411"
+    },
+    {
+        "label": "Gandalf",
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0204_1_4.png",
+        "slabel": "Gandalf",
+        "slug": "light-gandalf",
+        "com2us_id": "34414"
+    },
+    {
+        "label": "Gandalf",
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0204_1_5.png",
+        "slabel": "Gandalf",
+        "slug": "dark-gandalf",
+        "com2us_id": "34415"
     },
     {
         "label": "Gangchun (Water Beast Hunter)",
@@ -7290,6 +7389,51 @@
         "slabel": "Leah",
         "slug": "leah",
         "com2us_id": "24914"
+    },
+    {
+        "label": "Legolas",
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0205_1_2.png",
+        "slabel": "Legolas",
+        "slug": "fire-legolas",
+        "com2us_id": "34712"
+    },
+    {
+        "label": "Legolas",
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0205_1_4.png",
+        "slabel": "Legolas",
+        "slug": "light-legolas",
+        "com2us_id": "34714"
+    },
+    {
+        "label": "Legolas",
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0205_1_1.png",
+        "slabel": "Legolas",
+        "slug": "water-legolas",
+        "com2us_id": "34711"
+    },
+    {
+        "label": "Legolas",
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0205_1_3.png",
+        "slabel": "Legolas",
+        "slug": "wind-legolas",
+        "com2us_id": "34713"
+    },
+    {
+        "label": "Legolas",
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0205_1_5.png",
+        "slabel": "Legolas",
+        "slug": "dark-legolas",
+        "com2us_id": "34715"
     },
     {
         "label": "Leo (Wind Dragon Knight)",

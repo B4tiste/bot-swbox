@@ -1,8 +1,8 @@
 use crate::commands::mob_stats::models::{MonsterMatchup, MonsterRtaInfoData};
 use crate::commands::player_stats::utils::get_mob_emoji_collection;
+use mongodb::{bson::doc, Collection};
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
-use mongodb::{bson::doc, Collection};
 
 pub async fn get_emoji_from_filename(
     collection: &Collection<mongodb::bson::Document>,

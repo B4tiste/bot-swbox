@@ -264,7 +264,11 @@ pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Repl
     let json: Root = res.json().await?;
 
     if !status.is_success() {
-        return Err(anyhow!("Error status {}: {:?}", status, json.data.page.list));
+        return Err(anyhow!(
+            "Error status {}: {:?}",
+            status,
+            json.data.page.list
+        ));
     }
 
     Ok(json.data.page.list)
@@ -289,22 +293,17 @@ static FILENAME_TO_ID: OnceLock<HashMap<String, i32>> = OnceLock::new();
 
 fn get_filename_to_id_map() -> &'static HashMap<String, i32> {
     FILENAME_TO_ID.get_or_init(|| {
-        let file = fs::read_to_string("monsters_elements.json")
-            .expect("monsters_elements.json not found");
+        let file =
+            fs::read_to_string("monsters_elements.json").expect("monsters_elements.json not found");
         let v: Value = serde_json::from_str(&file).expect("invalid monsters_elements.json");
 
-        let arr = v["monsters"]
-            .as_array()
-            .expect("monsters must be an array");
+        let arr = v["monsters"].as_array().expect("monsters must be an array");
 
         let mut map = HashMap::new();
         for m in arr {
             let obtainable = m["obtainable"].as_bool().unwrap_or(false);
             if obtainable {
-                let filename = m["image_filename"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .to_string();
+                let filename = m["image_filename"].as_str().unwrap_or_default().to_string();
                 let com2us_id = m["com2us_id"].as_i64().unwrap_or(0) as i32;
                 if !filename.is_empty() && com2us_id != 0 {
                     map.insert(filename, com2us_id);
@@ -496,13 +495,11 @@ pub fn create_player_embed(
             .field("Rank", details.player_rank.unwrap_or(0).to_string(), true);
     }
 
-    embed = embed
-        .field("Approx. Rank", rank_emojis, true)
-        .field(
-            "Matches Played",
-            details.season_count.unwrap_or(0).to_string(),
-            true,
-        );
+    embed = embed.field("Approx. Rank", rank_emojis, true).field(
+        "Matches Played",
+        details.season_count.unwrap_or(0).to_string(),
+        true,
+    );
 
     for (suffix, text) in ld_fields {
         let name = if suffix.is_empty() {
@@ -530,7 +527,9 @@ pub fn create_player_embed(
         } else {
             ""
         })
-        .footer(CreateEmbedFooter::new("Data is gathered from m.swranking.com"))
+        .footer(CreateEmbedFooter::new(
+            "Data is gathered from m.swranking.com",
+        ))
 }
 
 /* ------------------ Rank emojis ------------------ */
@@ -556,7 +555,11 @@ pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
 
 /* ------------------ Replay image generation ------------------ */
 
-pub async fn create_replay_image(recent_replays: Vec<Replay>, rows: i32, cols: i32) -> Result<PathBuf> {
+pub async fn create_replay_image(
+    recent_replays: Vec<Replay>,
+    rows: i32,
+    cols: i32,
+) -> Result<PathBuf> {
     let nb_battles = recent_replays.len();
 
     let mut sections: Vec<RgbaImage> = Vec::new();
@@ -623,25 +626,39 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, rows: i32, cols: i
 
         let mut final_image = ImageBuffer::new(combined_width, height);
         final_image.copy_from(&img1, 0, 0).unwrap();
-        final_image.copy_from(&img2, img1.width() + spacing, 0).unwrap();
+        final_image
+            .copy_from(&img2, img1.width() + spacing, 0)
+            .unwrap();
 
         let left_text = if battle.player_one.player_score == 0 {
             battle.player_one.player_name.clone()
         } else {
-            format!("{} - {}", battle.player_one.player_score, battle.player_one.player_name)
+            format!(
+                "{} - {}",
+                battle.player_one.player_score, battle.player_one.player_name
+            )
         };
 
         let right_text = if battle.player_two.player_score == 0 {
             battle.player_two.player_name.clone()
         } else {
-            format!("{} - {}", battle.player_two.player_name, battle.player_two.player_score)
+            format!(
+                "{} - {}",
+                battle.player_two.player_name, battle.player_two.player_score
+            )
         };
 
         let date_text = NaiveDateTime::parse_from_str(&battle.date, "%Y-%m-%d %H:%M:%S")
             .map(|dt| dt.date().format("%d-%m-%Y").to_string())
             .unwrap_or_else(|_| battle.date.clone());
 
-        let match_banner = create_match_banner(&left_text, &date_text, &right_text, combined_width, Rgba([0, 0, 0, 0]));
+        let match_banner = create_match_banner(
+            &left_text,
+            &date_text,
+            &right_text,
+            combined_width,
+            Rgba([0, 0, 0, 0]),
+        );
         let banner_height = match_banner.height();
 
         let border_thickness = 10;
@@ -657,7 +674,8 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, rows: i32, cols: i
             _ => Rgba([0, 0, 0, 100]),
         };
 
-        let mut section = ImageBuffer::from_pixel(section_total_width, section_total_height, bg_color);
+        let mut section =
+            ImageBuffer::from_pixel(section_total_width, section_total_height, bg_color);
 
         let mut inner = ImageBuffer::from_pixel(
             section_inner_width,
@@ -668,7 +686,9 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, rows: i32, cols: i
         inner.copy_from(&match_banner, 0, 0).unwrap();
         inner.copy_from(&final_image, 0, banner_height).unwrap();
 
-        section.copy_from(&inner, border_thickness, border_thickness).unwrap();
+        section
+            .copy_from(&inner, border_thickness, border_thickness)
+            .unwrap();
         sections.push(section);
     }
 
@@ -788,7 +808,10 @@ async fn create_team_collage_custom_layout(
     Ok(collage)
 }
 
-async fn load_image_local(filename: &str, cache: &mut HashMap<String, DynamicImage>) -> Result<DynamicImage> {
+async fn load_image_local(
+    filename: &str,
+    cache: &mut HashMap<String, DynamicImage>,
+) -> Result<DynamicImage> {
     if let Some(img) = cache.get(filename) {
         return Ok(img.clone());
     }
@@ -821,13 +844,21 @@ async fn load_image_local(filename: &str, cache: &mut HashMap<String, DynamicIma
                 .with_context(|| format!("Failed to download image from: {}", url))?
                 .bytes()
                 .await
-                .with_context(|| format!("Failed to read downloaded bytes for file: {}", filename))?;
+                .with_context(|| {
+                    format!("Failed to read downloaded bytes for file: {}", filename)
+                })?;
 
             img = image::load_from_memory(&bytes)
                 .with_context(|| format!("Failed to decode downloaded image: {}", filename))?;
         }
         Ok(Err(e)) => return Err(e),
-        Err(e) => return Err(anyhow!("Blocking task failed for file: {}: {}", filename, e)),
+        Err(e) => {
+            return Err(anyhow!(
+                "Blocking task failed for file: {}: {}",
+                filename,
+                e
+            ))
+        }
     }
 
     let img = img.resize_exact(100, 100, image::imageops::FilterType::Lanczos3);
@@ -865,13 +896,37 @@ fn create_match_banner(
 
     let y = 8;
 
-    draw_bold_text_mut(&mut image, Rgba([255, 255, 255, 255]), margin as i32, y, scale, &font, &left);
+    draw_bold_text_mut(
+        &mut image,
+        Rgba([255, 255, 255, 255]),
+        margin as i32,
+        y,
+        scale,
+        &font,
+        &left,
+    );
 
     let center_x: i32 = ((width_f - center_w) / 2.0).round() as i32;
-    draw_bold_text_mut(&mut image, Rgba([255, 255, 255, 255]), center_x, y, scale, &font, &center);
+    draw_bold_text_mut(
+        &mut image,
+        Rgba([255, 255, 255, 255]),
+        center_x,
+        y,
+        scale,
+        &font,
+        &center,
+    );
 
     let right_x: i32 = (width_f - right_w - margin).round() as i32;
-    draw_bold_text_mut(&mut image, Rgba([255, 255, 255, 255]), right_x, y, scale, &font, &right);
+    draw_bold_text_mut(
+        &mut image,
+        Rgba([255, 255, 255, 255]),
+        right_x,
+        y,
+        scale,
+        &font,
+        &right,
+    );
 
     image
 }
@@ -915,7 +970,9 @@ fn fit_text_to_width(font: &FontArc, scale: PxScale, text: &str, max_width: f32)
     }
 
     let mut chars: Vec<char> = s.chars().collect();
-    while !chars.is_empty() && text_width(font, scale, &chars.iter().collect::<String>()) > max_width {
+    while !chars.is_empty()
+        && text_width(font, scale, &chars.iter().collect::<String>()) > max_width
+    {
         chars.pop();
     }
 

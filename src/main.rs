@@ -170,7 +170,7 @@ async fn login(username: String, password: String) -> Result<String> {
         HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"),
     );
 
-    // Headers "client-hint" + Authentication:null 
+    // Headers "client-hint" + Authentication:null
     headers.insert("Authentication", HeaderValue::from_static("null")); // oui, littéral "null"
     headers.insert(
         "sec-ch-ua",
