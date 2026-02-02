@@ -1,7 +1,23 @@
 use crate::commands::mob_stats::models::{MonsterMatchup, MonsterRtaInfoData};
-use crate::commands::player_stats::utils::{get_emoji_from_filename, get_mob_emoji_collection};
+use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
+use mongodb::{bson::doc, Collection};
+
+pub async fn get_emoji_from_filename(
+    collection: &Collection<mongodb::bson::Document>,
+    filename: &str,
+) -> Option<String> {
+    let name_no_ext = filename.replace(".png", "").replace("unit_icon_", "");
+
+    let emoji_doc = collection
+        .find_one(doc! { "name": &name_no_ext })
+        .await
+        .ok()??;
+
+    let id = emoji_doc.get_str("id").ok()?;
+    Some(format!("<:{}:{}>", name_no_ext, id))
+}
 
 pub async fn get_monster_stats_swrt(
     monster_id: i32,
