@@ -12,10 +12,11 @@ use crate::commands::{
     player_stats::utils::{
         create_player_embed, create_replay_image, format_player_ld_monsters_emojis,
         format_player_monsters, get_rank_emojis_for_score, get_recent_replays, get_user_detail,
-        search_users, Player,
+        search_users, parse_discord_mention_to_id, Player,
     },
     shared::{logs::get_server_name, models::LoggerDocument},
 };
+use crate::commands::register::utils::get_user_link;
 use crate::{Data, API_TOKEN};
 
 /// 📂 Displays the RTA stats of the given player. (LD & most used monsters)
@@ -66,16 +67,37 @@ pub(crate) fn get_token() -> Result<String, Error> {
     })
 }
 
-/// Resolve the player to a swrt_player_id:
-/// - if alias known => return it directly
-/// - else search => 0 results => reply + return None
-/// - 1 result => return it
-/// - multiple => show select menu => return selection or None on timeout
 async fn resolve_player_id(
     ctx: &poise::ApplicationContext<'_, Data, Error>,
     token: &str,
     player_name: &str,
 ) -> Result<Option<i64>, Error> {
+
+    // Mention Discord
+    if let Some(discord_id) = parse_discord_mention_to_id(player_name) {
+        let doc_opt = get_user_link(discord_id).await.map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("DB error: {e}"),
+            ))
+        })?;
+
+        let Some(doc) = doc_opt else {
+            ctx.say("❌ This Discord user has no linked account. They must use `/register <account name>` first.")
+                .await?;
+            return Ok(None);
+        };
+
+        let swrt_player_id = doc.get_i64("swrt_player_id").map_err(|_| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Invalid stored swrt_player_id in DB",
+            ))
+        })?;
+
+        return Ok(Some(swrt_player_id));
+    }
+
     // Alias direct
     if let Some(swrt_id) = ALIAS_LOOKUP_MAP.get(&player_name.to_lowercase()) {
         return Ok(Some(*swrt_id));

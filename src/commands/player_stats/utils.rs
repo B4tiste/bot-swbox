@@ -982,3 +982,17 @@ fn fit_text_to_width(font: &FontArc, scale: PxScale, text: &str, max_width: f32)
     }
     result
 }
+
+pub fn parse_discord_mention_to_id(s: &str) -> Option<u64> {
+    // Supporte: <@123> et <@!123>
+    let s = s.trim();
+
+    if !s.starts_with("<@") || !s.ends_with('>') {
+        return None;
+    }
+
+    let inner = &s[2..s.len() - 1]; // retire <@ et >
+    let inner = inner.strip_prefix('!').unwrap_or(inner);
+
+    inner.parse::<u64>().ok()
+}
