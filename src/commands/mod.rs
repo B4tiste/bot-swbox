@@ -5,6 +5,7 @@ pub mod how_to_build;
 pub mod leaderboard;
 pub mod meta;
 pub mod mob_stats;
+pub mod mystats;
 pub mod player_names;
 pub mod player_stats;
 pub mod ranks;

@@ -25,19 +25,21 @@ use crate::commands::how_to_build::how_to_build::how_to_build;
 use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
 use crate::commands::meta::meta::get_meta;
 use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
+use crate::commands::mystats::mystats::mystats;
 use crate::commands::player_names::track_player_names::track_player_names;
 use crate::commands::player_stats::get_player_stats::get_player_stats;
 use crate::commands::ranks::get_ranks::get_ranks;
+use crate::commands::register::register::register;
+use crate::commands::register::unregister::unregister;
 use crate::commands::replays::get_replays::get_replays;
 use crate::commands::rta_core::get_rta_core::get_rta_core;
-use crate::commands::suggestion::send_suggestion::send_suggestion;
-use crate::commands::upload_json::upload_json::upload_json;
-// use crate::commands::register::register::register;
-use crate::commands::register::utils::{
+use crate::commands::services::services::services;
+use crate::commands::shared::coupons::{
     apply_coupons_to_all_users, notify_new_coupons, update_coupon_list,
 };
-use crate::commands::services::services::services;
+use crate::commands::suggestion::send_suggestion::send_suggestion;
 use crate::commands::support::support::support;
+use crate::commands::upload_json::upload_json::upload_json;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -338,8 +340,9 @@ async fn main() -> Result<()> {
                 support(),
                 services(),
                 how_to_build(),
-                // get_duo_stats(),
-                // register(),
+                register(),
+                unregister(),
+                mystats(),
             ],
             ..Default::default()
         })
