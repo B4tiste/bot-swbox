@@ -56,7 +56,7 @@ pub async fn get_player_stats(
 }
 
 /// Centralized token retrieval
-fn get_token() -> Result<String, Error> {
+pub(crate) fn get_token() -> Result<String, Error> {
     let guard = API_TOKEN.lock().unwrap();
     guard.clone().ok_or_else(|| {
         Error::from(std::io::Error::new(
@@ -218,7 +218,7 @@ async fn select_player_from_menu(
 }
 
 /// One single pipeline used for alias / single search result / menu selection
-async fn show_player_stats(
+pub(crate) async fn show_player_stats(
     ctx: &poise::ApplicationContext<'_, Data, Error>,
     token: &str,
     swrt_id: &i64,
