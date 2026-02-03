@@ -32,5 +32,5 @@ pub async fn mystats(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
     })?;
 
     let token = get_token()?;
-    show_player_stats(&ctx, &token, &swrt_player_id).await
+    show_player_stats(&ctx, &token, &swrt_player_id, None).await
 }

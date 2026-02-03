@@ -6,18 +6,24 @@ use serenity::{
     Error,
 };
 
+use crate::commands::register::utils::get_user_link;
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
 use crate::commands::{
     player_stats::utils::{
         create_player_embed, create_replay_image, format_player_ld_monsters_emojis,
         format_player_monsters, get_rank_emojis_for_score, get_recent_replays, get_user_detail,
-        search_users, parse_discord_mention_to_id, Player,
+        parse_discord_mention_to_id, search_users, Player,
     },
     shared::{logs::get_server_name, models::LoggerDocument},
 };
-use crate::commands::register::utils::get_user_link;
 use crate::{Data, API_TOKEN};
+
+/// Résultat de résolution : id + (optionnel) handle du message à éditer (menu)
+struct ResolvedPlayer<'a> {
+    swrt_player_id: i64,
+    reply_handle: Option<poise::ReplyHandle<'a>>,
+}
 
 /// 📂 Displays the RTA stats of the given player. (LD & most used monsters)
 ///
@@ -32,8 +38,8 @@ pub async fn get_player_stats(
     let token = get_token()?;
 
     // 1) Resolve swrt_player_id (alias / search / select)
-    let resolved_id = match resolve_player_id(&ctx, &token, &player_name).await? {
-        Some(id) => id,
+    let resolved = match resolve_player_id(&ctx, &token, &player_name).await? {
+        Some(r) => r,
         None => {
             // resolve_player_id already replied + logged failure if needed
             return Ok(());
@@ -41,7 +47,14 @@ pub async fn get_player_stats(
     };
 
     // 2) Show stats (single pipeline)
-    let result = show_player_stats(&ctx, &token, &resolved_id).await;
+    // Important : on passe le reply_handle, pour réutiliser le message du menu
+    let result = show_player_stats(
+        &ctx,
+        &token,
+        &resolved.swrt_player_id,
+        resolved.reply_handle,
+    )
+    .await;
 
     // 3) Log
     send_log(LoggerDocument::new(
@@ -67,12 +80,11 @@ pub(crate) fn get_token() -> Result<String, Error> {
     })
 }
 
-async fn resolve_player_id(
-    ctx: &poise::ApplicationContext<'_, Data, Error>,
+async fn resolve_player_id<'a>(
+    ctx: &'a poise::ApplicationContext<'a, Data, Error>,
     token: &str,
     player_name: &str,
-) -> Result<Option<i64>, Error> {
-
+) -> Result<Option<ResolvedPlayer<'a>>, Error> {
     // Mention Discord
     if let Some(discord_id) = parse_discord_mention_to_id(player_name) {
         let doc_opt = get_user_link(discord_id).await.map_err(|e| {
@@ -95,12 +107,18 @@ async fn resolve_player_id(
             ))
         })?;
 
-        return Ok(Some(swrt_player_id));
+        return Ok(Some(ResolvedPlayer {
+            swrt_player_id,
+            reply_handle: None,
+        }));
     }
 
     // Alias direct
     if let Some(swrt_id) = ALIAS_LOOKUP_MAP.get(&player_name.to_lowercase()) {
-        return Ok(Some(*swrt_id));
+        return Ok(Some(ResolvedPlayer {
+            swrt_player_id: *swrt_id,
+            reply_handle: None,
+        }));
     }
 
     // Search
@@ -129,19 +147,25 @@ async fn resolve_player_id(
     }
 
     if players.len() == 1 {
-        return Ok(Some(players[0].swrt_player_id));
+        return Ok(Some(ResolvedPlayer {
+            swrt_player_id: players[0].swrt_player_id,
+            reply_handle: None,
+        }));
     }
 
     // Multiple => select menu
     let selected = select_player_from_menu(ctx, &players).await?;
-    Ok(selected)
+    Ok(selected.map(|(id, handle)| ResolvedPlayer {
+        swrt_player_id: id,
+        reply_handle: Some(handle),
+    }))
 }
 
-/// Build select menu, wait for interaction, return selected swrt_player_id or None on timeout
-async fn select_player_from_menu(
-    ctx: &poise::ApplicationContext<'_, Data, Error>,
+/// Build select menu, wait for interaction, return selected swrt_player_id + le handle du message
+async fn select_player_from_menu<'a>(
+    ctx: &'a poise::ApplicationContext<'a, Data, Error>,
     players: &[Player],
-) -> Result<Option<i64>, Error> {
+) -> Result<Option<(i64, poise::ReplyHandle<'a>)>, Error> {
     let options: Vec<CreateSelectMenuOption> = players
         .iter()
         .take(25)
@@ -168,7 +192,7 @@ async fn select_player_from_menu(
         CreateSelectMenu::new("select_player", CreateSelectMenuKind::String { options });
     let action_row = CreateActionRow::SelectMenu(select_menu);
 
-    let msg = ctx
+    let reply_handle = ctx
         .send(CreateReply {
             content: Some(
                 "🧙 Several players match the given username, please select a player :".to_string(),
@@ -210,17 +234,17 @@ async fn select_player_from_menu(
         )
         .await?;
 
-    // Remove components + show loading
-    msg.edit(
-        poise::Context::Application(*ctx),
-        CreateReply {
-            content: Some("<a:loading:1358029412716515418> Retrieving data...".to_string()),
-            components: Some(vec![]),
-            embeds: vec![],
-            ..Default::default()
-        },
-    )
-    .await?;
+    reply_handle
+        .edit(
+            poise::Context::Application(*ctx),
+            CreateReply {
+                content: Some("<a:loading:1358029412716515418> Retrieving data...".to_string()),
+                components: Some(vec![]),
+                embeds: vec![],
+                ..Default::default()
+            },
+        )
+        .await?;
 
     let selected_str = match &component_interaction.data.kind {
         serenity::ComponentInteractionDataKind::StringSelect { values } => {
@@ -236,14 +260,14 @@ async fn select_player_from_menu(
         ))
     })?;
 
-    Ok(Some(selected_id))
+    Ok(Some((selected_id, reply_handle)))
 }
 
-/// One single pipeline used for alias / single search result / menu selection
-pub(crate) async fn show_player_stats(
-    ctx: &poise::ApplicationContext<'_, Data, Error>,
+pub(crate) async fn show_player_stats<'a>(
+    ctx: &'a poise::ApplicationContext<'a, Data, Error>,
     token: &str,
     swrt_id: &i64,
+    existing_reply: Option<poise::ReplyHandle<'a>>,
 ) -> Result<(), Error> {
     // Fetch details
     let details = get_user_detail(token, swrt_id).await.map_err(|e| {
@@ -258,7 +282,7 @@ pub(crate) async fn show_player_stats(
         .await
         .unwrap_or_else(|_| "❓".to_string());
 
-    // 1) Send initial embed (loading)
+    // 1) Embed loading
     let loading_embed = create_player_embed(
         &details,
         vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
@@ -267,12 +291,30 @@ pub(crate) async fn show_player_stats(
         0,
     );
 
-    let reply_handle = ctx
-        .send(CreateReply {
-            embeds: vec![loading_embed],
-            ..Default::default()
-        })
-        .await?;
+    let reply_handle = match existing_reply {
+        Some(handle) => {
+            handle
+                .edit(
+                    poise::Context::Application(*ctx),
+                    CreateReply {
+                        content: None,
+                        embeds: vec![loading_embed],
+                        components: Some(vec![]),
+                        attachments: vec![],
+                        ..Default::default()
+                    },
+                )
+                .await?;
+            handle
+        }
+        None => {
+            ctx.send(CreateReply {
+                embeds: vec![loading_embed],
+                ..Default::default()
+            })
+            .await?
+        }
+    };
 
     // 2) Load extras + replay image
     let ld_emojis = format_player_ld_monsters_emojis(&details).await;
@@ -300,8 +342,10 @@ pub(crate) async fn show_player_stats(
         .edit(
             poise::Context::Application(*ctx),
             CreateReply {
+                content: Some("".to_string()),
                 embeds: vec![updated_embed],
                 attachments: vec![attachment],
+                components: Some(vec![]),
                 ..Default::default()
             },
         )
