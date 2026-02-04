@@ -170,6 +170,12 @@ lazy_static! {
                 "en_names": ["Compte Tagy"],
                 "swarena_id": 2635681,
                 "swrt_id": 383855,
+            },
+            {
+                "og_names": "?",
+                "en_names": ["Branleur"],
+                "swarena_id": 21744282,
+                "swrt_id": 93118800,
             }
         ]
     });
