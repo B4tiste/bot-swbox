@@ -361,51 +361,6 @@
         "com2us_id": "18013"
     },
     {
-        "label": "Aragorn",
-        "searchable": true,
-        "element": "Water",
-        "image": "unit_icon_0206_1_1.png",
-        "slabel": "Aragorn",
-        "slug": "water-aragorn",
-        "com2us_id": "34611"
-    },
-    {
-        "label": "Aragorn",
-        "searchable": true,
-        "element": "Wind",
-        "image": "unit_icon_0206_1_3.png",
-        "slabel": "Aragorn",
-        "slug": "wind-aragorn",
-        "com2us_id": "34613"
-    },
-    {
-        "label": "Aragorn",
-        "searchable": true,
-        "element": "Dark",
-        "image": "unit_icon_0206_1_5.png",
-        "slabel": "Aragorn",
-        "slug": "dark-aragorn",
-        "com2us_id": "34615"
-    },
-    {
-        "label": "Aragorn",
-        "searchable": true,
-        "element": "Fire",
-        "image": "unit_icon_0206_1_2.png",
-        "slabel": "Aragorn",
-        "slug": "fire-aragorn",
-        "com2us_id": "34612"
-    },
-    {
-        "label": "Aragorn",
-        "searchable": true,
-        "element": "Light",
-        "image": "unit_icon_0206_1_4.png",
-        "slabel": "Aragorn",
-        "slug": "light-aragorn",
-        "com2us_id": "34614"
-    },
-    {
         "label": "Arang (Wind Nine-tailed Fox)",
         "searchable": true,
         "element": "Wind",
@@ -1655,6 +1610,15 @@
         "com2us_id": "20405"
     },
     {
+        "label": "Dark Aragorn",
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0206_1_5.png",
+        "slabel": "Dark Aragorn",
+        "slug": "dark-aragorn",
+        "com2us_id": "34615"
+    },
+    {
         "label": "Dark Arcane Weapon",
         "searchable": false,
         "element": "Dark",
@@ -2120,6 +2084,15 @@
         "com2us_id": "20805"
     },
     {
+        "label": "Dark Gandalf",
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0204_1_5.png",
+        "slabel": "Dark Gandalf",
+        "slug": "dark-gandalf",
+        "com2us_id": "34415"
+    },
+    {
         "label": "Dark Gargoyle",
         "searchable": false,
         "element": "Dark",
@@ -2419,6 +2392,15 @@
         "slabel": "Dark Kung Fu Girl",
         "slug": "dark-kung-fu-girl",
         "com2us_id": "17305"
+    },
+    {
+        "label": "Dark Legolas",
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0205_1_5.png",
+        "slabel": "Dark Legolas",
+        "slug": "dark-legolas",
+        "com2us_id": "34715"
     },
     {
         "label": "Dark Lich",
@@ -3929,6 +3911,15 @@
         "com2us_id": "20402"
     },
     {
+        "label": "Fire Aragorn",
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0206_1_2.png",
+        "slabel": "Fire Aragorn",
+        "slug": "fire-aragorn",
+        "com2us_id": "34612"
+    },
+    {
         "label": "Fire Arcane Weapon",
         "searchable": false,
         "element": "Fire",
@@ -4405,6 +4396,15 @@
         "com2us_id": "20802"
     },
     {
+        "label": "Fire Gandalf",
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0204_1_2.png",
+        "slabel": "Fire Gandalf",
+        "slug": "fire-gandalf",
+        "com2us_id": "34412"
+    },
+    {
         "label": "Fire Gargoyle",
         "searchable": false,
         "element": "Fire",
@@ -4693,6 +4693,15 @@
         "slabel": "Fire Kung Fu Girl",
         "slug": "fire-kung-fu-girl",
         "com2us_id": "17302"
+    },
+    {
+        "label": "Fire Legolas",
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0205_1_2.png",
+        "slabel": "Fire Legolas",
+        "slug": "fire-legolas",
+        "com2us_id": "34712"
     },
     {
         "label": "Fire Lich",
@@ -5595,15 +5604,6 @@
         "com2us_id": "19415"
     },
     {
-        "label": "Frodo",
-        "searchable": true,
-        "element": "Water",
-        "image": "unit_icon_0203_1_1.png",
-        "slabel": "Frodo",
-        "slug": "water-frodo",
-        "com2us_id": "34311"
-    },
-    {
         "label": "Fuco (Wind Lich)",
         "searchable": true,
         "element": "Wind",
@@ -5669,51 +5669,6 @@
         "slabel": "Ganache",
         "slug": "ganache",
         "com2us_id": "27111"
-    },
-    {
-        "label": "Gandalf",
-        "searchable": true,
-        "element": "Fire",
-        "image": "unit_icon_0204_1_2.png",
-        "slabel": "Gandalf",
-        "slug": "fire-gandalf",
-        "com2us_id": "34412"
-    },
-    {
-        "label": "Gandalf",
-        "searchable": true,
-        "element": "Wind",
-        "image": "unit_icon_0204_1_3.png",
-        "slabel": "Gandalf",
-        "slug": "wind-gandalf",
-        "com2us_id": "34413"
-    },
-    {
-        "label": "Gandalf",
-        "searchable": true,
-        "element": "Water",
-        "image": "unit_icon_0204_1_1.png",
-        "slabel": "Gandalf",
-        "slug": "water-gandalf",
-        "com2us_id": "34411"
-    },
-    {
-        "label": "Gandalf",
-        "searchable": true,
-        "element": "Light",
-        "image": "unit_icon_0204_1_4.png",
-        "slabel": "Gandalf",
-        "slug": "light-gandalf",
-        "com2us_id": "34414"
-    },
-    {
-        "label": "Gandalf",
-        "searchable": true,
-        "element": "Dark",
-        "image": "unit_icon_0204_1_5.png",
-        "slabel": "Gandalf",
-        "slug": "dark-gandalf",
-        "com2us_id": "34415"
     },
     {
         "label": "Gangchun (Water Beast Hunter)",
@@ -7391,51 +7346,6 @@
         "com2us_id": "24914"
     },
     {
-        "label": "Legolas",
-        "searchable": true,
-        "element": "Fire",
-        "image": "unit_icon_0205_1_2.png",
-        "slabel": "Legolas",
-        "slug": "fire-legolas",
-        "com2us_id": "34712"
-    },
-    {
-        "label": "Legolas",
-        "searchable": true,
-        "element": "Light",
-        "image": "unit_icon_0205_1_4.png",
-        "slabel": "Legolas",
-        "slug": "light-legolas",
-        "com2us_id": "34714"
-    },
-    {
-        "label": "Legolas",
-        "searchable": true,
-        "element": "Water",
-        "image": "unit_icon_0205_1_1.png",
-        "slabel": "Legolas",
-        "slug": "water-legolas",
-        "com2us_id": "34711"
-    },
-    {
-        "label": "Legolas",
-        "searchable": true,
-        "element": "Wind",
-        "image": "unit_icon_0205_1_3.png",
-        "slabel": "Legolas",
-        "slug": "wind-legolas",
-        "com2us_id": "34713"
-    },
-    {
-        "label": "Legolas",
-        "searchable": true,
-        "element": "Dark",
-        "image": "unit_icon_0205_1_5.png",
-        "slabel": "Legolas",
-        "slug": "dark-legolas",
-        "com2us_id": "34715"
-    },
-    {
         "label": "Leo (Wind Dragon Knight)",
         "searchable": true,
         "element": "Wind",
@@ -7506,6 +7416,15 @@
         "slabel": "Light Anubis",
         "slug": "light-anubis",
         "com2us_id": "20404"
+    },
+    {
+        "label": "Light Aragorn",
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0206_1_4.png",
+        "slabel": "Light Aragorn",
+        "slug": "light-aragorn",
+        "com2us_id": "34614"
     },
     {
         "label": "Light Arcane Weapon",
@@ -7982,6 +7901,15 @@
         "com2us_id": "20804"
     },
     {
+        "label": "Light Gandalf",
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0204_1_4.png",
+        "slabel": "Light Gandalf",
+        "slug": "light-gandalf",
+        "com2us_id": "34414"
+    },
+    {
         "label": "Light Gargoyle",
         "searchable": false,
         "element": "Light",
@@ -8252,6 +8180,15 @@
         "slabel": "Light Kung Fu Girl",
         "slug": "light-kung-fu-girl",
         "com2us_id": "17304"
+    },
+    {
+        "label": "Light Legolas",
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0205_1_4.png",
+        "slabel": "Light Legolas",
+        "slug": "light-legolas",
+        "com2us_id": "34714"
     },
     {
         "label": "Light Lich",
@@ -12340,6 +12277,15 @@
         "com2us_id": "20401"
     },
     {
+        "label": "Water Aragorn",
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0206_1_1.png",
+        "slabel": "Water Aragorn",
+        "slug": "water-aragorn",
+        "com2us_id": "34611"
+    },
+    {
         "label": "Water Arcane Weapon",
         "searchable": false,
         "element": "Water",
@@ -12805,6 +12751,24 @@
         "com2us_id": "20801"
     },
     {
+        "label": "Water Frodo",
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0203_1_1.png",
+        "slabel": "Water Frodo",
+        "slug": "water-frodo",
+        "com2us_id": "34311"
+    },
+    {
+        "label": "Water Gandalf",
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0204_1_1.png",
+        "slabel": "Water Gandalf",
+        "slug": "water-gandalf",
+        "com2us_id": "34411"
+    },
+    {
         "label": "Water Gargoyle",
         "searchable": false,
         "element": "Water",
@@ -13093,6 +13057,15 @@
         "slabel": "Water Kung Fu Girl",
         "slug": "water-kung-fu-girl",
         "com2us_id": "17301"
+    },
+    {
+        "label": "Water Legolas",
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0205_1_1.png",
+        "slabel": "Water Legolas",
+        "slug": "water-legolas",
+        "com2us_id": "34711"
     },
     {
         "label": "Water Lich",
@@ -13984,6 +13957,15 @@
         "com2us_id": "20403"
     },
     {
+        "label": "Wind Aragorn",
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0206_1_3.png",
+        "slabel": "Wind Aragorn",
+        "slug": "wind-aragorn",
+        "com2us_id": "34613"
+    },
+    {
         "label": "Wind Arcane Weapon",
         "searchable": false,
         "element": "Wind",
@@ -14460,6 +14442,15 @@
         "com2us_id": "20803"
     },
     {
+        "label": "Wind Gandalf",
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0204_1_3.png",
+        "slabel": "Wind Gandalf",
+        "slug": "wind-gandalf",
+        "com2us_id": "34413"
+    },
+    {
         "label": "Wind Gargoyle",
         "searchable": false,
         "element": "Wind",
@@ -14748,6 +14739,15 @@
         "slabel": "Wind Kung Fu Girl",
         "slug": "wind-kung-fu-girl",
         "com2us_id": "17303"
+    },
+    {
+        "label": "Wind Legolas",
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0205_1_3.png",
+        "slabel": "Wind Legolas",
+        "slug": "wind-legolas",
+        "com2us_id": "34713"
     },
     {
         "label": "Wind Lich",
