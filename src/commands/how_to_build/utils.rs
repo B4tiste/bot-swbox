@@ -373,8 +373,8 @@ pub fn build_how_to_build_embed(
         .color(serenity::Colour::from_rgb(120, 153, 255))
         .field("Top Rune Sets", top_sets, false)
         .field("Top 2/4/6 Slots", top_slots, false)
-        .field("Top Type Artifacts", top_artifact_type, false)
-        .field("Top Artifacts (Archetype)", top_artifact_arch, false)
+        .field("Top Left Artifacts (Element)", top_artifact_type, false)
+        .field("Top Right Artifacts (Type)", top_artifact_arch, false)
         .footer(CreateEmbedFooter::new("Data is gathered from lucksack.gg"));
 
     if let Some(url) = image_url {
