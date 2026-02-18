@@ -2147,6 +2147,15 @@
         "com2us_id": "11405"
     },
     {
+        "label": "Dark Gollum",
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0207_1_5.png",
+        "slabel": "Dark Gollum",
+        "slug": "dark-gollum",
+        "com2us_id": "34815"
+    },
+    {
         "label": "Dark Griffon",
         "searchable": false,
         "element": "Dark",
@@ -4457,6 +4466,15 @@
         "slabel": "Fire Golem",
         "slug": "fire-golem",
         "com2us_id": "11402"
+    },
+    {
+        "label": "Fire Gollum",
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0207_1_2.png",
+        "slabel": "Fire Gollum",
+        "slug": "fire-gollum",
+        "com2us_id": "34812"
     },
     {
         "label": "Fire Griffon",
@@ -7953,6 +7971,15 @@
         "slabel": "Light Golem",
         "slug": "light-golem",
         "com2us_id": "11404"
+    },
+    {
+        "label": "Light Gollum",
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0207_1_4.png",
+        "slabel": "Light Gollum",
+        "slug": "light-gollum",
+        "com2us_id": "34814"
     },
     {
         "label": "Light Griffon",
@@ -12823,6 +12850,15 @@
         "com2us_id": "11401"
     },
     {
+        "label": "Water Gollum",
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0207_1_1.png",
+        "slabel": "Water Gollum",
+        "slug": "water-gollum",
+        "com2us_id": "34811"
+    },
+    {
         "label": "Water Griffon",
         "searchable": false,
         "element": "Water",
@@ -14503,6 +14539,15 @@
         "slabel": "Wind Golem",
         "slug": "wind-golem",
         "com2us_id": "11403"
+    },
+    {
+        "label": "Wind Gollum",
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0207_1_3.png",
+        "slabel": "Wind Gollum",
+        "slug": "wind-gollum",
+        "com2us_id": "34813"
     },
     {
         "label": "Wind Griffon",
