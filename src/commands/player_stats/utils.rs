@@ -105,6 +105,31 @@ struct PlayerDetailWrapper {
     season_count: Option<i32>,
 }
 
+/* ------------------ personOneMonsterList types ------------------ */
+
+#[derive(Debug, Deserialize)]
+pub struct PersonOneMonsterListResponse {
+    pub data: Option<PersonOneMonsterListData>,
+    #[serde(rename = "enMessage")]
+    pub en_message: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PersonOneMonsterListData {
+    #[serde(rename = "opptPlayerMonsters")]
+    pub oppt_player_monsters: Option<Vec<PersonMonsterStat>>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct PersonMonsterStat {
+    #[serde(rename = "monsterImg")]
+    pub monster_img: String,
+    #[serde(rename = "pickTotal")]
+    pub pick_total: i32,
+    #[serde(rename = "winRate")]
+    pub win_rate: f32,
+}
+
 /* ------------------ Replay types ------------------ */
 
 #[derive(Debug, Deserialize)]
@@ -274,6 +299,42 @@ pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Repl
     Ok(json.data.page.list)
 }
 
+pub async fn get_person_one_monster_list(
+    token: &str,
+    swrt_player_id: i64,
+    season: i64,
+) -> Result<PersonOneMonsterListData> {
+    let mut url = format!(
+        "https://m.swranking.com/api/player/personOneMonsterList?swrtPlayerId={}",
+        swrt_player_id
+    );
+
+    url.push_str(&format!("&season={}&version=", season));
+
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("Authentication", token)
+        .header("Content-Type", "application/json")
+        .send()
+        .await?;
+
+    let status = res.status();
+    let resp_json: PersonOneMonsterListResponse = res.json().await?;
+
+    if !status.is_success() {
+        return Err(anyhow!(
+            "Error status {}: {:?}",
+            status,
+            resp_json.en_message
+        ));
+    }
+
+    resp_json
+        .data
+        .ok_or_else(|| anyhow!("personOneMonsterList: missing data"))
+}
+
 /* ------------------ Mongo / emojis helpers ------------------ */
 
 pub async fn get_mob_emoji_collection() -> Result<Collection<mongodb::bson::Document>> {
@@ -410,12 +471,99 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     output
 }
 
+pub async fn format_opponent_monsters_worst5(
+    details: &PlayerDetail,
+    data: &PersonOneMonsterListData,
+) -> Vec<String> {
+    let mut out = vec![];
+
+    let Ok(collection) = get_mob_emoji_collection().await else {
+        return out;
+    };
+    let filename_to_id = get_filename_to_id_map();
+
+    let total_games = details.season_count.unwrap_or(0);
+    if total_games <= 0 {
+        out.push("None (no season_count data)".to_string());
+        return out;
+    }
+
+    let min_pick = ((total_games as f32) * 0.05).ceil() as i32;
+
+    let Some(list) = data.oppt_player_monsters.as_ref() else {
+        out.push("None".to_string());
+        return out;
+    };
+
+    let mut filtered: Vec<PersonMonsterStat> = list
+        .iter()
+        .cloned()
+        .filter(|m| m.pick_total >= min_pick)
+        .collect();
+
+    // sort by worst WR first
+    filtered.sort_by(|a, b| {
+        a.win_rate
+            .partial_cmp(&b.win_rate)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    for (idx, m) in filtered.into_iter().take(10).enumerate() {
+        if let Some(&monster_id) = filename_to_id.get(&m.monster_img) {
+            let remapped_id = remap_monster_id(monster_id);
+
+            let emoji_doc = collection
+                .find_one(doc! { "com2us_id": remapped_id })
+                .await
+                .ok()
+                .flatten();
+
+            if let Some(emoji_doc) = emoji_doc {
+                if let Ok(id) = emoji_doc.get_str("id") {
+                    let name = emoji_doc.get_str("name").unwrap_or("unit");
+                    let emoji = format!("<:{}:{}>", name, id);
+
+                    let pick_display = if m.pick_total >= 1000 {
+                        let k = m.pick_total / 1000;
+                        let remainder = (m.pick_total % 1000) / 100;
+                        if remainder == 0 {
+                            format!("{}k", k)
+                        } else {
+                            format!("{}k{}", k, remainder)
+                        }
+                    } else {
+                        m.pick_total.to_string()
+                    };
+
+                    out.push(format!(
+                        "{}. {} {} picks, **{:.1} %** WR\n",
+                        idx + 1,
+                        emoji,
+                        pick_display,
+                        m.win_rate
+                    ));
+                }
+            }
+        }
+    }
+
+    if out.is_empty() {
+        out.push(format!(
+            "None (no opponent units meet the threshold: {} picks)",
+            min_pick
+        ));
+    }
+
+    out
+}
+
 /* ------------------ Embed ------------------ */
 
 pub fn create_player_embed(
     details: &PlayerDetail,
     ld_emojis: Vec<String>,
     top_monsters: Vec<String>,
+    worst_opponents: Vec<String>,
     rank_emojis: String,
     has_image: i32,
 ) -> CreateEmbed {
@@ -462,6 +610,7 @@ pub fn create_player_embed(
 
     let ld_fields = format_emojis_with_split(ld_emojis);
     let top_fields = format_emojis_with_split(top_monsters);
+    let opp_fields = format_emojis_with_split(worst_opponents);
 
     let gifs = vec![
         "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif",
@@ -516,7 +665,16 @@ pub fn create_player_embed(
         } else {
             format!("🔥 Most Used Units Winrate {}", suffix)
         };
-        embed = embed.field(name, text, false);
+        embed = embed.field(name, text, true);
+    }
+
+    for (suffix, text) in opp_fields {
+        let name = if suffix.is_empty() {
+            "😈 Opponent units - worst WR (≥5% matches)".to_string()
+        } else {
+            format!("😈 Opponent units - worst WR (≥5% matches) {}", suffix)
+        };
+        embed = embed.field(name, text, true);
     }
 
     embed
@@ -555,11 +713,7 @@ pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
 
 /* ------------------ Replay image generation ------------------ */
 
-pub async fn create_replay_image(
-    recent_replays: Vec<Replay>,
-    rows: i32,
-    cols: i32,
-) -> Result<PathBuf> {
+pub async fn create_replay_image(recent_replays: Vec<Replay>, rows: i32, cols: i32) -> Result<PathBuf> {
     let nb_battles = recent_replays.len();
 
     let mut sections: Vec<RgbaImage> = Vec::new();
@@ -633,19 +787,13 @@ pub async fn create_replay_image(
         let left_text = if battle.player_one.player_score == 0 {
             battle.player_one.player_name.clone()
         } else {
-            format!(
-                "{} - {}",
-                battle.player_one.player_score, battle.player_one.player_name
-            )
+            format!("{} - {}", battle.player_one.player_score, battle.player_one.player_name)
         };
 
         let right_text = if battle.player_two.player_score == 0 {
             battle.player_two.player_name.clone()
         } else {
-            format!(
-                "{} - {}",
-                battle.player_two.player_name, battle.player_two.player_score
-            )
+            format!("{} - {}", battle.player_two.player_name, battle.player_two.player_score)
         };
 
         let date_text = NaiveDateTime::parse_from_str(&battle.date, "%Y-%m-%d %H:%M:%S")
@@ -844,9 +992,7 @@ async fn load_image_local(
                 .with_context(|| format!("Failed to download image from: {}", url))?
                 .bytes()
                 .await
-                .with_context(|| {
-                    format!("Failed to read downloaded bytes for file: {}", filename)
-                })?;
+                .with_context(|| format!("Failed to read downloaded bytes for file: {}", filename))?;
 
             img = image::load_from_memory(&bytes)
                 .with_context(|| format!("Failed to decode downloaded image: {}", filename))?;
@@ -970,8 +1116,7 @@ fn fit_text_to_width(font: &FontArc, scale: PxScale, text: &str, max_width: f32)
     }
 
     let mut chars: Vec<char> = s.chars().collect();
-    while !chars.is_empty()
-        && text_width(font, scale, &chars.iter().collect::<String>()) > max_width
+    while !chars.is_empty() && text_width(font, scale, &chars.iter().collect::<String>()) > max_width
     {
         chars.pop();
     }
