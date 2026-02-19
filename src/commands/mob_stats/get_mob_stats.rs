@@ -128,20 +128,28 @@ pub async fn get_mob_stats(
         .await
         .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
+    let collection = get_mob_emoji_collection()
+        .await
+        .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+
+    let monster_emoji = get_emoji_from_filename(&collection, &stats.image_filename)
+        .await
+        .unwrap_or("❓".to_string());
+
     let initial_embed = build_monster_stats_embed(&stats, season, current_level)
         .await
         .field(
-            "📈 Best Teammates",
+            format!("📈 Best {} Teammates", monster_emoji),
             "<a:loading:1358029412716515418> Loading...",
             false,
         )
         .field(
-            "📈 Best Matchups",
+            format!("📈 Best {} Matchups", monster_emoji),
             "<a:loading:1358029412716515418> Loading...",
             true,
         )
         .field(
-            "📉 Worst Matchups",
+            format!("📉 Worst {} Matchups", monster_emoji),
             "<a:loading:1358029412716515418> Loading...",
             true,
         )
@@ -177,23 +185,15 @@ pub async fn get_mob_stats(
             .await
             .unwrap_or((vec![], vec![], vec![]));
 
-    let collection = get_mob_emoji_collection()
-        .await
-        .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
-
-    let monster_emoji = get_emoji_from_filename(&collection, &stats.image_filename)
-        .await
-        .unwrap_or("❓".to_string());
-
-    let good_teams = format_good_teams(&monster_emoji, &high_teams);
-    let good_matchups = format_good_matchups(&monster_emoji, &high_matchups);
-    let bad_matchups = format_bad_matchups(&monster_emoji, &low_matchups);
+    let good_teams = format_good_teams(&high_teams);
+    let good_matchups = format_good_matchups(&high_matchups);
+    let bad_matchups = format_bad_matchups(&low_matchups);
 
     let updated_embed = build_monster_stats_embed(&stats, season, current_level)
         .await
-        .field("📈 Best Teammates", good_teams, false)
-        .field("📈 Best Matchups", good_matchups, true)
-        .field("📉 Worst Matchups", bad_matchups, true)
+        .field(format!("📈 Best {} Teammates", monster_emoji), good_teams, false)
+        .field(format!("📈 Best {} Matchups", monster_emoji), good_matchups, true)
+        .field(format!("📉 Worst {} Matchups", monster_emoji), bad_matchups, true)
         .field(
             "ℹ️ Tip",
             "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",
@@ -240,6 +240,7 @@ pub async fn get_mob_stats(
         current_level = selected_level;
 
         let loading_embed = build_loading_monster_stats_embed(
+            monster_emoji.clone(),
             &stats.monster_name,
             &stats.image_filename,
             season,
@@ -296,15 +297,15 @@ pub async fn get_mob_stats(
             .await
             .unwrap_or("❓".to_string());
 
-        let good_teams = format_good_teams(&monster_emoji, &high_teams);
-        let good_matchups = format_good_matchups(&monster_emoji, &high_matchups);
-        let bad_matchups = format_bad_matchups(&monster_emoji, &low_matchups);
+        let good_teams = format_good_teams(&high_teams);
+        let good_matchups = format_good_matchups(&high_matchups);
+        let bad_matchups = format_bad_matchups(&low_matchups);
 
         let final_embed = build_monster_stats_embed(&new_stats, season, current_level)
             .await
-            .field("📈 Dream Teams", good_teams, false)
-            .field("📈 Best Matchups", good_matchups, true)
-            .field("📉 Worst Matchups", bad_matchups, true)
+            .field(format!("📈 Best {} Teammates", monster_emoji), good_teams, false)
+            .field(format!("📈 Best {} Matchups", monster_emoji), good_matchups, true)
+            .field(format!("📉 Worst {} Matchups", monster_emoji), bad_matchups, true)
             .field(
                 "ℹ️ Tip",
                 "Use the buttons below to view stats for different RTA ranks (C1-C3, P1-P3, G1-G2, G3).",

@@ -215,7 +215,7 @@ fn truncate_entries_safely(entries: Vec<String>, max_len: usize) -> String {
     result
 }
 
-pub fn format_good_teams(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
+pub fn format_good_teams(matchups: &[MonsterMatchup]) -> String {
     if matchups.is_empty() {
         return "No good teammates data.".to_string();
     }
@@ -226,9 +226,8 @@ pub fn format_good_teams(monster_emoji: &str, matchups: &[MonsterMatchup]) -> St
         .map(|(i, m)| {
             let pick_display = format_pick_total(m.pick_total);
             format!(
-                "{}. {} + {} {} **{:.1} %**/{}",
+                "{}. {} {} **{:.1} %**/{}",
                 i + 1,
-                monster_emoji,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
                 m.win_rate,
@@ -240,7 +239,7 @@ pub fn format_good_teams(monster_emoji: &str, matchups: &[MonsterMatchup]) -> St
     truncate_entries_safely(entries, 1024)
 }
 
-pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
+pub fn format_good_matchups(matchups: &[MonsterMatchup]) -> String {
     if matchups.is_empty() {
         return "No good matchup data.".to_string();
     }
@@ -251,9 +250,8 @@ pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) ->
         .map(|(i, m)| {
             let pick_display = format_pick_total(m.pick_total);
             format!(
-                "{}. {} → {} {} **{:.1} %**/{}",
+                "{}. {} {} **{:.1} %**/{}",
                 i + 1,
-                monster_emoji,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
                 m.win_rate,
@@ -265,7 +263,7 @@ pub fn format_good_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) ->
     truncate_entries_safely(entries, 1024)
 }
 
-pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> String {
+pub fn format_bad_matchups(matchups: &[MonsterMatchup]) -> String {
     if matchups.is_empty() {
         return "No bad matchup data.".to_string();
     }
@@ -276,11 +274,10 @@ pub fn format_bad_matchups(monster_emoji: &str, matchups: &[MonsterMatchup]) -> 
         .map(|(i, m)| {
             let pick_display = format_pick_total(m.pick_total);
             format!(
-                "{}. {} {} → {} **{:.1} %**/{}",
+                "{}. {} {} **{:.1} %**/{}",
                 i + 1,
                 m.emoji1.clone().unwrap_or("❓".to_string()),
                 m.emoji2.clone().unwrap_or("❓".to_string()),
-                monster_emoji,
                 100.0 - m.win_rate,
                 pick_display,
             )
@@ -361,6 +358,7 @@ pub async fn build_monster_stats_embed(
 }
 
 pub async fn build_loading_monster_stats_embed(
+    monster_emoji: String,
     monster_name: &str,
     image_filename: &str,
     season: i64,
@@ -408,17 +406,17 @@ pub async fn build_loading_monster_stats_embed(
             true,
         )
         .field(
-            "📈 Best Teammates",
+            format!("📈 Best {} Teammates", monster_emoji),
             "<a:loading:1358029412716515418> Loading...",
             false,
         )
         .field(
-            "📈 Best Matchups",
+            format!("📈 Best {} Matchups", monster_emoji),
             "<a:loading:1358029412716515418> Loading...",
             true,
         )
         .field(
-            "📉 Worst Matchups",
+            format!("📉 Worst {} Matchups", monster_emoji),
             "<a:loading:1358029412716515418> Loading...",
             true,
         )
