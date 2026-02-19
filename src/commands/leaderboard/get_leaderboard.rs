@@ -6,10 +6,14 @@ use serenity::{
 };
 
 use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlayer};
+use crate::commands::mob_stats::utils::get_swrt_settings;
 use crate::commands::player_stats::utils::{
-    create_player_embed, format_player_ld_monsters_emojis, format_player_monsters,
-    get_rank_emojis_for_score, get_user_detail,
+    create_player_embed, format_opponent_monsters_worst5, format_player_ld_monsters_emojis,
+    format_player_monsters, get_person_one_monster_list, get_rank_emojis_for_score,
+    get_user_detail,
 };
+use crate::commands::shared::embed_error_handling::create_embed_error;
+use crate::commands::shared::embed_error_handling::schedule_message_deletion;
 use crate::commands::shared::logs::get_server_name;
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::models::LoggerDocument;
@@ -69,6 +73,7 @@ pub async fn get_rta_leaderboard(
         match interaction.data.custom_id.as_str() {
             "previous_page" if page > 1 => page -= 1,
             "next_page" => page += 1,
+
             "leaderboard_player_select" => {
                 let selected_id =
                     if let serenity::ComponentInteractionDataKind::StringSelect { values } =
@@ -79,76 +84,7 @@ pub async fn get_rta_leaderboard(
                         None
                     };
 
-                if let Some(id) = selected_id {
-                    let player_id: i64 = match id.parse() {
-                        Ok(pid) => pid,
-                        Err(_) => {
-                            interaction
-                                .create_response(
-                                    &ctx.serenity_context,
-                                    serenity::CreateInteractionResponse::Message(
-                                        serenity::CreateInteractionResponseMessage::new()
-                                            .content("❌ Invalid player ID format.")
-                                            .ephemeral(false),
-                                    ),
-                                )
-                                .await?;
-                            continue;
-                        }
-                    };
-
-                    // 🧠 Étape 1 : répondre rapidement avec message "chargement"
-                    interaction
-            .create_response(
-                &ctx.serenity_context,
-                serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::new()
-                        .content("<a:loading:1358029412716515418> Retrieving player stats...")
-                        .ephemeral(false),
-                ),
-            )
-            .await?;
-
-                    // On récupère le message d’interaction à modifier
-                    let mut followup = interaction.get_response(&ctx.serenity_context).await?;
-
-                    // Étape 2 : charger les données et mettre à jour
-                    match get_user_detail(&token, &player_id).await {
-                        Ok(details) => {
-                            let ld_emojis = format_player_ld_monsters_emojis(&details).await;
-                            let top_monsters = format_player_monsters(&details).await;
-                            let rank_emojis =
-                                get_rank_emojis_for_score(details.player_level.unwrap_or(0))
-                                    .await
-                                    .unwrap_or_else(|_| "❓".to_string());
-                            let embed = create_player_embed(
-                                &details,
-                                ld_emojis,
-                                top_monsters,
-                                rank_emojis.clone(),
-                                2,
-                            );
-
-                            followup
-                                .edit(
-                                    &ctx.serenity_context,
-                                    serenity::builder::EditMessage::new()
-                                        .content("")
-                                        .embed(embed),
-                                )
-                                .await?;
-                        }
-                        Err(e) => {
-                            followup
-                                .edit(
-                                    &ctx.serenity_context,
-                                    serenity::builder::EditMessage::new()
-                                        .content(format!("❌ Failed to load player stats: {}", e)),
-                                )
-                                .await?;
-                        }
-                    }
-                } else {
+                let Some(id) = selected_id else {
                     interaction
                         .create_response(
                             &ctx.serenity_context,
@@ -159,6 +95,109 @@ pub async fn get_rta_leaderboard(
                             ),
                         )
                         .await?;
+                    continue;
+                };
+
+                let player_id: i64 = match id.parse() {
+                    Ok(pid) => pid,
+                    Err(_) => {
+                        interaction
+                            .create_response(
+                                &ctx.serenity_context,
+                                serenity::CreateInteractionResponse::Message(
+                                    serenity::CreateInteractionResponseMessage::new()
+                                        .content("❌ Invalid player ID format.")
+                                        .ephemeral(false),
+                                ),
+                            )
+                            .await?;
+                        continue;
+                    }
+                };
+
+                // 1) respond quickly with "loading" message
+                interaction
+                    .create_response(
+                        &ctx.serenity_context,
+                        serenity::CreateInteractionResponse::Message(
+                            serenity::CreateInteractionResponseMessage::new()
+                                .content(
+                                    "<a:loading:1358029412716515418> Retrieving player stats...",
+                                )
+                                .ephemeral(false),
+                        ),
+                    )
+                    .await?;
+
+                // get the interaction response message we can edit
+                let mut followup = interaction.get_response(&ctx.serenity_context).await?;
+
+                // 2) fetch & update with the player embed
+                match get_user_detail(&token, &player_id).await {
+                    Ok(details) => {
+                        let ld_emojis = format_player_ld_monsters_emojis(&details).await;
+                        let top_monsters = format_player_monsters(&details).await;
+
+                        let rank_emojis =
+                            get_rank_emojis_for_score(details.player_level.unwrap_or(0))
+                                .await
+                                .unwrap_or_else(|_| "❓".to_string());
+
+                        let season = match get_swrt_settings(&token).await {
+                            Ok(data) => data,
+                            Err(e) => {
+                                let reply = ctx.send(create_embed_error(&e)).await?;
+                                schedule_message_deletion(reply, ctx).await?;
+                                send_log(LoggerDocument::new(
+                                    &ctx.author().name,
+                                    &"get_mob_stats".to_string(),
+                                    &get_server_name(&ctx).await?,
+                                    false,
+                                    chrono::Utc::now().timestamp(),
+                                ))
+                                .await?;
+                                return Ok(());
+                            }
+                        };
+                        let worst_opponents =
+                            match get_person_one_monster_list(&token, details.swrt_player_id, season)
+                                .await
+                            {
+                                Ok(person_list) => {
+                                    format_opponent_monsters_worst5(&details, &person_list).await
+                                }
+                                Err(_) => vec!["❌ Failed to load opponent monsters.".to_string()],
+                            };
+
+                        // NOTE: create_player_embed signature must be:
+                        // (details, ld_emojis, top_monsters, worst_opponents, rank_emojis, has_image)
+                        let embed = create_player_embed(
+                            &details,
+                            ld_emojis,
+                            top_monsters,
+                            worst_opponents,
+                            rank_emojis,
+                            2,
+                        );
+
+                        followup
+                            .edit(
+                                &ctx.serenity_context,
+                                serenity::builder::EditMessage::new()
+                                    .content("")
+                                    .embed(embed),
+                            )
+                            .await?;
+                    }
+                    Err(e) => {
+                        followup
+                            .edit(
+                                &ctx.serenity_context,
+                                serenity::builder::EditMessage::new()
+                                    .content(format!("❌ Failed to load player stats: {}", e)),
+                            )
+                            .await?;
+                    }
                 }
 
                 continue;
@@ -191,6 +230,7 @@ pub async fn get_rta_leaderboard(
             .await?;
     }
 
+    // Disable buttons after timeout
     response
         .edit(
             poise::Context::Application(ctx),

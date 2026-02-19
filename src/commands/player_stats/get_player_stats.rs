@@ -10,12 +10,18 @@ use crate::commands::register::utils::get_user_link;
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
 use crate::commands::{
+    mob_stats::utils::get_swrt_settings,
     player_stats::utils::{
-        create_player_embed, create_replay_image, format_player_ld_monsters_emojis,
-        format_player_monsters, get_rank_emojis_for_score, get_recent_replays, get_user_detail,
+        create_player_embed, create_replay_image, format_opponent_monsters_worst5,
+        format_player_ld_monsters_emojis, format_player_monsters, get_person_one_monster_list,
+        get_rank_emojis_for_score, get_recent_replays, get_user_detail,
         parse_discord_mention_to_id, search_users, Player,
     },
-    shared::{logs::get_server_name, models::LoggerDocument},
+    shared::{
+        embed_error_handling::{create_embed_error, schedule_message_deletion},
+        logs::get_server_name,
+        models::LoggerDocument,
+    },
 };
 use crate::{Data, API_TOKEN};
 
@@ -287,6 +293,7 @@ pub(crate) async fn show_player_stats<'a>(
         &details,
         vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
         vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
+        vec!["<a:loading:1358029412716515418> Loading opponent monsters...".to_string()],
         rank_emojis.clone(),
         0,
     );
@@ -320,6 +327,35 @@ pub(crate) async fn show_player_stats<'a>(
     let ld_emojis = format_player_ld_monsters_emojis(&details).await;
     let top_monsters = format_player_monsters(&details).await;
 
+    let season = match get_swrt_settings(&token).await {
+        Ok(data) => data,
+        Err(e) => {
+            let reply = ctx.send(create_embed_error(&e)).await?;
+            schedule_message_deletion(reply, *ctx).await?;
+            send_log(LoggerDocument::new(
+                &ctx.author().name,
+                &"get_mob_stats".to_string(),
+                &get_server_name(&ctx).await?,
+                false,
+                chrono::Utc::now().timestamp(),
+            ))
+            .await?;
+            return Ok(());
+        }
+    };
+
+    // Opponent monsters
+    let person_list = get_person_one_monster_list(token, details.swrt_player_id, season)
+        .await
+        .map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Error retrieving opponent monsters: {}", e),
+            ))
+        })?;
+
+    let worst_opponents = format_opponent_monsters_worst5(&details, &person_list).await;
+
     let recent_replays = get_recent_replays(token, &details.swrt_player_id)
         .await
         .map_err(|e| {
@@ -336,7 +372,14 @@ pub(crate) async fn show_player_stats<'a>(
     let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
 
     // 3) Edit with final embed
-    let updated_embed = create_player_embed(&details, ld_emojis, top_monsters, rank_emojis, 1);
+    let updated_embed = create_player_embed(
+        &details,
+        ld_emojis,
+        top_monsters,
+        worst_opponents,
+        rank_emojis,
+        1,
+    );
 
     reply_handle
         .edit(
