@@ -665,7 +665,7 @@ pub fn create_player_embed(
         } else {
             format!("🔥 Most Used Units Winrate {}", suffix)
         };
-        embed = embed.field(name, text, true);
+        embed = embed.field(name, text, false);
     }
 
     for (suffix, text) in opp_fields {
@@ -674,7 +674,7 @@ pub fn create_player_embed(
         } else {
             format!("😈 Opponent units - worst WR (≥5% matches) {}", suffix)
         };
-        embed = embed.field(name, text, true);
+        embed = embed.field(name, text, false);
     }
 
     embed
