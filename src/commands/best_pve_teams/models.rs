@@ -126,7 +126,7 @@ impl Dungeon {
             Dungeon::ElluniaSanctuary => "ellunia",
             Dungeon::LumelCliff => "lumel",
             Dungeon::KhalderunRuin => "khalderun",
-            Dungeon::SacreonCastle => "saceron", // To fix to -> sacreon when Mozzes updates it
+            Dungeon::SacreonCastle => "sacreon",
             Dungeon::FireBeast => "fire-beast",
             Dungeon::DarkBeast => "dark-beast",
         }
