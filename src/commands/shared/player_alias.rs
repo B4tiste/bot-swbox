@@ -173,7 +173,7 @@ lazy_static! {
             },
             {
                 "og_names": "?",
-                "en_names": ["Branleur"],
+                "en_names": ["Craig Boosted"],
                 "swarena_id": 21744282,
                 "swrt_id": 93118800,
             }
