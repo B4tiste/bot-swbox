@@ -46,6 +46,9 @@ pub enum Dungeon {
     #[name = "Sacreon - Castle of Forgotten Heroes"]
     SacreonCastle,
 
+    #[name = "Inferath - Hellground of Raging Fires"]
+    InferathHellground,
+
     #[name = "Fire Beast"]
     FireBeast,
 
@@ -91,6 +94,7 @@ impl Dungeon {
             Dungeon::LumelCliff => 3101,
             Dungeon::KhalderunRuin => 4101,
             Dungeon::SacreonCastle => 5101,
+            Dungeon::InferathHellground => 6101,
             Dungeon::FireBeast => 2001,
             Dungeon::DarkBeast => 5001,
         }
@@ -109,6 +113,7 @@ impl Dungeon {
             Dungeon::LumelCliff => "Lumel - Cliff of Tough Beast Men",
             Dungeon::KhalderunRuin => "Khalderun - Ruin of Silent Death",
             Dungeon::SacreonCastle => "Sacreon - Castle of Forgotten Heroes",
+            Dungeon::InferathHellground => "Inferath - Hellground of Raging Fires",
             Dungeon::FireBeast => "Fire Beast",
             Dungeon::DarkBeast => "Dark Beast",
         }
@@ -127,6 +132,7 @@ impl Dungeon {
             Dungeon::LumelCliff => "lumel",
             Dungeon::KhalderunRuin => "khalderun",
             Dungeon::SacreonCastle => "sacreon",
+            Dungeon::InferathHellground => "inferath",
             Dungeon::FireBeast => "fire-beast",
             Dungeon::DarkBeast => "dark-beast",
         }
