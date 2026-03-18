@@ -71,7 +71,7 @@ lazy_static! {
             },
             {
                 "og_name": "ᴅᴀᴍ~",
-                "en_names": ["Le débilos"],
+                "en_names": ["Compte dam"],
                 "swarena_id": 2419842,
                 "swrt_id": 17817
             },
