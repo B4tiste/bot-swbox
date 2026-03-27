@@ -93,13 +93,15 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
     }
     full_description.push_str(&build_grouped_description(&scores, &prediction));
 
+    full_description.push_str("Check out `/services` or [MyShop](https://discord.gg/myshop) if you need help reaching your desired rank.\n");
+
     // Optional small source note if predictions were attempted
     if ENABLE_PREDICTION {
         if prediction.is_some() {
-            full_description.push_str("*Prediction source: <https://swrta.top/predict>*\n");
+            full_description.push_str("\n*Prediction source: <https://swrta.top/predict>*\n");
         } else {
             full_description
-                .push_str("_Prediction currently unavailable (failed to fetch from swrta.top)._");
+                .push_str("\n_Prediction currently unavailable (failed to fetch from swrta.top)._");
         }
     }
 
