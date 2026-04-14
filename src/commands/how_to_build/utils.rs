@@ -3,7 +3,7 @@ use reqwest::Client;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 
 use crate::commands::how_to_build::models::{LucksackBuildResponse, LucksackSeason};
-use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
+use crate::{GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 
 pub async fn get_latest_lucksack_season() -> Result<i32, String> {
     let url = "https://api.lucksack.gg/seasons";
@@ -176,10 +176,10 @@ fn artifact_effect_name(id: i32) -> &'static str {
 
 fn rank_label(rank: i32) -> &'static str {
     match rank {
-        0 => "G3",
-        1 => "G1-G2",
-        2 => "P1-P3",
-        3 => "C1-C3",
+        16 => "G3",
+        102 => "G1-G3",
+        103 => "P2-P3",
+        11 => "P1",
         _ => "Unknown",
     }
 }
@@ -391,7 +391,6 @@ pub fn create_lucksack_rank_buttons(
     selected_rank: i32,
     disabled: bool,
 ) -> serenity::CreateActionRow {
-    let conqueror_id: u64 = CONQUEROR_EMOJI_ID.lock().unwrap().parse().unwrap();
     let guardian_id: u64 = GUARDIAN_EMOJI_ID.lock().unwrap().parse().unwrap();
     let punisher_id: u64 = PUNISHER_EMOJI_ID.lock().unwrap().parse().unwrap();
 
@@ -404,37 +403,36 @@ pub fn create_lucksack_rank_buttons(
     };
 
     serenity::CreateActionRow::Buttons(vec![
-        // C1-C3 (rank 3)
-        serenity::CreateButton::new("rank_c1c3")
-            .label("C1-C3")
-            .disabled(disabled)
-            .emoji(serenity::ReactionType::Custom {
-                animated: false,
-                id: conqueror_id.into(),
-                name: Some("conqueror".to_string()),
-            })
-            .style(style_for(3)),
-        // P1-P3 (rank 2)
-        serenity::CreateButton::new("rank_p1p3")
-            .label("P1-P3")
+        serenity::CreateButton::new("rank_p1")
+            .label("P1")
             .disabled(disabled)
             .emoji(serenity::ReactionType::Custom {
                 animated: false,
                 id: punisher_id.into(),
                 name: Some("punisher".to_string()),
             })
-            .style(style_for(2)),
-        // G1-G2 (rank 1)
-        serenity::CreateButton::new("rank_g1g2")
-            .label("G1-G2")
+            .style(style_for(11)),
+
+        serenity::CreateButton::new("rank_p2p3")
+            .label("P2-P3")
+            .disabled(disabled)
+            .emoji(serenity::ReactionType::Custom {
+                animated: false,
+                id: punisher_id.into(),
+                name: Some("punisher".to_string()),
+            })
+            .style(style_for(103)),
+
+        serenity::CreateButton::new("rank_g1g2g3")
+            .label("G1-G3")
             .disabled(disabled)
             .emoji(serenity::ReactionType::Custom {
                 animated: false,
                 id: guardian_id.into(),
                 name: Some("guardian".to_string()),
             })
-            .style(style_for(1)),
-        // G3 (rank 0)
+            .style(style_for(102)),
+
         serenity::CreateButton::new("rank_g3")
             .label("G3")
             .disabled(disabled)
@@ -443,6 +441,6 @@ pub fn create_lucksack_rank_buttons(
                 id: guardian_id.into(),
                 name: Some("guardian".to_string()),
             })
-            .style(style_for(0)),
+            .style(style_for(16)),
     ])
 }

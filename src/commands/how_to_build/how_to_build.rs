@@ -115,11 +115,11 @@ pub async fn how_to_build(
     let mut image_url: Option<String> = Some(format!("{}{}", LUCKSACK_IMG_BASE_URL, image));
 
     // Lucksack ranks:
-    // 0 : G3
-    // 1 : G1-G2
-    // 2 : P1-P3
-    // 3 : C1-C3
-    let mut current_rank: i32 = 1;
+    // G3 = 16
+    // G1-G3 = 102
+    // P2-P3 = 103
+    // P1 = 11
+    let mut current_rank: i32 = 102;
 
     // IMPORTANT: si collab_id existe, on l'utilise en priorité
     let mut effective_monster_id: i32 = collab_id.unwrap_or(monster_id);
@@ -144,7 +144,7 @@ pub async fn how_to_build(
                         data
                     }
                     Err(e2) => {
-                        let msg = format!("❌ Error fetching data: {} (fallback: {})", e1, e2);
+                        let msg = format!("❌ Error fetching data 1: {} (fallback: {})", e1, e2);
                         let reply = ctx.send(create_embed_error(&msg)).await?;
                         schedule_message_deletion(reply, ctx).await?;
 
@@ -161,7 +161,7 @@ pub async fn how_to_build(
                     }
                 }
             } else {
-                let msg = format!("❌ Error fetching data: {}", e1);
+                let msg = format!("❌ Error fetching data 2: {}", e1);
                 let reply = ctx.send(create_embed_error(&msg)).await?;
                 schedule_message_deletion(reply, ctx).await?;
 
@@ -208,10 +208,10 @@ pub async fn how_to_build(
             .await
     {
         let selected_rank = match interaction.data.custom_id.as_str() {
-            "rank_g3" => 0,
-            "rank_g1g2" => 1,
-            "rank_p1p3" => 2,
-            "rank_c1c3" => 3,
+            "rank_g3" => 16,
+            "rank_g1g2g3" => 102,
+            "rank_p2p3" => 103,
+            "rank_p1" => 11,
             _ => continue,
         };
 
@@ -247,7 +247,7 @@ pub async fn how_to_build(
                                 .edit_response(
                                     &ctx.serenity_context.http,
                                     EditInteractionResponse::new()
-                                        .content(format!("❌ Error fetching data: {}", e))
+                                        .content(format!("❌ Error fetching data 3: {}", e))
                                         .components(vec![create_lucksack_rank_buttons(
                                             current_rank,
                                             false,
@@ -263,7 +263,7 @@ pub async fn how_to_build(
                         .edit_response(
                             &ctx.serenity_context.http,
                             EditInteractionResponse::new()
-                                .content(format!("❌ Error fetching data: {}", e))
+                                .content(format!("❌ Error fetching data 4: {}", e))
                                 .components(vec![create_lucksack_rank_buttons(current_rank, false)])
                                 .embeds(vec![]),
                         )
