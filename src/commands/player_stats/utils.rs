@@ -10,7 +10,7 @@ use rand::seq::IndexedRandom;
 use serde::Deserialize;
 use serde_json::Value;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
@@ -567,50 +567,111 @@ pub fn create_player_embed(
     rank_emojis: String,
     has_image: i32,
 ) -> CreateEmbed {
-    let format_emojis_with_split = |list: Vec<String>| -> Vec<(String, String)> {
-        let full_text = list.join(" ");
-
-        if full_text.len() <= 1020 {
-            let display = if full_text.is_empty() {
-                "None".to_string()
-            } else {
-                full_text
-            };
-            return vec![("".to_string(), display)];
-        }
-
-        let mid = list.len() / 2;
-        let mut part1: Vec<String> = list[..mid].to_vec();
-        let mut part2: Vec<String> = list[mid..].to_vec();
-
-        let mut part1_text = part1.join(" ");
-        let mut part2_text = part2.join(" ");
-
-        while part1_text.len() > 1020 && !part1.is_empty() {
-            part1.pop();
-            part1_text = part1.join(" ");
-        }
-        if part1_text.len() >= 1020 {
-            part1_text.push_str(" …");
-        }
-
-        while part2_text.len() > 1020 && !part2.is_empty() {
-            part2.pop();
-            part2_text = part2.join(" ");
-        }
-        if part2_text.len() >= 1020 {
-            part2_text.push_str(" …");
-        }
-
-        vec![
-            ("(1/2)".to_string(), part1_text),
-            ("(2/2)".to_string(), part2_text),
-        ]
+    let extract_emoji_key = |s: &str| -> Option<String> {
+        let start = s.find("<:")?;
+        let tail = &s[start..];
+        let end_rel = tail.find('>')?;
+        Some(tail[..=end_rel].to_string())
     };
 
-    let ld_fields = format_emojis_with_split(ld_emojis);
-    let top_fields = format_emojis_with_split(top_monsters);
-    let opp_fields = format_emojis_with_split(worst_opponents);
+    let dedup_emojis = |list: Vec<String>| -> Vec<String> {
+        let mut seen = HashSet::new();
+        let mut out = Vec::new();
+
+        for item in list {
+            if let Some(key) = extract_emoji_key(&item) {
+                if seen.insert(key) {
+                    out.push(item);
+                }
+            } else {
+                out.push(item);
+            }
+        }
+
+        out
+    };
+
+    let format_emojis_with_split = |list: Vec<String>| -> Vec<(String, String)> {
+        const MAX_FIELD_LEN: usize = 1020;
+
+        if list.is_empty() {
+            return vec![("".to_string(), "None".to_string())];
+        }
+
+        let mut parts: Vec<String> = Vec::new();
+        let mut current = String::new();
+
+        for entry in list {
+            let candidate_len = if current.is_empty() {
+                entry.len()
+            } else {
+                current.len() + 1 + entry.len()
+            };
+
+            if candidate_len <= MAX_FIELD_LEN {
+                if !current.is_empty() {
+                    current.push(' ');
+                }
+                current.push_str(&entry);
+                continue;
+            }
+
+            if !current.is_empty() {
+                parts.push(current);
+                current = String::new();
+            }
+
+            if entry.len() <= MAX_FIELD_LEN {
+                current.push_str(&entry);
+                continue;
+            }
+
+            let mut start = 0usize;
+            let entry_len = entry.len();
+            while start < entry_len {
+                let mut end = (start + MAX_FIELD_LEN).min(entry_len);
+                while end > start && !entry.is_char_boundary(end) {
+                    end -= 1;
+                }
+
+                if end == start {
+                    break;
+                }
+
+                let chunk = entry[start..end].to_string();
+                if !chunk.is_empty() {
+                    parts.push(chunk);
+                }
+                start = end;
+            }
+        }
+
+        if !current.is_empty() {
+            parts.push(current);
+        }
+
+        if parts.is_empty() {
+            return vec![("".to_string(), "None".to_string())];
+        }
+
+        let total_parts = parts.len();
+        parts
+            .into_iter()
+            .enumerate()
+            .map(|(idx, text)| {
+                let suffix = if total_parts > 1 {
+                    format!("({}/{})", idx + 1, total_parts)
+                } else {
+                    String::new()
+                };
+                (suffix, text)
+            })
+            .collect()
+    };
+
+    let ld_fields = format_emojis_with_split(dedup_emojis(ld_emojis));
+    let top_fields = format_emojis_with_split(dedup_emojis(top_monsters));
+    let opp_fields = format_emojis_with_split(dedup_emojis(worst_opponents));
 
     let gifs = vec![
         "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif",
