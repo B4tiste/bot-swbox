@@ -231,5 +231,3 @@ If you wish to contribute to this project, please contact B4tiste on Discord (ta
 ### 2. **/get_mob_stats**
 
 ![mob](Images/mob.gif)
-
-blabla
