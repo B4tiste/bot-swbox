@@ -1,233 +1,172 @@
 # bot-swbox
 
-## Overview
+Discord bot for Summoners War, written in Rust with poise/serenity.
 
-`bot-swbox` is a Discord bot developed in Rust designed to enhance user experience by providing various commands to display game statistics and ranking data. The bot is designed for Summoners War players.
+## Quick Links
 
-To use the bot, add it to your Discord server by contacting B4tiste on Discord (tag: b4tiste).
+- Website: [BOT Website](https://bot-swbox.netlify.app/)
+- Demo video: [Youtube Guide](https://www.youtube.com/watch?v=U6CxFH6WFKU)
+- Support/community: https://discord.gg/AfANrTVaDJ
 
-## Installation Guide (French)
+## What This Bot Does
 
-Click on the image to go to the French Youtube Video Guide :
+SWbox focuses on RTA and account analysis workflows:
 
-[![](Images/minia.jpg)](https://www.youtube.com/watch?v=WGs2rWrIy5M)
+- Fetch live RTA rank thresholds and optional prediction cutoffs.
+- Show player stats (including LD/top monsters and replay snapshots).
+- Provide monster stats with matchup/team insights by rank bracket.
+- Browse interactive leaderboard pages and open player details directly.
+- Analyze exported game JSON files (runes score, account summaries, core trios).
+- Offer helper utilities such as player-name history, support links, and services.
 
-## Features
+## Current Slash Commands
 
--   **Interactive Commands**: Use a series of slash commands to access the bot's features.
--   **Ranking Information**: View rankings and their details.
--   **Player Statistics**: Retrieve and display detailed information about a player's account, including their rank, win rate, LD5 and most played monsters.
--   **Mob Statistics**: Retrieve and display monster statistics for different seasons.
--   **RTA Core Trios**: Shows 15 trios to play in RTA for a given account and selected rank.
--   **Duo Statistics**: Display common win rates of two monsters played together.
--   **JSON File analysis** : Gives a small breakdown of your account
--   **Feature Suggestion & BUG Report**: Suggest features or report bugs directly to the developer.
--   **Help Menu**: Easily access the list of available commands and their descriptions.
+These are the commands currently registered by the bot:
 
----
+- `/help`
+- `/get_ranks`
+- `/get_mob_stats`
+- `/send_suggestion`
+- `/track_player_names`
+- `/upload_json`
+- `/get_player_stats`
+- `/get_rta_leaderboard`
+- `/get_rta_core`
+- `/get_replays`
+- `/get_meta`
+- `/best_pve_teams`
+- `/support`
+- `/services`
+- `/how_to_build`
+- `/register`
+- `/unregister`
+- `/mystats`
 
-## Feature Roadmap
-
-### ToDo:
-
--   [ ] Find something that Unaxe can do so that he stops ouin-oui'ing.
-
-### Completed:
-
--   [x] Add the `/how_to_build` command to get the best runes/artis for a monster.
--   [x] Create a commande `/get_replays <Monster1> <Monster2> ...` that gives the replays of the last 10 replays containing the monsters in the list.
--   [x] Create the command that gives trio cores for a given JSON.
--   [x] Switch to SWRT for data.
--   [x] Add replay on player stats.
--   [x] Separate RTA & Siege JSON analysis using different coeffs.
--   [x] Add the /upload_json command to get an analysis of the JSON file.
--   [x] Translate the bot to English.
--   [x] Add the /help command.
--   [x] Check if there is a 2A in the list of searched monsters, if so, the bot should prioritize it.
--   [x] Add the option to choose the season number for monster stats.
--   [x] Add a command to display the common win rates of two monsters played together. Also displays the win rate of one against the other.
--   [x] Add a feature suggestion command.
--   [x] Redo the account tracking commands to display all usernames linked to an account.
--   [x] Add image embedding for the `get_duo_stats` command.
-
----
-
-## User Guide
-
-### `/help`
-
-**Description**: Displays the available commands and their descriptions.
-
-**Usage**:
-
--   Type `/help` in the Discord chat to display the list of all supported commands.
-
-**Result**:
-
--   A well-formatted embedded message with:
-    -   A list of commands with their descriptions.
-    -   Creator details.
-    -   A link to the source code and project roadmap.
-
----
+## Command Details
 
 ### `/get_ranks`
 
-**Description**: Displays detailed information about the current RTA rankings.
+Shows current SWRT rank thresholds (P2 to G3), with prediction values when available.
 
-**Usage**:
+### `/get_rta_leaderboard [page]`
 
--   `/get_ranks`
+Shows a paginated leaderboard (10 players per page), with buttons and a select menu to open selected player stats.
 
-**Result**:
+### `/get_player_stats <player_name>`
 
--   Presents ranking data in an easy-to-read format.
+Shows detailed player info, LD monsters, top monsters, worst opponent monsters, and replay image.
 
----
+Supports:
+- Regular name search
+- Alias lookup
+- Discord mention lookup if the user is linked via `/register`
 
-### `/get_rta_leaderboard`
+### `/mystats`
 
-**Description**: Displays an interactive RTA leaderboard with pagination and player stat selection.
+Shows stats for your linked account (requires prior `/register`).
 
-**Usage**:
+### `/register <account_name>`
 
--   `/get_rta_leaderboard` — Displays the first page of the leaderboard.
--   `/get_rta_leaderboard page:<number>` — Displays the specified leaderboard page directly.
+Links your Discord user to an SWRT player ID using a search + selection flow.
 
-**Features**:
+### `/unregister`
 
--   📊 **Paginated leaderboard** showing player name, country, and ELO.
--   ⬅️➡️ **Navigation buttons** to browse leaderboard pages.
--   🔍 **Select menu below the leaderboard**: pick a player from the current page to view their RTA stats instantly.
--   📈 When a player is selected, their RTA performance (rank, ELO, winrate, LD monsters, top units) is shown right away.
--   ✅ No need to retype `/get_player_stats`, it’s handled automatically.
+Removes your linked account from the database.
 
----
+### `/get_mob_stats <monster_name>`
 
-### `/get_player_stats`
+Shows monster performance data and matchup insights. Includes interactive rank-bracket buttons.
 
-**Description**: Displays detailed information about a player's account.
+### `/get_replays <monster1> [monster2] [monster3] [monster4] [monster5]`
 
-**Usage**:
+Finds recent replays containing selected monsters and renders a replay image grid.
 
--  `/get_player_stats` + `USERNAME`
+### `/get_meta`
 
-**Features**:
--   Displays the player's rank, win rate, and other relevant statistics.
--   Displays the player's LD5 and Most Played Monsters with their win rates.
--   Displays the last six replays of the player
+Displays current tierlist-style meta for selectable rank brackets.
 
----
+### `/how_to_build <monster_name>`
 
-### `/get_mob_stats`
+Shows runes/artifact trends from Lucksack, with rank filters (G3, G1-G3, P2-P3, P1).
 
-**Description**: Retrieves monster statistics. It also displays some great combo and counter to that monster.
+### `/best_pve_teams <dungeon>`
 
-**Usage**:
+Returns best-performing PvE teams for selected content (Giants, Dragons, Necro, etc.).
 
--   `/get_mob_stats` + The name of the monster you want to search for with an autocomplete feature.
+### `/upload_json <file> [mode]`
 
-**Features**:
+Uploads Summoners War JSON and generates account/rune score summary.
 
--   Allows you to choose the rank you want to see the stats for.
+Supported modes:
+- `Classic`
+- `NoSpeedDetail`
+- `Anonymized`
+- `NoSpeedDetailAndAnonymized`
 
----
+### `/get_rta_core <file> <rank> [monster] <mode>`
 
-### `/get_duo_stats`
+Computes top trios from your box and current meta data.
 
-**Description**: Displays the win rate of two given monsters either in confrontation or cooperation.
+Supported rank values:
+- `C1`, `C2`, `C3`, `P1`, `P2`, `P3`, `G1`, `G2`, `G3`
 
-**Usage**:
+Supported mode values:
+- `MetaSlayer`
+- `FunAndCasual`
 
--   `/get_duo_stats` => Opens a form to enter the names of the two monsters.
+### `/track_player_names <mode>`
 
-**Features**:
-
--   Automatically prioritizes 2A monsters in searches when applicable.
-
----
-
-### `/track_player_names`
-
-**Description**: Displays the different usernames that this player may have had. Searchable by ID or account username (The player must exist on SWARENA).
-
-**Usage**:
-
--   `/track_player_names` => Opens a form to enter the player's name or ID.
-
----
+Retrieves known past usernames (SWArena-based), with search mode:
+- `Name`
+- `Id`
 
 ### `/send_suggestion`
 
-**Description**: Allows sending a feature suggestion or reporting a BUG.
+Opens a modal to send suggestions or bug reports (with optional image URL).
 
-**Usage**:
+### `/support`
 
--   `/send_suggestion` => Opens a form to enter a suggestion.
+Displays support and donation information.
 
-**Features**:
+### `/services`
 
--   The user can provide an image to illustrate their suggestion.
+Displays partner/service information.
 
----
+## Data Sources
 
-### `/upload_json`
+The bot currently pulls data from multiple sources depending on command:
 
-**Description**:
-Uploads a JSON file to analyze account data and display an account score along with detailed information about rune set efficiency percentages and rune speeds. This command is particularly useful for Summoners War players looking to quickly assess their account's performance metrics. The Scores will be saved in a Database to be able to compare them over time.
+- SWRT: https://m.swranking.com/
+- SWArena: https://swarena.gg/
+- Lucksack: https://lucksack.gg/
+- SWCalc (PvE teams): https://swcalc.cz/
+- Coupons feed: https://sw-coupons.netlify.app/
 
-**Usage**:
+## Tech Stack
 
--   Type `/upload_json` in your Discord server.
--   Attach a JSON file (with a `.json` extension) containing the account data.
+- Rust (edition 2021)
+- poise + serenity (Discord interactions)
+- tokio (async runtime)
+- reqwest + serde/serde_json (API requests and parsing)
+- mongodb (logs, account links, JSON score history, coupons)
+- image/imageproc/ab_glyph (replay image rendering)
+- moka (caching)
 
----
+## Contributing
 
-### `/get_rta_core`
+Maintainers:
 
-**Description**
+- B4tiste: https://github.com/B4tiste
+- shvvkz: https://github.com/shvvkz
 
-Analyzes an RTA/Siege export JSON file and suggests 15 “core” trios to play for the chosen rank. The list is based on the following criteria:
-- Trio **win rate**
-- Total trio **pick count**
-- **Penalty** for late-picks (to downrank lately-picked monsters)
-- **Bonus** if Light/Dark monsters are included
+If you want to contribute, open an issue or contact the maintainers on Discord.
 
-**Usage**
+## Demo Assets
 
-- Type `/get_rta_core` in your Discord server.
-- Attach a JSON file (with a `.json` extension) containing the account data.
-- Select the rank you want to analyze.
-
-**Result**
-
-Sends a Discord message listing up to 15 trios (as emojis), each showing:
-- **Win Rate** (in %)
-- **Total Picks** count
-
-## Contributions
-
-This project is maintained and developed by:
-
--   [B4tiste](https://github.com/B4tiste)
--   [shvvkz](https://github.com/shvvkz)
-
-Data is sourced from:
-
--   [SWARENA](https://swarena.gg/) developed by [Relisora](https://github.com/relisora)
--   [SWARFARM](https://swarfarm.com/)
--   [SWRT](https://m.swranking.com/)
-
-If you wish to contribute to this project, please contact B4tiste on Discord (tag: b4tiste).
-
----
-
-## Demo
-
-### 1. **/get_player_stats**
+### `/get_player_stats`
 
 ![player](Images/player.gif)
 
-### 2. **/get_mob_stats**
+### `/get_mob_stats`
 
 ![mob](Images/mob.gif)
