@@ -471,7 +471,7 @@ pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
     output
 }
 
-pub async fn format_opponent_monsters_worst5(
+pub async fn format_opponent_monsters_worst(
     details: &PlayerDetail,
     data: &PersonOneMonsterListData,
 ) -> Vec<String> {

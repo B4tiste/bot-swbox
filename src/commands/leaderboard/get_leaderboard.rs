@@ -8,7 +8,7 @@ use serenity::{
 use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlayer};
 use crate::commands::mob_stats::utils::get_swrt_settings;
 use crate::commands::player_stats::utils::{
-    create_player_embed, format_opponent_monsters_worst5, format_player_ld_monsters_emojis,
+    create_player_embed, format_opponent_monsters_worst, format_player_ld_monsters_emojis,
     format_player_monsters, get_person_one_monster_list, get_rank_emojis_for_score,
     get_user_detail,
 };
@@ -164,7 +164,7 @@ pub async fn get_rta_leaderboard(
                                 .await
                             {
                                 Ok(person_list) => {
-                                    format_opponent_monsters_worst5(&details, &person_list).await
+                                    format_opponent_monsters_worst(&details, &person_list).await
                                 }
                                 Err(_) => vec!["❌ Failed to load opponent monsters.".to_string()],
                             };

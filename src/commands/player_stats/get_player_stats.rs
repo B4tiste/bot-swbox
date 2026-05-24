@@ -12,7 +12,7 @@ use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
 use crate::commands::{
     mob_stats::utils::get_swrt_settings,
     player_stats::utils::{
-        create_player_embed, create_replay_image, format_opponent_monsters_worst5,
+        create_player_embed, create_replay_image, format_opponent_monsters_worst,
         format_player_ld_monsters_emojis, format_player_monsters, get_person_one_monster_list,
         get_rank_emojis_for_score, get_recent_replays, get_user_detail,
         parse_discord_mention_to_id, search_users, Player,
@@ -354,7 +354,7 @@ pub(crate) async fn show_player_stats<'a>(
             ))
         })?;
 
-    let worst_opponents = format_opponent_monsters_worst5(&details, &person_list).await;
+    let worst_opponents = format_opponent_monsters_worst(&details, &person_list).await;
 
     let recent_replays = get_recent_replays(token, &details.swrt_player_id)
         .await
