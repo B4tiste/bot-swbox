@@ -6,19 +6,13 @@ use serenity::{
 };
 
 use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlayer};
-use crate::commands::mob_stats::utils::get_swrt_settings;
-use crate::commands::player_stats::utils::{
-    create_player_embed, format_opponent_monsters_worst, format_player_ld_monsters_emojis,
-    format_player_monsters, get_person_one_monster_list, get_rank_emojis_for_score,
-    get_user_detail,
-};
-use crate::commands::shared::embed_error_handling::create_embed_error;
-use crate::commands::shared::embed_error_handling::schedule_message_deletion;
+use crate::commands::player_stats::get_player_stats::show_player_stats;
+use crate::commands::player_stats::utils::get_lucksack_season_numbers;
 use crate::commands::shared::logs::get_server_name;
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::models::LoggerDocument;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
-use crate::{Data, API_TOKEN};
+use crate::Data;
 
 /// 📂 Displays the RTA leaderboard
 #[poise::command(slash_command)]
@@ -30,29 +24,36 @@ pub async fn get_rta_leaderboard(
 
     let user_id = ctx.author().id;
     let mut page = page.unwrap_or(1).max(1);
+    const PAGE_SIZE: i32 = 10;
 
-    let token = {
-        let guard = API_TOKEN.lock().unwrap();
-        guard.clone().ok_or_else(|| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Missing API Token, please contact **b4tiste** on Discord : <https://discord.gg/AfANrTVaDJ>.",
-            ))
-        })?
-    };
+    let seasons = get_lucksack_season_numbers().await.map_err(|e| {
+        Error::from(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to fetch seasons: {}", e),
+        ))
+    })?;
+    let season = seasons.first().copied().ok_or_else(|| {
+        Error::from(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "No valid season found.",
+        ))
+    })?;
 
-    let players = get_leaderboard_data(&token, &page).await.map_err(|e| {
+    let leaderboard = get_leaderboard_data(season, page, PAGE_SIZE).await.map_err(|e| {
         Error::from(std::io::Error::new(
             std::io::ErrorKind::Other,
             format!("API error: {}", e),
         ))
     })?;
 
+    let mut players = leaderboard.data;
+    let total_count = leaderboard.count;
+
     let response = ctx
         .send(CreateReply {
-            embeds: vec![build_leaderboard_embed(&players, page)],
+            embeds: vec![build_leaderboard_embed(&players, page, total_count)],
             components: Some(vec![
-                create_pagination_buttons(page),
+                create_pagination_buttons(page, total_count, PAGE_SIZE),
                 create_player_select_menu(&players),
             ]),
             ..Default::default()
@@ -115,89 +116,20 @@ pub async fn get_rta_leaderboard(
                     }
                 };
 
-                // 1) respond quickly with "loading" message
                 interaction
                     .create_response(
                         &ctx.serenity_context,
                         serenity::CreateInteractionResponse::Message(
                             serenity::CreateInteractionResponseMessage::new()
-                                .content(
-                                    "<a:loading:1358029412716515418> Retrieving player stats...",
-                                )
+                                .content("<a:loading:1358029412716515418> Retrieving player stats...")
                                 .ephemeral(false),
                         ),
                     )
                     .await?;
 
-                // get the interaction response message we can edit
-                let mut followup = interaction.get_response(&ctx.serenity_context).await?;
-
-                // 2) fetch & update with the player embed
-                match get_user_detail(&token, &player_id).await {
-                    Ok(details) => {
-                        let ld_emojis = format_player_ld_monsters_emojis(&details).await;
-                        let top_monsters = format_player_monsters(&details).await;
-
-                        let rank_emojis =
-                            get_rank_emojis_for_score(details.player_level.unwrap_or(0))
-                                .await
-                                .unwrap_or_else(|_| "❓".to_string());
-
-                        let season = match get_swrt_settings(&token).await {
-                            Ok(data) => data,
-                            Err(e) => {
-                                let reply = ctx.send(create_embed_error(&e)).await?;
-                                schedule_message_deletion(reply, ctx).await?;
-                                send_log(LoggerDocument::new(
-                                    &ctx.author().name,
-                                    &"get_mob_stats".to_string(),
-                                    &get_server_name(&ctx).await?,
-                                    false,
-                                    chrono::Utc::now().timestamp(),
-                                ))
-                                .await?;
-                                return Ok(());
-                            }
-                        };
-                        let worst_opponents =
-                            match get_person_one_monster_list(&token, details.swrt_player_id, season)
-                                .await
-                            {
-                                Ok(person_list) => {
-                                    format_opponent_monsters_worst(&details, &person_list).await
-                                }
-                                Err(_) => vec!["❌ Failed to load opponent monsters.".to_string()],
-                            };
-
-                        // NOTE: create_player_embed signature must be:
-                        // (details, ld_emojis, top_monsters, worst_opponents, rank_emojis, has_image)
-                        let embed = create_player_embed(
-                            &details,
-                            ld_emojis,
-                            top_monsters,
-                            worst_opponents,
-                            rank_emojis,
-                            2,
-                        );
-
-                        followup
-                            .edit(
-                                &ctx.serenity_context,
-                                serenity::builder::EditMessage::new()
-                                    .content("")
-                                    .embed(embed),
-                            )
-                            .await?;
-                    }
-                    Err(e) => {
-                        followup
-                            .edit(
-                                &ctx.serenity_context,
-                                serenity::builder::EditMessage::new()
-                                    .content(format!("❌ Failed to load player stats: {}", e)),
-                            )
-                            .await?;
-                    }
+                if let Err(e) = show_player_stats(&ctx, player_id, None).await {
+                    ctx.say(format!("❌ Failed to load player stats: {}", e))
+                        .await?;
                 }
 
                 continue;
@@ -206,7 +138,7 @@ pub async fn get_rta_leaderboard(
             _ => continue,
         }
 
-        let players = match get_leaderboard_data(&token, &page).await {
+        let leaderboard = match get_leaderboard_data(season, page, PAGE_SIZE).await {
             Ok(p) => p,
             Err(e) => {
                 ctx.say(format!("Failed to load page {}: {}", page, e))
@@ -215,14 +147,16 @@ pub async fn get_rta_leaderboard(
             }
         };
 
+        players = leaderboard.data;
+
         interaction
             .create_response(
                 &ctx.serenity_context,
                 serenity::CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::new()
-                        .add_embed(build_leaderboard_embed(&players, page))
+                        .add_embed(build_leaderboard_embed(&players, page, total_count))
                         .components(vec![
-                            create_pagination_buttons(page),
+                            create_pagination_buttons(page, total_count, PAGE_SIZE),
                             create_player_select_menu(&players),
                         ]),
                 ),
@@ -235,7 +169,7 @@ pub async fn get_rta_leaderboard(
         .edit(
             poise::Context::Application(ctx),
             CreateReply {
-                embeds: vec![build_leaderboard_embed(&players, page)],
+                embeds: vec![build_leaderboard_embed(&players, page, total_count)],
                 components: Some(vec![serenity::CreateActionRow::Buttons(vec![
                     serenity::CreateButton::new("previous_page")
                         .label("⬅️ Previous")
@@ -263,23 +197,21 @@ pub async fn get_rta_leaderboard(
     Ok(())
 }
 
-fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity::CreateEmbed {
+fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32, total_count: i64) -> serenity::CreateEmbed {
     let mut description = String::new();
 
-    for (rank, player) in players.iter().enumerate() {
-        let position = rank + 1 + ((page - 1) * 10) as usize;
-
+    for player in players {
         let alias_str = PLAYER_ALIAS_MAP
-            .get(&player.swrt_player_id)
+            .get(&player.player_id)
             .map(|alias| format!(" aka **{}**", alias))
             .unwrap_or_default();
 
         description.push_str(&format!(
             "{}. :flag_{}: {} - `{}`{}\n",
-            position,
-            player.player_country.to_lowercase(),
-            player.player_elo,
-            player.name,
+            player.rank,
+            player.country.to_lowercase(),
+            player.current_score,
+            player.username,
             alias_str,
         ));
     }
@@ -287,6 +219,7 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
     CreateEmbed::default()
         .title(format!("Leaderboard - Page {}", page))
         .description(description)
+        .field("Players", total_count.to_string(), true)
         .field(
             "💡 Tip",
             "Use the menu below to view a player's stats.",
@@ -298,12 +231,14 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32) -> serenity
             false,
         )
         .footer(CreateEmbedFooter::new(
-            "Data is gathered from m.swranking.com",
+            "Data is gathered from lucksack.gg",
         ))
         .color(serenity::Colour::from_rgb(0, 255, 0))
 }
 
-fn create_pagination_buttons(page: i32) -> serenity::CreateActionRow {
+fn create_pagination_buttons(page: i32, total_count: i64, page_size: i32) -> serenity::CreateActionRow {
+    let last_page = ((total_count + page_size as i64 - 1) / page_size as i64).max(1) as i32;
+
     let previous_button = serenity::CreateButton::new("previous_page")
         .label("⬅️ Previous")
         .style(serenity::ButtonStyle::Primary)
@@ -311,7 +246,8 @@ fn create_pagination_buttons(page: i32) -> serenity::CreateActionRow {
 
     let next_button = serenity::CreateButton::new("next_page")
         .label("➡️ Next")
-        .style(serenity::ButtonStyle::Primary);
+        .style(serenity::ButtonStyle::Primary)
+        .disabled(page >= last_page);
 
     serenity::CreateActionRow::Buttons(vec![previous_button, next_button])
 }
@@ -320,20 +256,20 @@ fn create_player_select_menu(players: &[LeaderboardPlayer]) -> serenity::CreateA
     let options: Vec<serenity::CreateSelectMenuOption> = players
         .iter()
         .map(|player| {
-            let emoji = if player.player_country.to_uppercase() == "UNKNOWN" {
+            let emoji = if player.country.to_uppercase() == "UNKNOWN" {
                 serenity::ReactionType::Unicode("❌".to_string())
             } else {
-                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country))
+                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.country))
             };
 
-            let label = if let Some(alias) = PLAYER_ALIAS_MAP.get(&player.swrt_player_id) {
-                format!("{} aka {}", player.name, alias)
+            let label = if let Some(alias) = PLAYER_ALIAS_MAP.get(&player.player_id) {
+                format!("{} aka {}", player.username, alias)
             } else {
-                player.name.clone()
+                player.username.clone()
             };
 
-            serenity::CreateSelectMenuOption::new(label, player.swrt_player_id.to_string())
-                .description(format!("Elo: {}", player.player_elo))
+            serenity::CreateSelectMenuOption::new(label, player.player_id.to_string())
+                .description(format!("Rank #{} | Elo: {}", player.rank, player.current_score))
                 .emoji(emoji)
         })
         .collect();

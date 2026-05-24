@@ -6,18 +6,19 @@ use serenity::{
     Error,
 };
 
-use crate::commands::player_stats::get_player_stats::get_token;
-use crate::commands::player_stats::utils::search_users;
+use crate::commands::player_stats::utils::search_players_lucksack;
 use crate::commands::register::utils::upsert_user_link;
+use crate::commands::shared::logs::{get_server_name, send_log};
+use crate::commands::shared::models::LoggerDocument;
 use crate::Data;
 
 #[derive(Debug, Clone)]
 struct RegisterCandidate {
-    swrt_player_id: i64,
+    player_id: i64,
     name: String,
-    server: i32,
     country: String,
     score: i32,
+    rank: i32,
 }
 
 /// 📂 Link an in-game account to your Discord profile
@@ -30,143 +31,148 @@ pub async fn register(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    // 1) On envoie un message "placeholder" qu'on éditera ensuite
-    let msg_handle = ctx
-        .send(CreateReply {
-            content: Some(format!(
-                "<a:loading:1358029412716515418> Searching accounts for `{}`...",
-                account_name
-            )),
-            ..Default::default()
-        })
-        .await?;
+    let result: Result<(), Error> = async {
+        let msg_handle = ctx
+            .send(CreateReply {
+                content: Some(format!(
+                    "<a:loading:1358029412716515418> Searching accounts for `{}`...",
+                    account_name
+                )),
+                ..Default::default()
+            })
+            .await?;
 
-    let token = get_token()?;
+        let players = search_players_lucksack(&account_name).await.map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("API error: {e}"),
+            ))
+        })?;
 
-    let players = search_users(&token, &account_name).await.map_err(|e| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("API error: {e}"),
-        ))
-    })?;
+        if players.is_empty() {
+            msg_handle
+                .edit(
+                    poise::Context::Application(ctx),
+                    CreateReply {
+                        content: Some(format!("No players found for `{}`.", account_name)),
+                        components: Some(vec![]),
+                        embeds: vec![],
+                        ..Default::default()
+                    },
+                )
+                .await?;
+            return Ok(());
+        }
 
-    if players.is_empty() {
+        let candidates: Vec<RegisterCandidate> = players
+            .into_iter()
+            .map(|p| RegisterCandidate {
+                player_id: p.player_id,
+                name: p.username,
+                country: p.country,
+                score: p.current_score,
+                rank: p.current_rank as i32,
+            })
+            .collect();
+
+        let picked = if candidates.len() == 1 {
+            candidates[0].player_id
+        } else {
+            match select_player_from_menu_editing(&ctx, &msg_handle, &candidates).await? {
+                Some(id) => id,
+                None => {
+                    msg_handle
+                        .edit(
+                            poise::Context::Application(ctx),
+                            CreateReply {
+                                content: Some("⏰ Time expired or no selection.".to_string()),
+                                components: Some(vec![]),
+                                embeds: vec![],
+                                ..Default::default()
+                            },
+                        )
+                        .await?;
+                    return Ok(());
+                }
+            }
+        };
+
+        let selected = candidates
+            .iter()
+            .find(|c| c.player_id == picked)
+            .cloned()
+            .unwrap_or(RegisterCandidate {
+                player_id: picked,
+                name: account_name.clone(),
+                country: "UNKNOWN".to_string(),
+                score: 0,
+                rank: 0,
+            });
+
         msg_handle
             .edit(
                 poise::Context::Application(ctx),
                 CreateReply {
-                    content: Some(format!("No players found for `{}`.", account_name)),
+                    content: Some("<a:loading:1358029412716515418> Saving link...".to_string()),
                     components: Some(vec![]),
                     embeds: vec![],
                     ..Default::default()
                 },
             )
             .await?;
-        return Ok(());
+
+        let discord_user_id = ctx.author().id.get();
+        let now_ts = chrono::Utc::now().timestamp();
+
+        upsert_user_link(
+            discord_user_id,
+            selected.player_id,
+            &selected.name,
+            0, // server not available from search; filled from summary on first /mystats
+            &selected.country,
+            now_ts,
+        )
+        .await
+        .map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("DB error: {e}"),
+            ))
+        })?;
+
+        msg_handle
+            .edit(
+                poise::Context::Application(ctx),
+                CreateReply {
+                    content: Some(format!(
+                        "✅ Registered **{}** to your Discord account. Now {} can use `/mystats` to see their stats! Others can use `/get_player_stats @{}` to access their stats.",
+                        selected.name,
+                        ctx.author().name,
+                        ctx.author().name,
+                    )),
+                    components: Some(vec![]),
+                    embeds: vec![],
+                    ..Default::default()
+                },
+            )
+            .await?;
+
+        Ok(())
     }
+    .await;
 
-    let candidates: Vec<RegisterCandidate> = players
-        .into_iter()
-        .map(|p| RegisterCandidate {
-            swrt_player_id: p.swrt_player_id,
-            name: p.name,
-            server: p.player_server,
-            country: p.player_country,
-            score: p.player_score.unwrap_or(0),
-        })
-        .collect();
+    send_log(LoggerDocument::new(
+        &ctx.author().name,
+        &"register".to_string(),
+        &get_server_name(&ctx).await?,
+        result.is_ok(),
+        chrono::Utc::now().timestamp(),
+    ))
+    .await?;
 
-    // 2) Si plusieurs, on édite le message initial pour afficher le select menu
-    let picked = if candidates.len() == 1 {
-        candidates[0].swrt_player_id
-    } else {
-        match select_player_from_menu_editing(&ctx, &msg_handle, &candidates).await? {
-            Some(id) => id,
-            None => {
-                // timeout => on édite le message initial
-                msg_handle
-                    .edit(
-                        poise::Context::Application(ctx),
-                        CreateReply {
-                            content: Some("⏰ Time expired or no selection.".to_string()),
-                            components: Some(vec![]),
-                            embeds: vec![],
-                            ..Default::default()
-                        },
-                    )
-                    .await?;
-                return Ok(());
-            }
-        }
-    };
-
-    // Find selected candidate to save metadata (name/server/country)
-    let selected = candidates
-        .iter()
-        .find(|c| c.swrt_player_id == picked)
-        .cloned()
-        .unwrap_or(RegisterCandidate {
-            swrt_player_id: picked,
-            name: account_name.clone(),
-            server: 0,
-            country: "UNKNOWN".to_string(),
-            score: 0,
-        });
-
-    // 3) Edit "Saving link..."
-    msg_handle
-        .edit(
-            poise::Context::Application(ctx),
-            CreateReply {
-                content: Some("<a:loading:1358029412716515418> Saving link...".to_string()),
-                components: Some(vec![]),
-                embeds: vec![],
-                ..Default::default()
-            },
-        )
-        .await?;
-
-    let discord_user_id = ctx.author().id.get();
-    let now_ts = chrono::Utc::now().timestamp();
-
-    upsert_user_link(
-        discord_user_id,
-        selected.swrt_player_id,
-        &selected.name,
-        selected.server,
-        &selected.country,
-        now_ts,
-    )
-    .await
-    .map_err(|e| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("DB error: {e}"),
-        ))
-    })?;
-
-    // 4) Edit final success message (pas de nouveau message envoyé)
-    msg_handle
-        .edit(
-            poise::Context::Application(ctx),
-            CreateReply {
-                content: Some(format!(
-                    "✅ Registered **{}** to your Discord account. Now {} can use the command `/my_stats` to see their stats! And other can use `/get_player_stats @{}` to access their stats.",
-                    selected.name,
-                    ctx.author().name,
-                    ctx.author().name,
-                )),
-                components: Some(vec![]),
-                embeds: vec![],
-                ..Default::default()
-            },
-        )
-        .await?;
-
-    Ok(())
+    result
 }
 
-/// Identique à ton select menu, mais au lieu de ctx.send(...), on édite `msg_handle`
 async fn select_player_from_menu_editing(
     ctx: &poise::ApplicationContext<'_, Data, Error>,
     msg_handle: &poise::ReplyHandle<'_>,
@@ -182,13 +188,9 @@ async fn select_player_from_menu_editing(
                 serenity::ReactionType::Unicode(country_code_to_flag_emoji(&p.country))
             };
 
-            let description = format!(
-                "Elo : {} - Server : {}",
-                p.score,
-                server_code_to_tag(p.server)
-            );
+            let description = format!("Elo: {} | Rank: #{}", p.score, p.rank);
 
-            CreateSelectMenuOption::new(&p.name, p.swrt_player_id.to_string())
+            CreateSelectMenuOption::new(&p.name, p.player_id.to_string())
                 .description(description)
                 .emoji(emoji)
         })
@@ -200,7 +202,6 @@ async fn select_player_from_menu_editing(
     );
     let action_row = CreateActionRow::SelectMenu(select_menu);
 
-    // 👉 ici on EDIT au lieu d'envoyer un nouveau message
     msg_handle
         .edit(
             poise::Context::Application(*ctx),
@@ -224,7 +225,6 @@ async fn select_player_from_menu_editing(
         return Ok(None);
     };
 
-    // Ack interaction
     component_interaction
         .create_response(
             &ctx.serenity_context,
@@ -234,7 +234,6 @@ async fn select_player_from_menu_editing(
         )
         .await?;
 
-    // Remove components quickly after selection (UX)
     msg_handle
         .edit(
             poise::Context::Application(*ctx),
@@ -273,16 +272,4 @@ fn country_code_to_flag_emoji(country_code: &str) -> String {
         .filter(|c| c.is_ascii_alphabetic())
         .map(|c| char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap_or('∅'))
         .collect()
-}
-
-fn server_code_to_tag(code: i32) -> &'static str {
-    match code {
-        1 => "Korea",
-        2 => "Japan",
-        3 => "China",
-        4 => "Global",
-        5 => "Asia",
-        6 => "Europe",
-        _ => "??",
-    }
 }

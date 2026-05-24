@@ -1,58 +1,49 @@
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
+
 #[derive(Debug, Deserialize)]
-pub struct LeaderboardPlayer {
-    #[serde(rename = "playerName")]
-    pub name: String,
-    #[serde(rename = "swrtPlayerId")]
-    pub swrt_player_id: i64,
-    #[serde(rename = "playerScore")]
-    pub player_elo: i64,
-    #[serde(rename = "playerCountry")]
-    pub player_country: String,
+pub struct LeaderboardResponse {
+    pub count: i64,
+    pub data: Vec<LeaderboardPlayer>,
 }
 
-pub async fn get_leaderboard_data(token: &str, page: &i32) -> Result<Vec<LeaderboardPlayer>> {
-    let url = "https://m.swranking.com/api/player/list";
+#[derive(Debug, Deserialize)]
+pub struct LeaderboardPlayer {
+    pub player_id: i64,
+    pub username: String,
+    pub country: String,
+    pub current_score: i64,
+    pub rank: i64,
+}
+
+pub async fn get_leaderboard_data(
+    season: i32,
+    page: i32,
+    page_size: i32,
+) -> Result<LeaderboardResponse> {
+    let safe_page = page.max(1);
+    let safe_size = page_size.max(1);
+    let offset = (safe_page - 1) * safe_size;
+
+    let url = format!(
+        "https://api.lucksack.gg/players/leaderboard?season={}&limit={}&offset={}",
+        season, safe_size, offset
+    );
+
     let client = reqwest::Client::new();
 
-    let body = serde_json::json!({
-        "pageNum": page,
-        "pageSize": 10,
-        "playerName": "",
-        "online": false,
-        "level": null,
-        "playerMonsters": []
-    });
-
     let res = client
-        .post(url)
-        .json(&body)
-        .header("Authentication", token)
-        .header("Content-Type", "application/json")
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
         .send()
         .await?;
 
-    let status = res.status();
-    let resp_json: serde_json::Value = res.json().await?;
-
-    if !status.is_success() {
-        return Err(anyhow!(
-            "Error status {}: {:?}",
-            status,
-            resp_json["enMessage"]
-        ));
+    if !res.status().is_success() {
+        return Err(anyhow!("Error status {}", res.status()));
     }
 
-    let players = resp_json["data"]["list"]
-        .as_array()
-        .ok_or_else(|| anyhow!("Failed to parse player list"))?
-        .iter()
-        .map(|player| {
-            serde_json::from_value::<LeaderboardPlayer>(player.clone())
-                .map_err(|e| anyhow!("Failed to parse player: {}", e))
-        })
-        .collect::<Result<Vec<_>>>()?;
-
-    Ok(players)
+    res.json::<LeaderboardResponse>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse leaderboard JSON: {}", e))
 }

@@ -6,7 +6,6 @@ use image::{DynamicImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::drawing::draw_text_mut;
 use mongodb::{bson::doc, Client, Collection};
 use poise::serenity_prelude as serenity;
-use rand::seq::IndexedRandom;
 use serde::Deserialize;
 use serde_json::Value;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
@@ -15,138 +14,10 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
 use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, MONGO_URI, PUNISHER_EMOJI_ID};
 
-#[derive(Debug, Deserialize)]
-pub struct Player {
-    #[serde(rename = "playerName")]
-    pub name: String,
-
-    #[serde(rename = "swrtPlayerId")]
-    pub swrt_player_id: i64,
-
-    #[serde(rename = "playerCountry")]
-    pub player_country: String,
-
-    #[serde(rename = "playerScore")]
-    pub player_score: Option<i32>,
-
-    #[serde(rename = "playerServer")]
-    pub player_server: i32,
-}
-
-#[derive(Debug, Deserialize)]
-struct SearchResponse {
-    data: Option<SearchData>,
-    #[serde(rename = "enMessage")]
-    en_message: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct SearchData {
-    list: Vec<Player>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PlayerDetail {
-    #[serde(rename = "playerName")]
-    pub name: String,
-    #[serde(rename = "playerScore")]
-    pub player_score: Option<i32>,
-    #[serde(rename = "playerLevel")]
-    pub player_level: Option<i32>,
-    #[serde(rename = "playerRank")]
-    pub player_rank: Option<i32>,
-    #[serde(rename = "winRate")]
-    pub win_rate: Option<f32>,
-    #[serde(rename = "headImg")]
-    pub head_img: Option<String>,
-    #[serde(rename = "playerMonsters")]
-    pub player_monsters: Option<Vec<PlayerMonster>>,
-    #[serde(rename = "monsterLDImgs")]
-    pub monster_ld_imgs: Option<Vec<String>>,
-    #[serde(rename = "seasonCount")]
-    pub season_count: Option<i32>,
-    #[serde(rename = "playerCountry")]
-    pub player_country: String,
-    #[serde(rename = "swrtPlayerId")]
-    pub swrt_player_id: i64,
-    #[serde(rename = "playerId")]
-    pub player_id: i64,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PlayerMonster {
-    #[serde(rename = "monsterImg")]
-    pub monster_img: String,
-    #[serde(rename = "winRate")]
-    pub win_rate: f32,
-    #[serde(rename = "pickTotal")]
-    pub pick_total: i32,
-}
-
-#[derive(Debug, Deserialize)]
-struct DetailResponse {
-    data: Option<PlayerDetailWrapper>,
-    #[serde(rename = "enMessage")]
-    en_message: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct PlayerDetailWrapper {
-    player: PlayerDetail,
-    #[serde(rename = "playerMonsters")]
-    player_monsters: Option<Vec<PlayerMonster>>,
-    #[serde(rename = "monsterLDImgs")]
-    monster_ld_imgs: Option<Vec<String>>,
-    #[serde(rename = "seasonCount")]
-    season_count: Option<i32>,
-}
-
-/* ------------------ personOneMonsterList types ------------------ */
-
-#[derive(Debug, Deserialize)]
-pub struct PersonOneMonsterListResponse {
-    pub data: Option<PersonOneMonsterListData>,
-    #[serde(rename = "enMessage")]
-    pub en_message: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PersonOneMonsterListData {
-    #[serde(rename = "opptPlayerMonsters")]
-    pub oppt_player_monsters: Option<Vec<PersonMonsterStat>>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct PersonMonsterStat {
-    #[serde(rename = "monsterImg")]
-    pub monster_img: String,
-    #[serde(rename = "pickTotal")]
-    pub pick_total: i32,
-    #[serde(rename = "winRate")]
-    pub win_rate: f32,
-}
-
 /* ------------------ Replay types ------------------ */
-
-#[derive(Debug, Deserialize)]
-struct Root {
-    data: DataWrapper,
-}
-
-#[derive(Debug, Deserialize)]
-struct DataWrapper {
-    page: PageData,
-}
-
-#[derive(Debug, Deserialize)]
-struct PageData {
-    list: Vec<Replay>,
-}
-
 #[derive(Debug, Deserialize)]
 pub struct Replay {
     #[serde(rename = "playerOne")]
@@ -185,156 +56,6 @@ pub struct ReplayMonster {
     pub monster_id: u32,
 }
 
-/* ------------------ API calls ------------------ */
-
-pub async fn get_user_detail(token: &str, player_id: &i64) -> Result<PlayerDetail> {
-    let url = format!(
-        "https://m.swranking.com/api/player/detail?swrtPlayerId={}",
-        player_id
-    );
-    let client = reqwest::Client::new();
-
-    let res = client
-        .get(&url)
-        .header("Authentication", token)
-        .header("Content-Type", "application/json")
-        .send()
-        .await?;
-
-    let status = res.status();
-    let resp_json: DetailResponse = res.json().await?;
-
-    if !status.is_success() {
-        return Err(anyhow!(
-            "Error status {}: {:?}",
-            status,
-            resp_json.en_message
-        ));
-    }
-
-    resp_json
-        .data
-        .map(|d| PlayerDetail {
-            name: d.player.name,
-            player_score: d.player.player_score,
-            player_level: d.player.player_level,
-            player_rank: d.player.player_rank,
-            win_rate: d.player.win_rate,
-            head_img: d.player.head_img,
-            player_monsters: d.player_monsters,
-            player_country: d.player.player_country,
-            swrt_player_id: d.player.swrt_player_id,
-            player_id: d.player.player_id,
-            monster_ld_imgs: d.monster_ld_imgs,
-            season_count: d.season_count,
-        })
-        .ok_or_else(|| anyhow!("Player details not found"))
-}
-
-pub async fn search_users(token: &str, username: &str) -> Result<Vec<Player>> {
-    let url = "https://m.swranking.com/api/player/list";
-    let client = reqwest::Client::new();
-
-    let body = serde_json::json!({
-        "pageNum": 1,
-        "pageSize": 15,
-        "playerName": username,
-        "online": false,
-        "level": null,
-        "playerMonsters": []
-    });
-
-    let res = client
-        .post(url)
-        .json(&body)
-        .header("Authentication", token)
-        .header("Content-Type", "application/json")
-        .send()
-        .await?;
-
-    let status = res.status();
-    let resp_json: SearchResponse = res.json().await?;
-
-    if !status.is_success() {
-        return Err(anyhow!(
-            "Error status {}: {:?}",
-            status,
-            resp_json.en_message
-        ));
-    }
-
-    Ok(resp_json.data.map(|d| d.list).unwrap_or_default())
-}
-
-pub async fn get_recent_replays(token: &str, player_id: &i64) -> Result<Vec<Replay>> {
-    let url = "https://m.swranking.com/api/player/replaylist";
-    let client = reqwest::Client::new();
-
-    let body = serde_json::json!({
-        "swrtPlayerId": player_id.to_string(),
-        "result": 2,
-        "pageNum": 1,
-        "pageSize": 6,
-    });
-
-    let res = client
-        .post(url)
-        .json(&body)
-        .header("Authentication", token)
-        .header("Content-Type", "application/json")
-        .send()
-        .await?;
-
-    let status = res.status();
-    let json: Root = res.json().await?;
-
-    if !status.is_success() {
-        return Err(anyhow!(
-            "Error status {}: {:?}",
-            status,
-            json.data.page.list
-        ));
-    }
-
-    Ok(json.data.page.list)
-}
-
-pub async fn get_person_one_monster_list(
-    token: &str,
-    swrt_player_id: i64,
-    season: i64,
-) -> Result<PersonOneMonsterListData> {
-    let mut url = format!(
-        "https://m.swranking.com/api/player/personOneMonsterList?swrtPlayerId={}",
-        swrt_player_id
-    );
-
-    url.push_str(&format!("&season={}&version=", season));
-
-    let client = reqwest::Client::new();
-    let res = client
-        .get(&url)
-        .header("Authentication", token)
-        .header("Content-Type", "application/json")
-        .send()
-        .await?;
-
-    let status = res.status();
-    let resp_json: PersonOneMonsterListResponse = res.json().await?;
-
-    if !status.is_success() {
-        return Err(anyhow!(
-            "Error status {}: {:?}",
-            status,
-            resp_json.en_message
-        ));
-    }
-
-    resp_json
-        .data
-        .ok_or_else(|| anyhow!("personOneMonsterList: missing data"))
-}
-
 /* ------------------ Mongo / emojis helpers ------------------ */
 
 pub async fn get_mob_emoji_collection() -> Result<Collection<mongodb::bson::Document>> {
@@ -347,429 +68,6 @@ pub async fn get_mob_emoji_collection() -> Result<Collection<mongodb::bson::Docu
     Ok(client
         .database("bot-swbox-db")
         .collection::<mongodb::bson::Document>("mob-emoji"))
-}
-
-/// Cache filename -> com2us_id mapping (loaded once)
-static FILENAME_TO_ID: OnceLock<HashMap<String, i32>> = OnceLock::new();
-
-fn get_filename_to_id_map() -> &'static HashMap<String, i32> {
-    FILENAME_TO_ID.get_or_init(|| {
-        let file =
-            fs::read_to_string("monsters_elements.json").expect("monsters_elements.json not found");
-        let v: Value = serde_json::from_str(&file).expect("invalid monsters_elements.json");
-
-        let arr = v["monsters"].as_array().expect("monsters must be an array");
-
-        let mut map = HashMap::new();
-        for m in arr {
-            let obtainable = m["obtainable"].as_bool().unwrap_or(false);
-            if obtainable {
-                let filename = m["image_filename"].as_str().unwrap_or_default().to_string();
-                let com2us_id = m["com2us_id"].as_i64().unwrap_or(0) as i32;
-                if !filename.is_empty() && com2us_id != 0 {
-                    map.insert(filename, com2us_id);
-                }
-            }
-        }
-        map
-    })
-}
-
-pub async fn format_player_ld_monsters_emojis(details: &PlayerDetail) -> Vec<String> {
-    let mut emojis = vec![];
-
-    let mut files = vec![];
-    if let Some(ld) = &details.monster_ld_imgs {
-        files.extend(ld.clone());
-    }
-
-    files.sort();
-    files.dedup();
-
-    let filename_to_id = get_filename_to_id_map();
-
-    let Ok(collection) = get_mob_emoji_collection().await else {
-        return emojis;
-    };
-
-    for file in files {
-        if let Some(&monster_id) = filename_to_id.get(&file) {
-            let remapped_id = remap_monster_id(monster_id);
-
-            let emoji_doc = collection
-                .find_one(doc! { "com2us_id": remapped_id })
-                .await
-                .ok()
-                .flatten();
-
-            if let Some(emoji_doc) = emoji_doc {
-                let natural_stars = emoji_doc.get_i32("natural_stars").unwrap_or(0);
-                if natural_stars < 5 {
-                    continue;
-                }
-                if let Ok(id) = emoji_doc.get_str("id") {
-                    let name = emoji_doc.get_str("name").unwrap_or("unit");
-                    emojis.push(format!("<:{}:{}>", name, id));
-                }
-            }
-        }
-    }
-
-    emojis
-}
-
-pub async fn format_player_monsters(details: &PlayerDetail) -> Vec<String> {
-    let mut output = vec![];
-
-    let Ok(collection) = get_mob_emoji_collection().await else {
-        return output;
-    };
-
-    let filename_to_id = get_filename_to_id_map();
-
-    if let Some(monsters) = &details.player_monsters {
-        for (index, m) in monsters.iter().enumerate() {
-            if let Some(&monster_id) = filename_to_id.get(&m.monster_img) {
-                let remapped_id = remap_monster_id(monster_id);
-
-                let emoji_doc = collection
-                    .find_one(doc! { "com2us_id": remapped_id })
-                    .await
-                    .ok()
-                    .flatten();
-
-                if let Some(emoji_doc) = emoji_doc {
-                    if let Ok(id) = emoji_doc.get_str("id") {
-                        let name = emoji_doc.get_str("name").unwrap_or("unit");
-                        let emoji = format!("<:{}:{}>", name, id);
-
-                        let pick_display = if m.pick_total >= 1000 {
-                            let k = m.pick_total / 1000;
-                            let remainder = (m.pick_total % 1000) / 100;
-                            if remainder == 0 {
-                                format!("{}k", k)
-                            } else {
-                                format!("{}k{}", k, remainder)
-                            }
-                        } else {
-                            m.pick_total.to_string()
-                        };
-
-                        output.push(format!(
-                            "{}. {} {} picks, **{:.1} %** WR\n",
-                            index + 1,
-                            emoji,
-                            pick_display,
-                            m.win_rate
-                        ));
-                    }
-                }
-            }
-        }
-    }
-
-    output
-}
-
-pub async fn format_opponent_monsters_worst(
-    details: &PlayerDetail,
-    data: &PersonOneMonsterListData,
-) -> Vec<String> {
-    let mut out = vec![];
-
-    let Ok(collection) = get_mob_emoji_collection().await else {
-        return out;
-    };
-    let filename_to_id = get_filename_to_id_map();
-
-    let total_games = details.season_count.unwrap_or(0);
-    if total_games <= 0 {
-        out.push("None (no season_count data)".to_string());
-        return out;
-    }
-
-    let min_pick = ((total_games as f32) * 0.05).ceil() as i32;
-
-    let Some(list) = data.oppt_player_monsters.as_ref() else {
-        out.push("None".to_string());
-        return out;
-    };
-
-    let mut filtered: Vec<PersonMonsterStat> = list
-        .iter()
-        .cloned()
-        .filter(|m| m.pick_total >= min_pick)
-        .collect();
-
-    // sort by worst WR first
-    filtered.sort_by(|a, b| {
-        a.win_rate
-            .partial_cmp(&b.win_rate)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
-
-    for (idx, m) in filtered.into_iter().take(10).enumerate() {
-        if let Some(&monster_id) = filename_to_id.get(&m.monster_img) {
-            let remapped_id = remap_monster_id(monster_id);
-
-            let emoji_doc = collection
-                .find_one(doc! { "com2us_id": remapped_id })
-                .await
-                .ok()
-                .flatten();
-
-            if let Some(emoji_doc) = emoji_doc {
-                if let Ok(id) = emoji_doc.get_str("id") {
-                    let name = emoji_doc.get_str("name").unwrap_or("unit");
-                    let emoji = format!("<:{}:{}>", name, id);
-
-                    let pick_display = if m.pick_total >= 1000 {
-                        let k = m.pick_total / 1000;
-                        let remainder = (m.pick_total % 1000) / 100;
-                        if remainder == 0 {
-                            format!("{}k", k)
-                        } else {
-                            format!("{}k{}", k, remainder)
-                        }
-                    } else {
-                        m.pick_total.to_string()
-                    };
-
-                    out.push(format!(
-                        "{}. {} {} picks, **{:.1} %** WR\n",
-                        idx + 1,
-                        emoji,
-                        pick_display,
-                        m.win_rate
-                    ));
-                }
-            }
-        }
-    }
-
-    if out.is_empty() {
-        out.push(format!(
-            "None (no opponent units meet the threshold: {} picks)",
-            min_pick
-        ));
-    }
-
-    out
-}
-
-/* ------------------ Embed ------------------ */
-
-pub fn create_player_embed(
-    details: &PlayerDetail,
-    ld_emojis: Vec<String>,
-    top_monsters: Vec<String>,
-    worst_opponents: Vec<String>,
-    rank_emojis: String,
-    has_image: i32,
-) -> CreateEmbed {
-    let extract_emoji_key = |s: &str| -> Option<String> {
-        let start = s.find("<:")?;
-        let tail = &s[start..];
-        let end_rel = tail.find('>')?;
-        Some(tail[..=end_rel].to_string())
-    };
-
-    let dedup_emojis = |list: Vec<String>| -> Vec<String> {
-        let mut seen = HashSet::new();
-        let mut out = Vec::new();
-
-        for item in list {
-            if let Some(key) = extract_emoji_key(&item) {
-                if seen.insert(key) {
-                    out.push(item);
-                }
-            } else {
-                out.push(item);
-            }
-        }
-
-        out
-    };
-
-    let format_emojis_with_split = |list: Vec<String>| -> Vec<(String, String)> {
-        const MAX_FIELD_LEN: usize = 1020;
-
-        if list.is_empty() {
-            return vec![("".to_string(), "None".to_string())];
-        }
-
-        let mut parts: Vec<String> = Vec::new();
-        let mut current = String::new();
-
-        for entry in list {
-            let candidate_len = if current.is_empty() {
-                entry.len()
-            } else {
-                current.len() + 1 + entry.len()
-            };
-
-            if candidate_len <= MAX_FIELD_LEN {
-                if !current.is_empty() {
-                    current.push(' ');
-                }
-                current.push_str(&entry);
-                continue;
-            }
-
-            if !current.is_empty() {
-                parts.push(current);
-                current = String::new();
-            }
-
-            if entry.len() <= MAX_FIELD_LEN {
-                current.push_str(&entry);
-                continue;
-            }
-
-            let mut start = 0usize;
-            let entry_len = entry.len();
-            while start < entry_len {
-                let mut end = (start + MAX_FIELD_LEN).min(entry_len);
-                while end > start && !entry.is_char_boundary(end) {
-                    end -= 1;
-                }
-
-                if end == start {
-                    break;
-                }
-
-                let chunk = entry[start..end].to_string();
-                if !chunk.is_empty() {
-                    parts.push(chunk);
-                }
-                start = end;
-            }
-        }
-
-        if !current.is_empty() {
-            parts.push(current);
-        }
-
-        if parts.is_empty() {
-            return vec![("".to_string(), "None".to_string())];
-        }
-
-        let total_parts = parts.len();
-        parts
-            .into_iter()
-            .enumerate()
-            .map(|(idx, text)| {
-                let suffix = if total_parts > 1 {
-                    format!("({}/{})", idx + 1, total_parts)
-                } else {
-                    String::new()
-                };
-                (suffix, text)
-            })
-            .collect()
-    };
-
-    let ld_fields = format_emojis_with_split(dedup_emojis(ld_emojis));
-    let top_fields = format_emojis_with_split(dedup_emojis(top_monsters));
-    let opp_fields = format_emojis_with_split(dedup_emojis(worst_opponents));
-
-    let gifs = vec![
-        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif",
-        "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeXRmY2locjR2cnJ5d2JvdWF5djN5cTRlajdna3JxeTA4d2RsdzVxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rGDZbxkkjo0hfLe4EA/giphy.gif",
-        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTRsODVtNThvbTl2bW50NnhzYjB5MWN3aHF5dW40NTIwMmpoaGk0ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WiIuC6fAOoXD2/giphy.gif",
-        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHFreWtobWUwdmx4MGlpYXZvZjVubDd4ejBuOTcweTh1d3IyaGtzeiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KDZdynDNJUrrp7EjTM/giphy.gif",
-    ];
-
-    let random_gif = gifs.choose(&mut rand::rng()).unwrap_or(&gifs[0]);
-    let has_ranked_data = details.player_score.unwrap_or(0) != 0;
-
-    let mut embed = CreateEmbed::default()
-        .title(format!(
-            ":flag_{}: {} (id: {}) {} RTA Statistics (Regular Season only)",
-            details.player_country.to_lowercase(),
-            details.name,
-            details.player_id,
-            PLAYER_ALIAS_MAP
-                .get(&details.swrt_player_id)
-                .map(|alias| format!("(aka. {})", alias))
-                .unwrap_or_default()
-        ))
-        .thumbnail(details.head_img.clone().unwrap_or_default())
-        .color(serenity::Colour::from_rgb(0, 180, 255))
-        .description("⚠️ Stats are not 100% accurate, swranking might not have gathered all games ➡️ The very last battle is not included in the elo/rank, and people under/around C1 elo will have weird stats (missing games, weird winrates) ⚠️")
-        .field("WinRate", format!("{:.1} %", details.win_rate.unwrap_or(0.0) * 100.0), true);
-
-    if has_ranked_data {
-        embed = embed
-            .field("Elo", details.player_score.unwrap_or(0).to_string(), true)
-            .field("Rank", details.player_rank.unwrap_or(0).to_string(), true);
-    }
-
-    embed = embed.field("Approx. Rank", rank_emojis, true).field(
-        "Matches Played",
-        details.season_count.unwrap_or(0).to_string(),
-        true,
-    );
-
-    for (suffix, text) in ld_fields {
-        let name = if suffix.is_empty() {
-            "✨ LD Monsters (RTA only)".to_string()
-        } else {
-            format!("✨ LD Monsters (RTA only) {}", suffix)
-        };
-        embed = embed.field(name, text, false);
-    }
-
-    for (suffix, text) in top_fields {
-        let name = if suffix.is_empty() {
-            "🔥 Most Used Units Winrate".to_string()
-        } else {
-            format!("🔥 Most Used Units Winrate {}", suffix)
-        };
-        embed = embed.field(name, text, false);
-    }
-
-    for (suffix, text) in opp_fields {
-        let name = if suffix.is_empty() {
-            "😈 Opponent units - worst WR (≥5% matches)".to_string()
-        } else {
-            format!("😈 Opponent units - worst WR (≥5% matches) {}", suffix)
-        };
-        embed = embed.field(name, text, false);
-    }
-
-    embed
-        .image(if has_image == 1 {
-            "attachment://replay.png"
-        } else if has_image == 0 {
-            random_gif
-        } else {
-            ""
-        })
-        .footer(CreateEmbedFooter::new(
-            "Data is gathered from m.swranking.com",
-        ))
-}
-
-/* ------------------ Rank emojis ------------------ */
-
-pub async fn get_rank_emojis_for_score(score: i32) -> Result<String> {
-    let conqueror_emote_str = format!("<:conqueror:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());
-    let punisher_emote_str = format!("<:punisher:{}>", PUNISHER_EMOJI_ID.lock().unwrap());
-    let guardian_emote_str = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
-
-    if score >= 4001 {
-        let count = score - 4000;
-        return Ok(guardian_emote_str.repeat(count as usize));
-    } else if score >= 3501 {
-        let count = score - 3500;
-        return Ok(punisher_emote_str.repeat(count as usize));
-    } else if score >= 3001 {
-        let count = score - 3000;
-        return Ok(conqueror_emote_str.repeat(count as usize));
-    }
-
-    Ok("Unranked".to_string())
 }
 
 /* ------------------ Replay image generation ------------------ */
@@ -937,7 +235,127 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, rows: i32, cols: i
     Ok(output_path)
 }
 
-/* ------------------ Collage + text drawing ------------------ */
+pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<PathBuf> {
+    let img_map = get_comid_to_image_map();
+    let mut sections: Vec<RgbaImage> = Vec::new();
+    let mut image_cache: HashMap<String, DynamicImage> = HashMap::new();
+
+    for m in matches.iter().take(6) {
+        let filenames_mine: Vec<String> = m
+            .my_monsters
+            .iter()
+            .filter_map(|&id| img_map.get(&(id as i32)).cloned())
+            .collect();
+        let filenames_opp: Vec<String> = m
+            .opponent_monsters
+            .iter()
+            .filter_map(|&id| img_map.get(&(id as i32)).cloned())
+            .collect();
+
+        if filenames_mine.is_empty() || filenames_opp.is_empty() {
+            continue;
+        }
+
+        let ids_mine: Vec<u32> = m.my_monsters.iter().map(|&id| id as u32).collect();
+        let ids_opp: Vec<u32> = m.opponent_monsters.iter().map(|&id| id as u32).collect();
+
+        let img_me = create_team_collage_custom_layout(
+            &filenames_mine,
+            &ids_mine,
+            m.my_bans as u32,
+            m.my_leader as u32,
+            m.had_first_pick,
+            &mut image_cache,
+        )
+        .await?;
+
+        let img_opp = create_team_collage_custom_layout(
+            &filenames_opp,
+            &ids_opp,
+            m.opponent_bans as u32,
+            m.opponent_leader as u32,
+            !m.had_first_pick,
+            &mut image_cache,
+        )
+        .await?;
+
+        let image_width = img_me.width() / 3;
+        let spacing = image_width / 2;
+        let combined_width = img_me.width() + img_opp.width() + spacing;
+        let height = img_me.height().max(img_opp.height());
+
+        let mut combined = ImageBuffer::new(combined_width, height);
+        combined.copy_from(&img_me, 0, 0).unwrap();
+        combined
+            .copy_from(&img_opp, img_me.width() + spacing, 0)
+            .unwrap();
+
+        // Parse ISO 8601 date → "DD-MM-YYYY"
+        let date_text = m
+            .battle_time
+            .get(..10)
+            .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+            .map(|d| d.format("%d-%m-%Y").to_string())
+            .unwrap_or_else(|| m.battle_time.get(..10).unwrap_or("").to_string());
+
+        let left_text = format!("{} - {}", m.my_score, m.my_username);
+        let right_text = format!("{} - {}", m.opponent_username, m.opponent_score);
+
+        let banner =
+            create_match_banner(&left_text, &date_text, &right_text, combined_width, Rgba([0, 0, 0, 0]));
+        let banner_height = banner.height();
+
+        let border = 10u32;
+        let inner_w = combined_width;
+        let inner_h = banner_height + combined.height();
+        let total_w = inner_w + 2 * border;
+        let total_h = inner_h + 2 * border;
+
+        let bg_color = if m.won {
+            Rgba([0, 255, 0, 100])
+        } else {
+            Rgba([255, 0, 0, 100])
+        };
+
+        let mut section = ImageBuffer::from_pixel(total_w, total_h, bg_color);
+        let mut inner = ImageBuffer::from_pixel(inner_w, inner_h, Rgba([0, 0, 0, 0]));
+        inner.copy_from(&banner, 0, 0).unwrap();
+        inner.copy_from(&combined, 0, banner_height).unwrap();
+        section.copy_from(&inner, border, border).unwrap();
+        sections.push(section);
+    }
+
+    if sections.is_empty() {
+        return Err(anyhow!("No valid matches to render"));
+    }
+
+    let cols = 2u32;
+    let rows = ((sections.len() as u32) + cols - 1) / cols;
+    let padding = 10u32;
+    let sw = sections[0].width();
+    let sh = sections[0].height();
+    let full_w = cols * sw + (cols - 1) * padding;
+    let full_h = rows * sh + (rows - 1) * padding;
+
+    let mut canvas = ImageBuffer::new(full_w, full_h);
+    for (i, section) in sections.iter().enumerate() {
+        let col = (i as u32) % cols;
+        let row = (i as u32) / cols;
+        canvas.copy_from(section, col * (sw + padding), row * (sh + padding))?;
+    }
+
+    let output_path = PathBuf::from("/tmp/replay.png");
+    let output_path_clone = output_path.clone();
+    tokio::task::spawn_blocking(move || {
+        std::fs::create_dir_all("/tmp")?;
+        canvas.save(&output_path_clone)?;
+        Ok::<_, anyhow::Error>(output_path_clone)
+    })
+    .await??;
+
+    Ok(output_path)
+}
+
 
 async fn create_team_collage_custom_layout(
     image_filenames: &[String],
@@ -1201,4 +619,530 @@ pub fn parse_discord_mention_to_id(s: &str) -> Option<u64> {
     let inner = inner.strip_prefix('!').unwrap_or(inner);
 
     inner.parse::<u64>().ok()
+}
+
+/* ------------------ Lucksack API types ------------------ */
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackSearchPlayer {
+    pub player_id: i64,
+    pub username: String,
+    pub country: String,
+    pub current_score: i32,
+    pub current_rank: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackSeasonEntry {
+    pub season_number: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackPlayerSummary {
+    pub user_info: LucksackUserInfo,
+    pub summary: LucksackSummaryData,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackUserInfo {
+    pub player_id: i64,
+    pub server_id: i32,
+    pub username: String,
+    pub country: String,
+    pub image: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackSummaryData {
+    pub total_matches: i32,
+    pub overall_win_rate: f64,
+    pub peak_score: i32,
+    pub current_score: i32,
+    pub current_rank: i64,
+    pub current_rank_bracket: i32,
+    pub score_last_3_days: i32,
+    pub score_last_7_days: i32,
+}
+
+/* ------------------ Lucksack API calls ------------------ */
+
+pub async fn search_players_lucksack(username: &str) -> Result<Vec<LucksackSearchPlayer>> {
+    let url = format!("https://api.lucksack.gg/players/search/{}", username);
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    res.json::<Vec<LucksackSearchPlayer>>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse search JSON: {}", e))
+}
+
+pub async fn get_lucksack_season_numbers() -> Result<Vec<i32>> {
+    let url = "https://api.lucksack.gg/seasons";
+    let client = reqwest::Client::new();
+    let res = client
+        .get(url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send seasons request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    let seasons = res
+        .json::<Vec<LucksackSeasonEntry>>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse seasons JSON: {}", e))?;
+
+    let mut season_numbers: Vec<i32> = seasons.into_iter().filter_map(|s| s.season_number).collect();
+    season_numbers.sort_unstable_by(|a, b| b.cmp(a));
+    season_numbers.dedup();
+
+    if season_numbers.is_empty() {
+        return Err(anyhow!("No valid season_number found"));
+    }
+
+    Ok(season_numbers)
+}
+
+pub async fn get_lucksack_player_summary(
+    player_id: i64,
+    season: i32,
+) -> Result<LucksackPlayerSummary> {
+    let url = format!(
+        "https://api.lucksack.gg/players/{}/summary?season={}",
+        player_id, season
+    );
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    res.json::<LucksackPlayerSummary>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse summary JSON: {}", e))
+}
+
+/* ------------------ Lucksack rank emojis ------------------ */
+
+pub fn get_rank_emojis_for_bracket(bracket: i32) -> String {
+    let conqueror = format!("<:conqueror:{}>", CONQUEROR_EMOJI_ID.lock().unwrap());
+    let punisher = format!("<:punisher:{}>", PUNISHER_EMOJI_ID.lock().unwrap());
+    let guardian = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
+
+    match bracket {
+        8 => conqueror.repeat(1),
+        9 => conqueror.repeat(2),
+        10 => conqueror.repeat(3),
+        11 => punisher.repeat(1),
+        12 => punisher.repeat(2),
+        13 => punisher.repeat(3),
+        14 => guardian.repeat(1),
+        15 => guardian.repeat(2),
+        16 => guardian.repeat(3),
+        _ => "Unranked".to_string(),
+    }
+}
+
+/* ------------------ Lucksack picks types & API ------------------ */
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackPickEntry {
+    pub monster_id: i64,
+    pub played_count: i32,
+    pub win_rate: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackBoxEntry {
+    pub monster_image: String,
+    pub played_count: i32,
+}
+
+pub async fn get_lucksack_player_picks(
+    player_id: i64,
+    season: i32,
+) -> Result<Vec<LucksackPickEntry>> {
+    let url = format!(
+        "https://api.lucksack.gg/players/{}/picks?season={}&min_game_played=3",
+        player_id, season
+    );
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send picks request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    res.json::<Vec<LucksackPickEntry>>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse picks JSON: {}", e))
+}
+
+pub async fn get_lucksack_player_ld5_box(
+    player_id: i64,
+    season: i32,
+) -> Result<Vec<LucksackBoxEntry>> {
+    let url = format!(
+        "https://api.lucksack.gg/players/{}/box?season={}&element=light%2Cdark&ld5=true",
+        player_id, season
+    );
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send LD5 box request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    res.json::<Vec<LucksackBoxEntry>>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse LD5 box JSON: {}", e))
+}
+
+/// com2us_id → image_filename (from monsters_elements.json)
+static COMID_TO_IMAGE: OnceLock<HashMap<i32, String>> = OnceLock::new();
+
+fn get_comid_to_image_map() -> &'static HashMap<i32, String> {
+    COMID_TO_IMAGE.get_or_init(|| {
+        let file = fs::read_to_string("monsters_elements.json")
+            .expect("monsters_elements.json not found");
+        let v: Value = serde_json::from_str(&file).expect("invalid monsters_elements.json");
+        let arr = v["monsters"].as_array().expect("monsters must be an array");
+
+        let mut map = HashMap::new();
+        for m in arr {
+            let com2us_id = m["com2us_id"].as_i64().unwrap_or(0) as i32;
+            let filename = m["image_filename"].as_str().unwrap_or("").to_string();
+            if com2us_id != 0 && !filename.is_empty() {
+                map.insert(com2us_id, filename);
+            }
+        }
+        map
+    })
+}
+
+pub async fn format_lucksack_top_monsters(picks: &[LucksackPickEntry]) -> String {
+    let Ok(collection) = get_mob_emoji_collection().await else {
+        return String::new();
+    };
+
+    let img_map = get_comid_to_image_map();
+    let mut lines = vec![];
+
+    for (idx, pick) in picks.iter().take(10).enumerate() {
+        let monster_id = pick.monster_id as i32;
+
+        let emoji_str = if let Some(image_filename) = img_map.get(&monster_id) {
+            // "unit_icon_0168_1_5.png" → "0168_1_5"
+            let emoji_name = image_filename
+                .trim_start_matches("unit_icon_")
+                .trim_end_matches(".png");
+
+            let doc = collection
+                .find_one(doc! { "name": emoji_name })
+                .await
+                .ok()
+                .flatten();
+
+            if let Some(d) = doc {
+                let id = d.get_str("id").unwrap_or("");
+                let name = d.get_str("name").unwrap_or("unit");
+                format!("<:{}:{}>", name, id)
+            } else {
+                "❓".to_string()
+            }
+        } else {
+            "❓".to_string()
+        };
+
+        lines.push(format!(
+            "{}. {} {} picks, **{:.1}%** WR",
+            idx + 1,
+            emoji_str,
+            pick.played_count,
+            pick.win_rate
+        ));
+    }
+
+    if lines.is_empty() {
+        "No data".to_string()
+    } else {
+        lines.join("\n")
+    }
+}
+
+pub async fn format_lucksack_ld_monsters_emojis(ld_box: &[LucksackBoxEntry]) -> String {
+    let Ok(collection) = get_mob_emoji_collection().await else {
+        return "No data".to_string();
+    };
+
+    let mut emojis = Vec::new();
+    let mut seen = HashSet::new();
+
+    for monster in ld_box {
+        if monster.played_count <= 0 {
+            continue;
+        }
+
+        let emoji_name = monster
+            .monster_image
+            .trim_start_matches("unit_icon_")
+            .trim_end_matches(".png");
+
+        if emoji_name.is_empty() || !seen.insert(emoji_name.to_string()) {
+            continue;
+        }
+
+        let doc = collection
+            .find_one(doc! { "name": emoji_name })
+            .await
+            .ok()
+            .flatten();
+
+        if let Some(d) = doc {
+            let id = d.get_str("id").unwrap_or("");
+            let name = d.get_str("name").unwrap_or("unit");
+            if !id.is_empty() {
+                emojis.push(format!("<:{}:{}>", name, id));
+            }
+        }
+    }
+
+    if emojis.is_empty() {
+        "No data".to_string()
+    } else {
+        emojis.join(" ")
+    }
+}
+
+/* ------------------ Lucksack embed builder ------------------ */
+
+pub fn create_lucksack_player_embed(
+    summary: &LucksackPlayerSummary,
+    rank_emojis: String,
+    top_monsters: String,
+    ld_monsters: String,
+) -> CreateEmbed {
+    let s = &summary.summary;
+    let info = &summary.user_info;
+
+    let _rank_label = match s.current_rank_bracket {
+        11 => "P1",
+        12 => "P2",
+        13 => "P3",
+        14 => "G1",
+        15 => "G2",
+        16 => "G3",
+        _ => "?",
+    };
+
+    let server_name = match info.server_id {
+        1 => "Korea",
+        2 => "Japan",
+        3 => "China",
+        4 => "Global",
+        5 => "Asia",
+        6 => "Europe",
+        _ => "??",
+    };
+
+    let alias_suffix = PLAYER_ALIAS_MAP
+        .get(&info.player_id)
+        .map(|alias| format!(" (aka. {})", alias))
+        .unwrap_or_default();
+
+    let score_3d = if s.score_last_3_days >= 0 {
+        format!("+{}", s.score_last_3_days)
+    } else {
+        s.score_last_3_days.to_string()
+    };
+
+    let score_7d = if s.score_last_7_days >= 0 {
+        format!("+{}", s.score_last_7_days)
+    } else {
+        s.score_last_7_days.to_string()
+    };
+
+    let description = format!(
+        "**Elo**: {} • **Rank**: #{} • **Peak Elo**: {}",
+        s.current_score, s.current_rank, s.peak_score
+    );
+
+    let split_field_chunks = |text: &str, max_len: usize| -> Vec<String> {
+        if text.is_empty() {
+            return vec!["No data".to_string()];
+        }
+
+        if text.len() <= max_len {
+            return vec![text.to_string()];
+        }
+
+        let mut chunks = Vec::new();
+        let mut current = String::new();
+
+        for token in text.split_whitespace() {
+            let candidate_len = if current.is_empty() {
+                token.len()
+            } else {
+                current.len() + 1 + token.len()
+            };
+
+            if candidate_len <= max_len {
+                if !current.is_empty() {
+                    current.push(' ');
+                }
+                current.push_str(token);
+            } else {
+                if !current.is_empty() {
+                    chunks.push(current);
+                    current = String::new();
+                }
+
+                if token.len() <= max_len {
+                    current.push_str(token);
+                } else {
+                    let mut start = 0usize;
+                    while start < token.len() {
+                        let mut end = (start + max_len).min(token.len());
+                        while end > start && !token.is_char_boundary(end) {
+                            end -= 1;
+                        }
+                        if end == start {
+                            break;
+                        }
+                        chunks.push(token[start..end].to_string());
+                        start = end;
+                    }
+                }
+            }
+        }
+
+        if !current.is_empty() {
+            chunks.push(current);
+        }
+
+        if chunks.is_empty() {
+            vec!["No data".to_string()]
+        } else {
+            chunks
+        }
+    };
+
+    let ld_chunks = split_field_chunks(&ld_monsters, 1020);
+
+    let mut embed = CreateEmbed::default()
+        .title(format!(
+            ":flag_{}: {}{}  (id: {}) - RTA Statistics",
+            info.country.to_lowercase(),
+            info.username,
+            alias_suffix,
+            info.player_id,
+        ))
+        .thumbnail(info.image.clone())
+        .color(serenity::Colour::from_rgb(0, 180, 255))
+        .description(description)
+        .field("Win Rate", format!("{:.2}%", s.overall_win_rate), true)
+        .field("Total Matches", s.total_matches.to_string(), true)
+        .field("Server", server_name, true)
+        .field("Rank Bracket", rank_emojis, true)
+        .field("Elo (3 days)", score_3d, true)
+        .field("Elo (7 days)", score_7d, true);
+
+    for (idx, chunk) in ld_chunks.into_iter().enumerate() {
+        let name = if idx == 0 {
+            "✨ LD Monsters (RTA only)".to_string()
+        } else {
+            format!("✨ LD Monsters (RTA only) ({})", idx + 1)
+        };
+        embed = embed.field(name, chunk, false);
+    }
+
+    embed
+        .field("🏆 Top Played Monsters", top_monsters, false)
+        .footer(CreateEmbedFooter::new("Data is gathered from lucksack.gg"))
+}
+
+/* ------------------ Lucksack matches types & API ------------------ */
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackMatchesResponse {
+    pub matches: Vec<LucksackMatch>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackMatch {
+    pub won: bool,
+    pub had_first_pick: bool,
+    pub battle_time: String,
+    pub my_monsters: Vec<i64>,
+    pub my_leader: i64,
+    pub my_bans: i64,
+    pub my_username: String,
+    pub my_score: i32,
+    pub opponent_monsters: Vec<i64>,
+    pub opponent_leader: i64,
+    pub opponent_bans: i64,
+    pub opponent_username: String,
+    pub opponent_score: i32,
+}
+
+pub async fn get_lucksack_player_matches(
+    player_id: i64,
+    season: i32,
+) -> Result<Vec<LucksackMatch>> {
+    let url = format!(
+        "https://api.lucksack.gg/players/{}/matches?season={}&limit=20&offset=0",
+        player_id, season
+    );
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send matches request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    let resp = res
+        .json::<LucksackMatchesResponse>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse matches JSON: {}", e))?;
+
+    Ok(resp.matches)
 }

@@ -10,12 +10,12 @@ use crate::commands::register::utils::get_user_link;
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
 use crate::commands::{
-    mob_stats::utils::get_swrt_settings,
     player_stats::utils::{
-        create_player_embed, create_replay_image, format_opponent_monsters_worst,
-        format_player_ld_monsters_emojis, format_player_monsters, get_person_one_monster_list,
-        get_rank_emojis_for_score, get_recent_replays, get_user_detail,
-        parse_discord_mention_to_id, search_users, Player,
+        create_lucksack_player_embed, create_lucksack_replay_image,
+        format_lucksack_ld_monsters_emojis, format_lucksack_top_monsters,
+        get_lucksack_player_ld5_box, get_lucksack_player_matches, get_lucksack_player_picks,
+        get_lucksack_player_summary, get_lucksack_season_numbers, get_rank_emojis_for_bracket,
+        parse_discord_mention_to_id, search_players_lucksack, LucksackSearchPlayer,
     },
     shared::{
         embed_error_handling::{create_embed_error, schedule_message_deletion},
@@ -23,15 +23,14 @@ use crate::commands::{
         models::LoggerDocument,
     },
 };
-use crate::{Data, API_TOKEN};
+use crate::Data;
 
-/// Résultat de résolution : id + (optionnel) handle du message à éditer (menu)
 struct ResolvedPlayer<'a> {
-    swrt_player_id: i64,
+    player_id: i64,
     reply_handle: Option<poise::ReplyHandle<'a>>,
 }
 
-/// 📂 Displays the RTA stats of the given player. (LD & most used monsters)
+/// 📂 Displays the RTA stats of the given player.
 ///
 /// Usage: /get_player_stats
 #[poise::command(slash_command)]
@@ -41,28 +40,13 @@ pub async fn get_player_stats(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let token = get_token()?;
-
-    // 1) Resolve swrt_player_id (alias / search / select)
-    let resolved = match resolve_player_id(&ctx, &token, &player_name).await? {
+    let resolved = match resolve_player_id(&ctx, &player_name).await? {
         Some(r) => r,
-        None => {
-            // resolve_player_id already replied + logged failure if needed
-            return Ok(());
-        }
+        None => return Ok(()),
     };
 
-    // 2) Show stats (single pipeline)
-    // Important : on passe le reply_handle, pour réutiliser le message du menu
-    let result = show_player_stats(
-        &ctx,
-        &token,
-        &resolved.swrt_player_id,
-        resolved.reply_handle,
-    )
-    .await;
+    let result = show_player_stats(&ctx, resolved.player_id, resolved.reply_handle).await;
 
-    // 3) Log
     send_log(LoggerDocument::new(
         &ctx.author().name,
         &"get_player_stats".to_string(),
@@ -75,23 +59,11 @@ pub async fn get_player_stats(
     result
 }
 
-/// Centralized token retrieval
-pub(crate) fn get_token() -> Result<String, Error> {
-    let guard = API_TOKEN.lock().unwrap();
-    guard.clone().ok_or_else(|| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Missing API Token, please contact **b4tiste** on Discord : <https://discord.gg/AfANrTVaDJ>.",
-        ))
-    })
-}
-
 async fn resolve_player_id<'a>(
     ctx: &'a poise::ApplicationContext<'a, Data, Error>,
-    token: &str,
     player_name: &str,
 ) -> Result<Option<ResolvedPlayer<'a>>, Error> {
-    // Mention Discord
+    // Discord mention
     if let Some(discord_id) = parse_discord_mention_to_id(player_name) {
         let doc_opt = get_user_link(discord_id).await.map_err(|e| {
             Error::from(std::io::Error::new(
@@ -106,29 +78,29 @@ async fn resolve_player_id<'a>(
             return Ok(None);
         };
 
-        let swrt_player_id = doc.get_i64("swrt_player_id").map_err(|_| {
+        let player_id = doc.get_i64("swrt_player_id").map_err(|_| {
             Error::from(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                "Invalid stored swrt_player_id in DB",
+                "Invalid stored player_id in DB",
             ))
         })?;
 
         return Ok(Some(ResolvedPlayer {
-            swrt_player_id,
+            player_id,
             reply_handle: None,
         }));
     }
 
-    // Alias direct
-    if let Some(swrt_id) = ALIAS_LOOKUP_MAP.get(&player_name.to_lowercase()) {
+    // Alias lookup
+    if let Some(&swrt_id) = ALIAS_LOOKUP_MAP.get(&player_name.to_lowercase()) {
         return Ok(Some(ResolvedPlayer {
-            swrt_player_id: *swrt_id,
+            player_id: swrt_id,
             reply_handle: None,
         }));
     }
 
-    // Search
-    let players = search_users(token, player_name).await.map_err(|e| {
+    // Lucksack search
+    let players = search_players_lucksack(player_name).await.map_err(|e| {
         Error::from(std::io::Error::new(
             std::io::ErrorKind::Other,
             format!("API error: {}", e),
@@ -139,7 +111,6 @@ async fn resolve_player_id<'a>(
         ctx.say(format!("No players found for `{}`.", player_name))
             .await?;
 
-        // log failure here because we return early without calling show_player_stats
         send_log(LoggerDocument::new(
             &ctx.author().name,
             &"get_player_stats".to_string(),
@@ -154,41 +125,38 @@ async fn resolve_player_id<'a>(
 
     if players.len() == 1 {
         return Ok(Some(ResolvedPlayer {
-            swrt_player_id: players[0].swrt_player_id,
+            player_id: players[0].player_id,
             reply_handle: None,
         }));
     }
 
-    // Multiple => select menu
     let selected = select_player_from_menu(ctx, &players).await?;
     Ok(selected.map(|(id, handle)| ResolvedPlayer {
-        swrt_player_id: id,
+        player_id: id,
         reply_handle: Some(handle),
     }))
 }
 
-/// Build select menu, wait for interaction, return selected swrt_player_id + le handle du message
 async fn select_player_from_menu<'a>(
     ctx: &'a poise::ApplicationContext<'a, Data, Error>,
-    players: &[Player],
+    players: &[LucksackSearchPlayer],
 ) -> Result<Option<(i64, poise::ReplyHandle<'a>)>, Error> {
     let options: Vec<CreateSelectMenuOption> = players
         .iter()
         .take(25)
         .map(|player| {
-            let emoji = if player.player_country.to_uppercase() == "UNKNOWN" {
+            let emoji = if player.country.to_uppercase() == "UNKNOWN" {
                 serenity::ReactionType::Unicode("❌".to_string())
             } else {
-                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.player_country))
+                serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.country))
             };
 
             let description = format!(
-                "Elo : {} - Server : {}",
-                player.player_score.unwrap_or(0),
-                server_code_to_tag(player.player_server)
+                "Elo: {} | Rank: #{}",
+                player.current_score, player.current_rank
             );
 
-            CreateSelectMenuOption::new(&player.name, player.swrt_player_id.to_string())
+            CreateSelectMenuOption::new(&player.username, player.player_id.to_string())
                 .description(description)
                 .emoji(emoji)
         })
@@ -201,7 +169,7 @@ async fn select_player_from_menu<'a>(
     let reply_handle = ctx
         .send(CreateReply {
             content: Some(
-                "🧙 Several players match the given username, please select a player :".to_string(),
+                "🧙 Several players match the given username, please select a player:".to_string(),
             ),
             components: Some(vec![action_row]),
             ..Default::default()
@@ -230,7 +198,6 @@ async fn select_player_from_menu<'a>(
         return Ok(None);
     };
 
-    // Ack interaction (update message)
     component_interaction
         .create_response(
             &ctx.serenity_context,
@@ -271,32 +238,63 @@ async fn select_player_from_menu<'a>(
 
 pub(crate) async fn show_player_stats<'a>(
     ctx: &'a poise::ApplicationContext<'a, Data, Error>,
-    token: &str,
-    swrt_id: &i64,
+    player_id: i64,
     existing_reply: Option<poise::ReplyHandle<'a>>,
 ) -> Result<(), Error> {
-    // Fetch details
-    let details = get_user_detail(token, swrt_id).await.map_err(|e| {
+    // Fetch season numbers from lucksack
+    let seasons = match get_lucksack_season_numbers().await {
+        Ok(s) => s,
+        Err(e) => {
+            let msg = format!("❌ Failed to fetch seasons: {}", e);
+            let reply = ctx.send(create_embed_error(&msg)).await?;
+            schedule_message_deletion(reply, *ctx).await?;
+            return Ok(());
+        }
+    };
+
+    let Some(&season) = seasons.first() else {
+        let reply = ctx
+            .send(create_embed_error("❌ No valid season number found."))
+            .await?;
+        schedule_message_deletion(reply, *ctx).await?;
+        return Ok(());
+    };
+
+    // --- Step 1: fetch summary + picks, show initial embed with loading gif ---
+    let (summary_res, picks_res) = tokio::join!(
+        get_lucksack_player_summary(player_id, season),
+        get_lucksack_player_picks(player_id, season),
+    );
+
+    let summary = summary_res.map_err(|e| {
         Error::from(std::io::Error::new(
             std::io::ErrorKind::Other,
-            format!("Error retrieving player details: {}", e),
+            format!("Error retrieving player summary: {}", e),
         ))
     })?;
 
-    // Rank emojis
-    let rank_emojis = get_rank_emojis_for_score(details.player_level.unwrap_or(0))
-        .await
-        .unwrap_or_else(|_| "❓".to_string());
+    let picks = picks_res.unwrap_or_default();
 
-    // 1) Embed loading
-    let loading_embed = create_player_embed(
-        &details,
-        vec!["<a:loading:1358029412716515418> Loading emojis...".to_string()],
-        vec!["<a:loading:1358029412716515418> Loading top monsters...".to_string()],
-        vec!["<a:loading:1358029412716515418> Loading opponent monsters...".to_string()],
+    let mut ld_box = Vec::new();
+    for season_number in &seasons {
+        if let Ok(mut season_box) = get_lucksack_player_ld5_box(player_id, *season_number).await {
+            ld_box.append(&mut season_box);
+        }
+    }
+
+    let top_monsters = format_lucksack_top_monsters(&picks).await;
+    let ld_monsters = format_lucksack_ld_monsters_emojis(&ld_box).await;
+    let rank_emojis = get_rank_emojis_for_bracket(summary.summary.current_rank_bracket);
+
+    const LOADING_GIF: &str = "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeXRmY2locjR2cnJ5d2JvdWF5djN5cTRlajdna3JxeTA4d2RsdzVxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rGDZbxkkjo0hfLe4EA/giphy.gif";
+
+    let initial_embed = create_lucksack_player_embed(
+        &summary,
         rank_emojis.clone(),
-        0,
-    );
+        top_monsters.clone(),
+        ld_monsters.clone(),
+    )
+    .image(LOADING_GIF);
 
     let reply_handle = match existing_reply {
         Some(handle) => {
@@ -304,10 +302,9 @@ pub(crate) async fn show_player_stats<'a>(
                 .edit(
                     poise::Context::Application(*ctx),
                     CreateReply {
-                        content: None,
-                        embeds: vec![loading_embed],
+                        content: Some("".to_string()),
+                        embeds: vec![initial_embed],
                         components: Some(vec![]),
-                        attachments: vec![],
                         ..Default::default()
                     },
                 )
@@ -316,82 +313,51 @@ pub(crate) async fn show_player_stats<'a>(
         }
         None => {
             ctx.send(CreateReply {
-                embeds: vec![loading_embed],
+                embeds: vec![create_lucksack_player_embed(
+                    &summary,
+                    rank_emojis.clone(),
+                    top_monsters.clone(),
+                    ld_monsters.clone(),
+                )
+                .image(LOADING_GIF)],
                 ..Default::default()
             })
             .await?
         }
     };
 
-    // 2) Load extras + replay image
-    let ld_emojis = format_player_ld_monsters_emojis(&details).await;
-    let top_monsters = format_player_monsters(&details).await;
+    // --- Step 2: fetch matches, generate replay image, update embed ---
+    let matches = get_lucksack_player_matches(player_id, season)
+        .await
+        .unwrap_or_default();
 
-    let season = match get_swrt_settings(&token).await {
-        Ok(data) => data,
-        Err(e) => {
-            let reply = ctx.send(create_embed_error(&e)).await?;
-            schedule_message_deletion(reply, *ctx).await?;
-            send_log(LoggerDocument::new(
-                &ctx.author().name,
-                &"get_mob_stats".to_string(),
-                &get_server_name(&ctx).await?,
-                false,
-                chrono::Utc::now().timestamp(),
-            ))
-            .await?;
-            return Ok(());
-        }
+    let replay_image_path = if !matches.is_empty() {
+        create_lucksack_replay_image(&matches).await.ok()
+    } else {
+        None
     };
 
-    // Opponent monsters
-    let person_list = get_person_one_monster_list(token, details.swrt_player_id, season)
-        .await
-        .map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Error retrieving opponent monsters: {}", e),
-            ))
-        })?;
+    let final_embed = {
+        let mut e = create_lucksack_player_embed(&summary, rank_emojis, top_monsters, ld_monsters);
+        if replay_image_path.is_some() {
+            e = e.image("attachment://replay.png");
+        }
+        e
+    };
 
-    let worst_opponents = format_opponent_monsters_worst(&details, &person_list).await;
-
-    let recent_replays = get_recent_replays(token, &details.swrt_player_id)
-        .await
-        .map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Error retrieving recent replays: {}", e),
-            ))
-        })?;
-
-    let replay_image_path = create_replay_image(recent_replays, 3, 2)
-        .await
-        .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
-
-    let attachment = serenity::CreateAttachment::path(replay_image_path).await?;
-
-    // 3) Edit with final embed
-    let updated_embed = create_player_embed(
-        &details,
-        ld_emojis,
-        top_monsters,
-        worst_opponents,
-        rank_emojis,
-        1,
-    );
-
+    let mut final_reply = CreateReply {
+        content: Some("".to_string()),
+        embeds: vec![final_embed],
+        components: Some(vec![]),
+        ..Default::default()
+    };
+    if let Some(ref path) = replay_image_path {
+        if let Ok(attachment) = serenity::CreateAttachment::path(path).await {
+            final_reply.attachments.push(attachment);
+        }
+    }
     reply_handle
-        .edit(
-            poise::Context::Application(*ctx),
-            CreateReply {
-                content: Some("".to_string()),
-                embeds: vec![updated_embed],
-                attachments: vec![attachment],
-                components: Some(vec![]),
-                ..Default::default()
-            },
-        )
+        .edit(poise::Context::Application(*ctx), final_reply)
         .await?;
 
     Ok(())
@@ -406,14 +372,3 @@ fn country_code_to_flag_emoji(country_code: &str) -> String {
         .collect()
 }
 
-fn server_code_to_tag(code: i32) -> &'static str {
-    match code {
-        1 => "Korea",
-        2 => "Japan",
-        3 => "China",
-        4 => "Global",
-        5 => "Asia",
-        6 => "Europe",
-        _ => "??",
-    }
-}

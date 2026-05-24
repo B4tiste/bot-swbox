@@ -38,7 +38,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         }
     };
 
-    // 2) Prediction thresholds (HTML scraping) — optional
+    // 2) Prediction thresholds (HTML scraping) - optional
     let prediction = if ENABLE_PREDICTION {
         get_prediction_info().await.ok()
     } else {
