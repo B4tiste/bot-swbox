@@ -937,7 +937,127 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, rows: i32, cols: i
     Ok(output_path)
 }
 
-/* ------------------ Collage + text drawing ------------------ */
+pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<PathBuf> {
+    let img_map = get_comid_to_image_map();
+    let mut sections: Vec<RgbaImage> = Vec::new();
+    let mut image_cache: HashMap<String, DynamicImage> = HashMap::new();
+
+    for m in matches.iter().take(6) {
+        let filenames_mine: Vec<String> = m
+            .my_monsters
+            .iter()
+            .filter_map(|&id| img_map.get(&(id as i32)).cloned())
+            .collect();
+        let filenames_opp: Vec<String> = m
+            .opponent_monsters
+            .iter()
+            .filter_map(|&id| img_map.get(&(id as i32)).cloned())
+            .collect();
+
+        if filenames_mine.is_empty() || filenames_opp.is_empty() {
+            continue;
+        }
+
+        let ids_mine: Vec<u32> = m.my_monsters.iter().map(|&id| id as u32).collect();
+        let ids_opp: Vec<u32> = m.opponent_monsters.iter().map(|&id| id as u32).collect();
+
+        let img_me = create_team_collage_custom_layout(
+            &filenames_mine,
+            &ids_mine,
+            m.my_bans as u32,
+            m.my_leader as u32,
+            m.had_first_pick,
+            &mut image_cache,
+        )
+        .await?;
+
+        let img_opp = create_team_collage_custom_layout(
+            &filenames_opp,
+            &ids_opp,
+            m.opponent_bans as u32,
+            m.opponent_leader as u32,
+            !m.had_first_pick,
+            &mut image_cache,
+        )
+        .await?;
+
+        let image_width = img_me.width() / 3;
+        let spacing = image_width / 2;
+        let combined_width = img_me.width() + img_opp.width() + spacing;
+        let height = img_me.height().max(img_opp.height());
+
+        let mut combined = ImageBuffer::new(combined_width, height);
+        combined.copy_from(&img_me, 0, 0).unwrap();
+        combined
+            .copy_from(&img_opp, img_me.width() + spacing, 0)
+            .unwrap();
+
+        // Parse ISO 8601 date → "DD-MM-YYYY"
+        let date_text = m
+            .battle_time
+            .get(..10)
+            .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+            .map(|d| d.format("%d-%m-%Y").to_string())
+            .unwrap_or_else(|| m.battle_time.get(..10).unwrap_or("").to_string());
+
+        let left_text = format!("{} - {}", m.my_score, m.my_username);
+        let right_text = format!("{} - {}", m.opponent_username, m.opponent_score);
+
+        let banner =
+            create_match_banner(&left_text, &date_text, &right_text, combined_width, Rgba([0, 0, 0, 0]));
+        let banner_height = banner.height();
+
+        let border = 10u32;
+        let inner_w = combined_width;
+        let inner_h = banner_height + combined.height();
+        let total_w = inner_w + 2 * border;
+        let total_h = inner_h + 2 * border;
+
+        let bg_color = if m.won {
+            Rgba([0, 255, 0, 100])
+        } else {
+            Rgba([255, 0, 0, 100])
+        };
+
+        let mut section = ImageBuffer::from_pixel(total_w, total_h, bg_color);
+        let mut inner = ImageBuffer::from_pixel(inner_w, inner_h, Rgba([0, 0, 0, 0]));
+        inner.copy_from(&banner, 0, 0).unwrap();
+        inner.copy_from(&combined, 0, banner_height).unwrap();
+        section.copy_from(&inner, border, border).unwrap();
+        sections.push(section);
+    }
+
+    if sections.is_empty() {
+        return Err(anyhow!("No valid matches to render"));
+    }
+
+    let cols = 2u32;
+    let rows = ((sections.len() as u32) + cols - 1) / cols;
+    let padding = 10u32;
+    let sw = sections[0].width();
+    let sh = sections[0].height();
+    let full_w = cols * sw + (cols - 1) * padding;
+    let full_h = rows * sh + (rows - 1) * padding;
+
+    let mut canvas = ImageBuffer::new(full_w, full_h);
+    for (i, section) in sections.iter().enumerate() {
+        let col = (i as u32) % cols;
+        let row = (i as u32) / cols;
+        canvas.copy_from(section, col * (sw + padding), row * (sh + padding))?;
+    }
+
+    let output_path = PathBuf::from("/tmp/replay.png");
+    let output_path_clone = output_path.clone();
+    tokio::task::spawn_blocking(move || {
+        std::fs::create_dir_all("/tmp")?;
+        canvas.save(&output_path_clone)?;
+        Ok::<_, anyhow::Error>(output_path_clone)
+    })
+    .await??;
+
+    Ok(output_path)
+}
+
 
 async fn create_team_collage_custom_layout(
     image_filenames: &[String],
@@ -1201,4 +1321,344 @@ pub fn parse_discord_mention_to_id(s: &str) -> Option<u64> {
     let inner = inner.strip_prefix('!').unwrap_or(inner);
 
     inner.parse::<u64>().ok()
+}
+
+/* ------------------ Lucksack API types ------------------ */
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackSearchPlayer {
+    pub player_id: i64,
+    pub username: String,
+    pub country: String,
+    pub profile_image: String,
+    pub current_score: i32,
+    pub current_rank: i64,
+    pub rank_id: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackPlayerSummary {
+    pub user_info: LucksackUserInfo,
+    pub summary: LucksackSummaryData,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackUserInfo {
+    pub player_id: i64,
+    pub server_id: i32,
+    pub username: String,
+    pub country: String,
+    pub image: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackSummaryData {
+    pub total_matches: i32,
+    pub overall_win_rate: f64,
+    pub peak_score: i32,
+    pub current_score: i32,
+    pub current_rank: i64,
+    pub current_rank_bracket: i32,
+    pub score_last_3_days: i32,
+    pub score_last_7_days: i32,
+}
+
+/* ------------------ Lucksack API calls ------------------ */
+
+pub async fn search_players_lucksack(username: &str) -> Result<Vec<LucksackSearchPlayer>> {
+    let url = format!("https://api.lucksack.gg/players/search/{}", username);
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    res.json::<Vec<LucksackSearchPlayer>>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse search JSON: {}", e))
+}
+
+pub async fn get_lucksack_player_summary(
+    player_id: i64,
+    season: i32,
+) -> Result<LucksackPlayerSummary> {
+    let url = format!(
+        "https://api.lucksack.gg/players/{}/summary?season={}",
+        player_id, season
+    );
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    res.json::<LucksackPlayerSummary>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse summary JSON: {}", e))
+}
+
+/* ------------------ Lucksack rank emojis ------------------ */
+
+pub fn get_rank_emojis_for_bracket(bracket: i32) -> String {
+    let punisher = format!("<:punisher:{}>", PUNISHER_EMOJI_ID.lock().unwrap());
+    let guardian = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
+
+    match bracket {
+        11 => punisher.repeat(1),
+        12 => punisher.repeat(2),
+        13 => punisher.repeat(3),
+        14 => guardian.repeat(1),
+        15 => guardian.repeat(2),
+        16 => guardian.repeat(3),
+        _ => "Unranked".to_string(),
+    }
+}
+
+/* ------------------ Lucksack picks types & API ------------------ */
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackPickEntry {
+    pub monster_id: i64,
+    pub played_count: i32,
+    pub win_rate: f64,
+}
+
+pub async fn get_lucksack_player_picks(
+    player_id: i64,
+    season: i32,
+) -> Result<Vec<LucksackPickEntry>> {
+    let url = format!(
+        "https://api.lucksack.gg/players/{}/picks?season={}&min_game_played=3",
+        player_id, season
+    );
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send picks request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    res.json::<Vec<LucksackPickEntry>>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse picks JSON: {}", e))
+}
+
+/// com2us_id → image_filename (from monsters_elements.json)
+static COMID_TO_IMAGE: OnceLock<HashMap<i32, String>> = OnceLock::new();
+
+fn get_comid_to_image_map() -> &'static HashMap<i32, String> {
+    COMID_TO_IMAGE.get_or_init(|| {
+        let file = fs::read_to_string("monsters_elements.json")
+            .expect("monsters_elements.json not found");
+        let v: Value = serde_json::from_str(&file).expect("invalid monsters_elements.json");
+        let arr = v["monsters"].as_array().expect("monsters must be an array");
+
+        let mut map = HashMap::new();
+        for m in arr {
+            let com2us_id = m["com2us_id"].as_i64().unwrap_or(0) as i32;
+            let filename = m["image_filename"].as_str().unwrap_or("").to_string();
+            if com2us_id != 0 && !filename.is_empty() {
+                map.insert(com2us_id, filename);
+            }
+        }
+        map
+    })
+}
+
+pub async fn format_lucksack_top_monsters(picks: &[LucksackPickEntry]) -> String {
+    let Ok(collection) = get_mob_emoji_collection().await else {
+        return String::new();
+    };
+
+    let img_map = get_comid_to_image_map();
+    let mut lines = vec![];
+
+    for (idx, pick) in picks.iter().take(10).enumerate() {
+        let monster_id = pick.monster_id as i32;
+
+        let emoji_str = if let Some(image_filename) = img_map.get(&monster_id) {
+            // "unit_icon_0168_1_5.png" → "0168_1_5"
+            let emoji_name = image_filename
+                .trim_start_matches("unit_icon_")
+                .trim_end_matches(".png");
+
+            let doc = collection
+                .find_one(doc! { "name": emoji_name })
+                .await
+                .ok()
+                .flatten();
+
+            if let Some(d) = doc {
+                let id = d.get_str("id").unwrap_or("");
+                let name = d.get_str("name").unwrap_or("unit");
+                format!("<:{}:{}>", name, id)
+            } else {
+                "❓".to_string()
+            }
+        } else {
+            "❓".to_string()
+        };
+
+        lines.push(format!(
+            "{}. {} {} picks | **{:.1}%** WR",
+            idx + 1,
+            emoji_str,
+            pick.played_count,
+            pick.win_rate
+        ));
+    }
+
+    if lines.is_empty() {
+        "No data".to_string()
+    } else {
+        lines.join("\n")
+    }
+}
+
+/* ------------------ Lucksack embed builder ------------------ */
+
+pub fn create_lucksack_player_embed(
+    summary: &LucksackPlayerSummary,
+    rank_emojis: String,
+    top_monsters: String,
+) -> CreateEmbed {
+    let s = &summary.summary;
+    let info = &summary.user_info;
+
+    let rank_label = match s.current_rank_bracket {
+        11 => "P1",
+        12 => "P2",
+        13 => "P3",
+        14 => "G1",
+        15 => "G2",
+        16 => "G3",
+        _ => "?",
+    };
+
+    let server_name = match info.server_id {
+        1 => "Korea",
+        2 => "Japan",
+        3 => "China",
+        4 => "Global",
+        5 => "Asia",
+        6 => "Europe",
+        _ => "??",
+    };
+
+    let alias_suffix = PLAYER_ALIAS_MAP
+        .get(&info.player_id)
+        .map(|alias| format!(" (aka. {})", alias))
+        .unwrap_or_default();
+
+    let score_3d = if s.score_last_3_days >= 0 {
+        format!("+{}", s.score_last_3_days)
+    } else {
+        s.score_last_3_days.to_string()
+    };
+
+    let score_7d = if s.score_last_7_days >= 0 {
+        format!("+{}", s.score_last_7_days)
+    } else {
+        s.score_last_7_days.to_string()
+    };
+
+    let description = format!(
+        "**Elo**: {} • **Rank**: #{} • **Peak Elo**: {}",
+        s.current_score, s.current_rank, s.peak_score
+    );
+
+    CreateEmbed::default()
+        .title(format!(
+            ":flag_{}: {}{}  (id: {}) - RTA Statistics",
+            info.country.to_lowercase(),
+            info.username,
+            alias_suffix,
+            info.player_id,
+        ))
+        .thumbnail(info.image.clone())
+        .color(serenity::Colour::from_rgb(0, 180, 255))
+        .description(description)
+        .field("Win Rate", format!("{:.2}%", s.overall_win_rate), true)
+        .field("Total Matches", s.total_matches.to_string(), true)
+        .field("Server", server_name, true)
+        .field("Rank Bracket", rank_emojis, true)
+        .field("Elo (3 days)", score_3d, true)
+        .field("Elo (7 days)", score_7d, true)
+        .field("🏆 Top Played Monsters", top_monsters, false)
+        .footer(CreateEmbedFooter::new("Data is gathered from lucksack.gg"))
+}
+
+/* ------------------ Lucksack matches types & API ------------------ */
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackMatchesResponse {
+    pub matches: Vec<LucksackMatch>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LucksackMatch {
+    pub won: bool,
+    pub had_first_pick: bool,
+    pub battle_time: String,
+    pub my_monsters: Vec<i64>,
+    pub my_leader: i64,
+    pub my_bans: i64,
+    pub my_username: String,
+    pub my_score: i32,
+    pub my_rank_bracket: i32,
+    pub opponent_monsters: Vec<i64>,
+    pub opponent_leader: i64,
+    pub opponent_bans: i64,
+    pub opponent_username: String,
+    pub opponent_score: i32,
+    pub opponent_rank_bracket: i32,
+}
+
+pub async fn get_lucksack_player_matches(
+    player_id: i64,
+    season: i32,
+) -> Result<Vec<LucksackMatch>> {
+    let url = format!(
+        "https://api.lucksack.gg/players/{}/matches?season={}&limit=20&offset=0",
+        player_id, season
+    );
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Failed to send matches request: {}", e))?;
+
+    if !res.status().is_success() {
+        return Err(anyhow!("HTTP {}", res.status()));
+    }
+
+    let resp = res
+        .json::<LucksackMatchesResponse>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse matches JSON: {}", e))?;
+
+    Ok(resp.matches)
 }

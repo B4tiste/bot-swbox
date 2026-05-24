@@ -1,6 +1,6 @@
 use poise::serenity_prelude::Error;
 
-use crate::commands::player_stats::get_player_stats::{get_token, show_player_stats};
+use crate::commands::player_stats::get_player_stats::show_player_stats;
 use crate::commands::register::utils::get_user_link;
 use crate::Data;
 
@@ -24,13 +24,12 @@ pub async fn mystats(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
         return Ok(());
     };
 
-    let swrt_player_id = doc.get_i64("swrt_player_id").map_err(|_| {
+    let player_id = doc.get_i64("swrt_player_id").map_err(|_| {
         Error::from(std::io::Error::new(
             std::io::ErrorKind::Other,
-            "Invalid stored swrt_player_id in DB",
+            "Invalid stored player_id in DB",
         ))
     })?;
 
-    let token = get_token()?;
-    show_player_stats(&ctx, &token, &swrt_player_id, None).await
+    show_player_stats(&ctx, player_id, None).await
 }

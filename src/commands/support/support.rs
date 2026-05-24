@@ -18,22 +18,22 @@ pub async fn support(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
             If you enjoy using SWbox and want to help keep it online, consider supporting the project on **[Ko-Fi](https://ko-fi.com/swbox)** 💙",
         )
         .field(
-            "🥉 Conqueror — 1€ / month",
+            "🥉 Conqueror - 1€ / month",
             "One coffee a month to keep SWbox online.\n",
             false,
         )
         .field(
-            "🥈 Punisher — 3€ / month",
+            "🥈 Punisher - 3€ / month",
             "Extra support to help SWbox grow.",
             false,
         )
         .field(
-            "🥇 Guardian — 5€ / month",
+            "🥇 Guardian - 5€ / month",
             "Strong support to secure SWbox’s future.",
             false,
         )
         .field(
-            "🎨 Custom Commission — Custom Player Alias (3€)",
+            "🎨 Custom Commission - Custom Player Alias (3€)",
             "Add a custom player alias for yourself or someone else.\n\
             The alias can be used in commands and will be displayed on the player profile.",
             false,
