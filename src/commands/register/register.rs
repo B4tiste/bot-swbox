@@ -8,6 +8,8 @@ use serenity::{
 
 use crate::commands::player_stats::utils::search_players_lucksack;
 use crate::commands::register::utils::upsert_user_link;
+use crate::commands::shared::logs::{get_server_name, send_log};
+use crate::commands::shared::models::LoggerDocument;
 use crate::Data;
 
 #[derive(Debug, Clone)]
@@ -29,132 +31,146 @@ pub async fn register(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let msg_handle = ctx
-        .send(CreateReply {
-            content: Some(format!(
-                "<a:loading:1358029412716515418> Searching accounts for `{}`...",
-                account_name
-            )),
-            ..Default::default()
-        })
-        .await?;
+    let result: Result<(), Error> = async {
+        let msg_handle = ctx
+            .send(CreateReply {
+                content: Some(format!(
+                    "<a:loading:1358029412716515418> Searching accounts for `{}`...",
+                    account_name
+                )),
+                ..Default::default()
+            })
+            .await?;
 
-    let players = search_players_lucksack(&account_name).await.map_err(|e| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("API error: {e}"),
-        ))
-    })?;
+        let players = search_players_lucksack(&account_name).await.map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("API error: {e}"),
+            ))
+        })?;
 
-    if players.is_empty() {
+        if players.is_empty() {
+            msg_handle
+                .edit(
+                    poise::Context::Application(ctx),
+                    CreateReply {
+                        content: Some(format!("No players found for `{}`.", account_name)),
+                        components: Some(vec![]),
+                        embeds: vec![],
+                        ..Default::default()
+                    },
+                )
+                .await?;
+            return Ok(());
+        }
+
+        let candidates: Vec<RegisterCandidate> = players
+            .into_iter()
+            .map(|p| RegisterCandidate {
+                player_id: p.player_id,
+                name: p.username,
+                country: p.country,
+                score: p.current_score,
+                rank: p.current_rank as i32,
+            })
+            .collect();
+
+        let picked = if candidates.len() == 1 {
+            candidates[0].player_id
+        } else {
+            match select_player_from_menu_editing(&ctx, &msg_handle, &candidates).await? {
+                Some(id) => id,
+                None => {
+                    msg_handle
+                        .edit(
+                            poise::Context::Application(ctx),
+                            CreateReply {
+                                content: Some("⏰ Time expired or no selection.".to_string()),
+                                components: Some(vec![]),
+                                embeds: vec![],
+                                ..Default::default()
+                            },
+                        )
+                        .await?;
+                    return Ok(());
+                }
+            }
+        };
+
+        let selected = candidates
+            .iter()
+            .find(|c| c.player_id == picked)
+            .cloned()
+            .unwrap_or(RegisterCandidate {
+                player_id: picked,
+                name: account_name.clone(),
+                country: "UNKNOWN".to_string(),
+                score: 0,
+                rank: 0,
+            });
+
         msg_handle
             .edit(
                 poise::Context::Application(ctx),
                 CreateReply {
-                    content: Some(format!("No players found for `{}`.", account_name)),
+                    content: Some("<a:loading:1358029412716515418> Saving link...".to_string()),
                     components: Some(vec![]),
                     embeds: vec![],
                     ..Default::default()
                 },
             )
             .await?;
-        return Ok(());
+
+        let discord_user_id = ctx.author().id.get();
+        let now_ts = chrono::Utc::now().timestamp();
+
+        upsert_user_link(
+            discord_user_id,
+            selected.player_id,
+            &selected.name,
+            0, // server not available from search; filled from summary on first /mystats
+            &selected.country,
+            now_ts,
+        )
+        .await
+        .map_err(|e| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("DB error: {e}"),
+            ))
+        })?;
+
+        msg_handle
+            .edit(
+                poise::Context::Application(ctx),
+                CreateReply {
+                    content: Some(format!(
+                        "✅ Registered **{}** to your Discord account. Now {} can use `/mystats` to see their stats! Others can use `/get_player_stats @{}` to access their stats.",
+                        selected.name,
+                        ctx.author().name,
+                        ctx.author().name,
+                    )),
+                    components: Some(vec![]),
+                    embeds: vec![],
+                    ..Default::default()
+                },
+            )
+            .await?;
+
+        Ok(())
     }
+    .await;
 
-    let candidates: Vec<RegisterCandidate> = players
-        .into_iter()
-        .map(|p| RegisterCandidate {
-            player_id: p.player_id,
-            name: p.username,
-            country: p.country,
-            score: p.current_score,
-            rank: p.current_rank as i32,
-        })
-        .collect();
+    send_log(LoggerDocument::new(
+        &ctx.author().name,
+        &"register".to_string(),
+        &get_server_name(&ctx).await?,
+        result.is_ok(),
+        chrono::Utc::now().timestamp(),
+    ))
+    .await?;
 
-    let picked = if candidates.len() == 1 {
-        candidates[0].player_id
-    } else {
-        match select_player_from_menu_editing(&ctx, &msg_handle, &candidates).await? {
-            Some(id) => id,
-            None => {
-                msg_handle
-                    .edit(
-                        poise::Context::Application(ctx),
-                        CreateReply {
-                            content: Some("⏰ Time expired or no selection.".to_string()),
-                            components: Some(vec![]),
-                            embeds: vec![],
-                            ..Default::default()
-                        },
-                    )
-                    .await?;
-                return Ok(());
-            }
-        }
-    };
-
-    let selected = candidates
-        .iter()
-        .find(|c| c.player_id == picked)
-        .cloned()
-        .unwrap_or(RegisterCandidate {
-            player_id: picked,
-            name: account_name.clone(),
-            country: "UNKNOWN".to_string(),
-            score: 0,
-            rank: 0,
-        });
-
-    msg_handle
-        .edit(
-            poise::Context::Application(ctx),
-            CreateReply {
-                content: Some("<a:loading:1358029412716515418> Saving link...".to_string()),
-                components: Some(vec![]),
-                embeds: vec![],
-                ..Default::default()
-            },
-        )
-        .await?;
-
-    let discord_user_id = ctx.author().id.get();
-    let now_ts = chrono::Utc::now().timestamp();
-
-    upsert_user_link(
-        discord_user_id,
-        selected.player_id,
-        &selected.name,
-        0, // server not available from search; filled from summary on first /mystats
-        &selected.country,
-        now_ts,
-    )
-    .await
-    .map_err(|e| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("DB error: {e}"),
-        ))
-    })?;
-
-    msg_handle
-        .edit(
-            poise::Context::Application(ctx),
-            CreateReply {
-                content: Some(format!(
-                    "✅ Registered **{}** to your Discord account. Now {} can use `/mystats` to see their stats! Others can use `/get_player_stats @{}` to access their stats.",
-                    selected.name,
-                    ctx.author().name,
-                    ctx.author().name,
-                )),
-                components: Some(vec![]),
-                embeds: vec![],
-                ..Default::default()
-            },
-        )
-        .await?;
-
-    Ok(())
+    result
 }
 
 async fn select_player_from_menu_editing(
