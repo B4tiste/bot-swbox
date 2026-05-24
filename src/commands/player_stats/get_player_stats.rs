@@ -1,6 +1,7 @@
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::CreateSelectMenuKind;
 use poise::CreateReply;
+use rand::seq::IndexedRandom;
 use serenity::{
     builder::{CreateActionRow, CreateSelectMenu, CreateSelectMenuOption},
     Error,
@@ -286,7 +287,14 @@ pub(crate) async fn show_player_stats<'a>(
     let ld_monsters = format_lucksack_ld_monsters_emojis(&ld_box).await;
     let rank_emojis = get_rank_emojis_for_bracket(summary.summary.current_rank_bracket);
 
-    const LOADING_GIF: &str = "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeXRmY2locjR2cnJ5d2JvdWF5djN5cTRlajdna3JxeTA4d2RsdzVxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rGDZbxkkjo0hfLe4EA/giphy.gif";
+    let gifs = [
+        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif",
+        "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeXRmY2locjR2cnJ5d2JvdWF5djN5cTRlajdna3JxeTA4d2RsdzVxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rGDZbxkkjo0hfLe4EA/giphy.gif",
+        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTRsODVtNThvbTl2bW50NnhzYjB5MWN3aHF5dW40NTIwMmpoaGk0ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WiIuC6fAOoXD2/giphy.gif",
+        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHFreWtobWUwdmx4MGlpYXZvZjVubDd4ejBuOTcweTh1d3IyaGtzeiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KDZdynDNJUrrp7EjTM/giphy.gif",
+    ];
+
+    let loading_gif = *gifs.choose(&mut rand::rng()).unwrap_or(&gifs[0]);
 
     let initial_embed = create_lucksack_player_embed(
         &summary,
@@ -294,7 +302,7 @@ pub(crate) async fn show_player_stats<'a>(
         top_monsters.clone(),
         ld_monsters.clone(),
     )
-    .image(LOADING_GIF);
+    .image(loading_gif);
 
     let reply_handle = match existing_reply {
         Some(handle) => {
@@ -319,7 +327,7 @@ pub(crate) async fn show_player_stats<'a>(
                     top_monsters.clone(),
                     ld_monsters.clone(),
                 )
-                .image(LOADING_GIF)],
+                .image(loading_gif)],
                 ..Default::default()
             })
             .await?
