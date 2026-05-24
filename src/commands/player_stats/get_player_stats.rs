@@ -6,16 +6,16 @@ use serenity::{
     Error,
 };
 
-use crate::commands::how_to_build::utils::get_latest_lucksack_season;
 use crate::commands::register::utils::get_user_link;
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
 use crate::commands::{
     player_stats::utils::{
-        create_lucksack_player_embed, create_lucksack_replay_image, format_lucksack_top_monsters,
-        get_lucksack_player_matches, get_lucksack_player_picks, get_lucksack_player_summary,
-        get_rank_emojis_for_bracket, parse_discord_mention_to_id, search_players_lucksack,
-        LucksackSearchPlayer,
+        create_lucksack_player_embed, create_lucksack_replay_image,
+        format_lucksack_ld_monsters_emojis, format_lucksack_top_monsters,
+        get_lucksack_player_ld5_box, get_lucksack_player_matches, get_lucksack_player_picks,
+        get_lucksack_player_summary, get_lucksack_season_numbers, get_rank_emojis_for_bracket,
+        parse_discord_mention_to_id, search_players_lucksack, LucksackSearchPlayer,
     },
     shared::{
         embed_error_handling::{create_embed_error, schedule_message_deletion},
@@ -241,15 +241,23 @@ pub(crate) async fn show_player_stats<'a>(
     player_id: i64,
     existing_reply: Option<poise::ReplyHandle<'a>>,
 ) -> Result<(), Error> {
-    // Fetch current season from lucksack
-    let season = match get_latest_lucksack_season().await {
+    // Fetch season numbers from lucksack
+    let seasons = match get_lucksack_season_numbers().await {
         Ok(s) => s,
         Err(e) => {
-            let msg = format!("❌ Failed to fetch current season: {}", e);
+            let msg = format!("❌ Failed to fetch seasons: {}", e);
             let reply = ctx.send(create_embed_error(&msg)).await?;
             schedule_message_deletion(reply, *ctx).await?;
             return Ok(());
         }
+    };
+
+    let Some(&season) = seasons.first() else {
+        let reply = ctx
+            .send(create_embed_error("❌ No valid season number found."))
+            .await?;
+        schedule_message_deletion(reply, *ctx).await?;
+        return Ok(());
     };
 
     // --- Step 1: fetch summary + picks, show initial embed with loading gif ---
@@ -266,7 +274,16 @@ pub(crate) async fn show_player_stats<'a>(
     })?;
 
     let picks = picks_res.unwrap_or_default();
+
+    let mut ld_box = Vec::new();
+    for season_number in &seasons {
+        if let Ok(mut season_box) = get_lucksack_player_ld5_box(player_id, *season_number).await {
+            ld_box.append(&mut season_box);
+        }
+    }
+
     let top_monsters = format_lucksack_top_monsters(&picks).await;
+    let ld_monsters = format_lucksack_ld_monsters_emojis(&ld_box).await;
     let rank_emojis = get_rank_emojis_for_bracket(summary.summary.current_rank_bracket);
 
     const LOADING_GIF: &str = "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeXRmY2locjR2cnJ5d2JvdWF5djN5cTRlajdna3JxeTA4d2RsdzVxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rGDZbxkkjo0hfLe4EA/giphy.gif";
@@ -275,6 +292,7 @@ pub(crate) async fn show_player_stats<'a>(
         &summary,
         rank_emojis.clone(),
         top_monsters.clone(),
+        ld_monsters.clone(),
     )
     .image(LOADING_GIF);
 
@@ -299,6 +317,7 @@ pub(crate) async fn show_player_stats<'a>(
                     &summary,
                     rank_emojis.clone(),
                     top_monsters.clone(),
+                    ld_monsters.clone(),
                 )
                 .image(LOADING_GIF)],
                 ..Default::default()
@@ -319,7 +338,7 @@ pub(crate) async fn show_player_stats<'a>(
     };
 
     let final_embed = {
-        let mut e = create_lucksack_player_embed(&summary, rank_emojis, top_monsters);
+        let mut e = create_lucksack_player_embed(&summary, rank_emojis, top_monsters, ld_monsters);
         if replay_image_path.is_some() {
             e = e.image("attachment://replay.png");
         }
