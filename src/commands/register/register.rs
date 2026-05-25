@@ -145,9 +145,8 @@ pub async fn register(
                 poise::Context::Application(ctx),
                 CreateReply {
                     content: Some(format!(
-                        "✅ Registered **{}** to your Discord account. Now {} can use `/mystats` to see their stats! Others can use `/get_player_stats @{}` to access their stats.",
+                        "✅ Registered **{}** to your Discord account. Now you can use `/mystats` to see this account's stats! Others can use `/get_player_stats @{}` to access the stats as well.",
                         selected.name,
-                        ctx.author().name,
                         ctx.author().name,
                     )),
                     components: Some(vec![]),
