@@ -152,10 +152,16 @@ async fn select_player_from_menu<'a>(
                 serenity::ReactionType::Unicode(country_code_to_flag_emoji(&player.country))
             };
 
-            let description = format!(
-                "Elo: {} | Rank: #{}",
-                player.current_score, player.current_rank
-            );
+            let score = player
+                .current_score
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "N/A".to_string());
+            let rank = player
+                .current_rank
+                .map(|r| format!("#{}", r))
+                .unwrap_or_else(|| "N/A".to_string());
+
+            let description = format!("Elo: {} | Rank: {}", score, rank);
 
             CreateSelectMenuOption::new(&player.username, player.player_id.to_string())
                 .description(description)

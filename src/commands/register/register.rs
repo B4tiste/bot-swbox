@@ -17,8 +17,8 @@ struct RegisterCandidate {
     player_id: i64,
     name: String,
     country: String,
-    score: i32,
-    rank: i32,
+    score: Option<i32>,
+    rank: Option<i64>,
 }
 
 /// 📂 Link an in-game account to your Discord profile
@@ -71,7 +71,7 @@ pub async fn register(
                 name: p.username,
                 country: p.country,
                 score: p.current_score,
-                rank: p.current_rank as i32,
+                rank: p.current_rank,
             })
             .collect();
 
@@ -105,8 +105,8 @@ pub async fn register(
                 player_id: picked,
                 name: account_name.clone(),
                 country: "UNKNOWN".to_string(),
-                score: 0,
-                rank: 0,
+                score: None,
+                rank: None,
             });
 
         msg_handle
@@ -188,7 +188,16 @@ async fn select_player_from_menu_editing(
                 serenity::ReactionType::Unicode(country_code_to_flag_emoji(&p.country))
             };
 
-            let description = format!("Elo: {} | Rank: #{}", p.score, p.rank);
+            let score = p
+                .score
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "N/A".to_string());
+            let rank = p
+                .rank
+                .map(|r| format!("#{}", r))
+                .unwrap_or_else(|| "N/A".to_string());
+
+            let description = format!("Elo: {} | Rank: {}", score, rank);
 
             CreateSelectMenuOption::new(&p.name, p.player_id.to_string())
                 .description(description)

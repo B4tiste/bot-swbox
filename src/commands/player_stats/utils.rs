@@ -628,8 +628,8 @@ pub struct LucksackSearchPlayer {
     pub player_id: i64,
     pub username: String,
     pub country: String,
-    pub current_score: i32,
-    pub current_rank: i64,
+    pub current_score: Option<i32>,
+    pub current_rank: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
