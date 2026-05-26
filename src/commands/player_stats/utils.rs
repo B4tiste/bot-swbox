@@ -999,6 +999,7 @@ pub fn create_lucksack_player_embed(
         "**Elo**: {} • **Rank**: #{} • **Peak Elo**: {}",
         s.current_score, s.current_rank, s.peak_score
     );
+    let lucksack_profile_url = format!("https://lucksack.gg/player/{}", info.player_id);
 
     let split_field_chunks = |text: &str, max_len: usize| -> Vec<String> {
         if text.is_empty() {
@@ -1073,6 +1074,11 @@ pub fn create_lucksack_player_embed(
         .thumbnail(info.image.clone())
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .description(description)
+        .field(
+            "Lucksack Profile",
+            format!("[Open profile]({})", lucksack_profile_url),
+            false,
+        )
         .field("Win Rate", format!("{:.2}%", s.overall_win_rate), true)
         .field("Total Matches", s.total_matches.to_string(), true)
         .field("Server", server_name, true)
