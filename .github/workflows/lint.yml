@@ -2,9 +2,8 @@ name: Lint
 
 on:
   pull_request:
-  # Run lint on pushes to any branch.
   push:
-  workflow_dispatch:
+    branches: [ main ]
 
 jobs:
   lint:
