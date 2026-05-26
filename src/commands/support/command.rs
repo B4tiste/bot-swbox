@@ -1,6 +1,6 @@
-use crate::Data;
 use crate::commands::shared::logs::{get_server_name, send_log};
 use crate::commands::shared::models::LoggerDocument;
+use crate::Data;
 use poise::{
     serenity_prelude::{self as serenity, Error},
     CreateReply,
@@ -61,7 +61,7 @@ pub async fn support(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"support".to_string(),
+        "support",
         &get_server_name(&ctx).await?,
         result.is_ok(),
         chrono::Utc::now().timestamp(),
