@@ -192,14 +192,10 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
     let server = user_doc.get_str("server")?;
     let mut applied: Vec<String> = user_doc
         .get_array("applied_coupons")
-        .ok()
-        .and_then(|arr| {
-            Some(
-                arr.iter()
-                    .filter_map(|v| v.as_str().map(String::from))
-                    .collect(),
-            )
-        })
+        .ok().map(|arr| arr.iter()
+            .filter_map(|v| v.as_str().map(String::from))
+            .collect()
+        )
         .unwrap_or_else(Vec::new);
 
     // 2. Get all coupons
@@ -341,7 +337,7 @@ pub async fn notify_new_coupons(
     let mut cursor = coupons_col.find(doc! { "status": "verified" }).await?;
     let mut current_labels = Vec::new();
     while let Some(doc) = cursor.try_next().await? {
-        if let Some(label) = doc.get_str("label").ok() {
+        if let Ok(label) = doc.get_str("label") {
             current_labels.push(label.to_string());
         }
     }
@@ -362,7 +358,7 @@ pub async fn notify_new_coupons(
             if let Some(guild) = cache.guild(guild_id) {
                 for channel in guild.channels.values() {
                     if channel.name.contains("coupons-swbox") {
-                        sample_channels.push(ChannelId::from(channel.id));
+                        sample_channels.push(channel.id);
                     }
                 }
             }

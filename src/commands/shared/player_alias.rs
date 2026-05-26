@@ -9,7 +9,7 @@ lazy_static! {
         for player in ALIAS_DATA["players"].as_array().unwrap() {
             let swrt_id = player["swrt_id"].as_i64().unwrap();
             let en_names = player["en_names"].as_array().unwrap();
-            if let Some(first_alias) = en_names.get(0) {
+            if let Some(first_alias) = en_names.first() {
                 m.insert(swrt_id, first_alias.as_str().unwrap().to_string());
             }
         }
