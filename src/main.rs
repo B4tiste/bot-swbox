@@ -30,7 +30,6 @@ use crate::commands::player_names::command::track_player_names;
 use crate::commands::player_stats::command::get_player_stats;
 use crate::commands::ranks::command::get_ranks;
 use crate::commands::register::command::register;
-use crate::commands::unregister::command::unregister;
 use crate::commands::replays::command::get_replays;
 use crate::commands::rta_core::command::get_rta_core;
 use crate::commands::services::command::services;
@@ -39,7 +38,8 @@ use crate::commands::shared::coupons::{
 };
 use crate::commands::suggestion::command::send_suggestion;
 use crate::commands::support::command::support;
-use crate::commands::upload_json::upload_json::upload_json;
+use crate::commands::unregister::command::unregister;
+use crate::commands::upload_json::command::upload_json;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -106,24 +106,39 @@ static MONSTER_MAP: Lazy<HashMap<String, u32>> = Lazy::new(|| {
         .collect()
 });
 
-pub static LUCKSACK_MONSTER_MAP: Lazy<HashMap<String, (i32, Option<i32>, String, Option<String>)>> =
-    Lazy::new(|| {
-        let data = fs::read_to_string("monsters_catalog.json")
-            .expect("Impossible de lire monsters_catalog.json");
+#[derive(Debug, Clone)]
+pub struct LucksackMonsterMapEntry {
+    pub id: i32,
+    pub collab_id: Option<i32>,
+    pub image: String,
+    pub collab_image: Option<String>,
+}
 
-        let list: Vec<LucksackMonsterEntry> =
-            serde_json::from_str(&data).expect("Impossible de parser monsters_catalog.json");
+pub static LUCKSACK_MONSTER_MAP: Lazy<HashMap<String, LucksackMonsterMapEntry>> = Lazy::new(|| {
+    let data = fs::read_to_string("monsters_catalog.json")
+        .expect("Impossible de lire monsters_catalog.json");
 
-        list.into_iter()
-            .filter(|m| m.searchable)
-            .filter_map(|m| {
-                let id = m.com2us_id.parse::<i32>().ok()?;
-                let collab_id = m.collab_id.as_deref().and_then(|s| s.parse::<i32>().ok());
+    let list: Vec<LucksackMonsterEntry> =
+        serde_json::from_str(&data).expect("Impossible de parser monsters_catalog.json");
 
-                Some((m.label, (id, collab_id, m.image, m.collab_image)))
-            })
-            .collect()
-    });
+    list.into_iter()
+        .filter(|m| m.searchable)
+        .filter_map(|m| {
+            let id = m.com2us_id.parse::<i32>().ok()?;
+            let collab_id = m.collab_id.as_deref().and_then(|s| s.parse::<i32>().ok());
+
+            Some((
+                m.label,
+                LucksackMonsterMapEntry {
+                    id,
+                    collab_id,
+                    image: m.image,
+                    collab_image: m.collab_image,
+                },
+            ))
+        })
+        .collect()
+});
 
 /// Fonction asynchrone qui se connecte au service web et retourne le token
 async fn login(username: String, password: String) -> Result<String> {

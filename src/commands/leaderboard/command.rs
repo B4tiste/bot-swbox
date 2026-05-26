@@ -27,23 +27,19 @@ pub async fn get_rta_leaderboard(
     const PAGE_SIZE: i32 = 10;
 
     let seasons = get_lucksack_season_numbers().await.map_err(|e| {
-        Error::from(std::io::Error::other(
-            format!("Failed to fetch seasons: {}", e),
-        ))
+        Error::from(std::io::Error::other(format!(
+            "Failed to fetch seasons: {}",
+            e
+        )))
     })?;
-    let season = seasons.first().copied().ok_or_else(|| {
-        Error::from(std::io::Error::other(
-            "No valid season found.",
-        ))
-    })?;
+    let season = seasons
+        .first()
+        .copied()
+        .ok_or_else(|| Error::from(std::io::Error::other("No valid season found.")))?;
 
     let leaderboard = get_leaderboard_data(season, page, PAGE_SIZE)
         .await
-        .map_err(|e| {
-            Error::from(std::io::Error::other(
-                format!("API error: {}", e),
-            ))
-        })?;
+        .map_err(|e| Error::from(std::io::Error::other(format!("API error: {}", e))))?;
 
     let mut players = leaderboard.data;
     let total_count = leaderboard.count;

@@ -1,2 +1,2 @@
-pub mod modal;
 pub mod command;
+pub mod modal;

@@ -372,9 +372,9 @@ pub async fn get_rta_core(
             let mut top = trios.into_iter().take(15).collect::<Vec<_>>();
 
             // Récupération des emojis
-            let collection = get_mob_emoji_collection().await.map_err(|_| {
-                Error::from(std::io::Error::other("DB error"))
-            })?;
+            let collection = get_mob_emoji_collection()
+                .await
+                .map_err(|_| Error::from(std::io::Error::other("DB error")))?;
             for t in &mut top {
                 let emojis_string = format!(
                     "{} {} {}",

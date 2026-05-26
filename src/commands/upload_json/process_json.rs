@@ -60,7 +60,7 @@ fn extract_rune(rune: &Value) -> Option<Rune> {
         }
     }
 
-    Some(Rune::new(super::rune::RuneInput { 
+    Some(Rune::new(super::rune::RuneInput {
         id,
         slot_location,
         class: class_enum,
@@ -71,8 +71,7 @@ fn extract_rune(rune: &Value) -> Option<Rune> {
         primary_property,
         innate_property,
         secondary_properties,
-    }
-    ))
+    }))
 }
 
 pub type ScoreMap = HashMap<String, HashMap<String, u32>>;
@@ -90,9 +89,7 @@ pub struct ProcessJsonResult {
 }
 
 /// Fonction qui traite un objet JSON et retourne un tuple contenant le score, les statistiques de runes et les informations du joueur
-pub fn process_json(
-    json: Value,
-) -> ProcessJsonResult {
+pub fn process_json(json: Value) -> ProcessJsonResult {
     let mut vec_runes: Vec<Rune> = Vec::new();
     if let Some(unit_list) = json.get("unit_list") {
         for unit in unit_list.as_array().expect("unit_list should be an array") {
@@ -277,13 +274,9 @@ pub fn process_json(
         }
 
         // Mapping set category
-        let eff_entry = map_score_eff
-            .entry(set_category.clone())
-            .or_default();
+        let eff_entry = map_score_eff.entry(set_category.clone()).or_default();
         *eff_entry.entry(global_eff_key).or_insert(0) += 1;
-        let spd_entry = map_score_spd
-            .entry(set_category.clone())
-            .or_default();
+        let spd_entry = map_score_spd.entry(set_category.clone()).or_default();
         *spd_entry.entry(global_spd_key).or_insert(0) += 1;
 
         // RTA

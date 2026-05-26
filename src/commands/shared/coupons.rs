@@ -1,7 +1,7 @@
 use futures::stream::TryStreamExt;
 use mongodb::bson::{doc, Document};
 use mongodb::Client as MongoClient;
-use poise::serenity_prelude::{ChannelId, Context as SerenityContext, CreateMessage};
+use poise::serenity_prelude::{Context as SerenityContext, CreateMessage};
 
 // pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
 //     let client = Client::builder().cookie_store(true).build()?;
@@ -192,10 +192,12 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
     let server = user_doc.get_str("server")?;
     let mut applied: Vec<String> = user_doc
         .get_array("applied_coupons")
-        .ok().map(|arr| arr.iter()
-            .filter_map(|v| v.as_str().map(String::from))
-            .collect()
-        )
+        .ok()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
         .unwrap_or_else(Vec::new);
 
     // 2. Get all coupons

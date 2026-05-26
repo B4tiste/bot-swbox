@@ -14,11 +14,9 @@ pub async fn mystats(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
     let result: Result<(), Error> = async {
         let discord_user_id = ctx.author().id.get();
 
-        let doc_opt = get_user_link(discord_user_id).await.map_err(|e| {
-            Error::from(std::io::Error::other(
-                format!("DB error: {e}"),
-            ))
-        })?;
+        let doc_opt = get_user_link(discord_user_id)
+            .await
+            .map_err(|e| Error::from(std::io::Error::other(format!("DB error: {e}"))))?;
 
         let Some(doc) = doc_opt else {
             ctx.say("❌ No linked account yet. Use `/register <account name>` first.")
@@ -26,11 +24,9 @@ pub async fn mystats(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
             return Ok(());
         };
 
-        let player_id = doc.get_i64("swrt_player_id").map_err(|_| {
-            Error::from(std::io::Error::other(
-                "Invalid stored player_id in DB",
-            ))
-        })?;
+        let player_id = doc
+            .get_i64("swrt_player_id")
+            .map_err(|_| Error::from(std::io::Error::other("Invalid stored player_id in DB")))?;
 
         show_player_stats(&ctx, player_id, None).await
     }

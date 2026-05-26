@@ -66,11 +66,9 @@ async fn resolve_player_id<'a>(
 ) -> Result<Option<ResolvedPlayer<'a>>, Error> {
     // Discord mention
     if let Some(discord_id) = parse_discord_mention_to_id(player_name) {
-        let doc_opt = get_user_link(discord_id).await.map_err(|e| {
-            Error::from(std::io::Error::other(
-                format!("DB error: {e}"),
-            ))
-        })?;
+        let doc_opt = get_user_link(discord_id)
+            .await
+            .map_err(|e| Error::from(std::io::Error::other(format!("DB error: {e}"))))?;
 
         let Some(doc) = doc_opt else {
             ctx.say("❌ This Discord user has no linked account. They must use `/register <account name>` first.")
@@ -78,11 +76,9 @@ async fn resolve_player_id<'a>(
             return Ok(None);
         };
 
-        let player_id = doc.get_i64("swrt_player_id").map_err(|_| {
-            Error::from(std::io::Error::other(
-                "Invalid stored player_id in DB",
-            ))
-        })?;
+        let player_id = doc
+            .get_i64("swrt_player_id")
+            .map_err(|_| Error::from(std::io::Error::other("Invalid stored player_id in DB")))?;
 
         return Ok(Some(ResolvedPlayer {
             player_id,
@@ -99,11 +95,9 @@ async fn resolve_player_id<'a>(
     }
 
     // Lucksack search
-    let players = search_players_lucksack(player_name).await.map_err(|e| {
-        Error::from(std::io::Error::other( 
-            format!("API error: {}", e),
-        ))
-    })?;
+    let players = search_players_lucksack(player_name)
+        .await
+        .map_err(|e| Error::from(std::io::Error::other(format!("API error: {}", e))))?;
 
     if players.is_empty() {
         ctx.say(format!("No players found for `{}`.", player_name))
@@ -271,9 +265,10 @@ pub(crate) async fn show_player_stats<'a>(
     );
 
     let summary = summary_res.map_err(|e| {
-        Error::from(std::io::Error::other(
-            format!("Error retrieving player summary: {}", e),
-        ))
+        Error::from(std::io::Error::other(format!(
+            "Error retrieving player summary: {}",
+            e
+        )))
     })?;
 
     let picks = picks_res.unwrap_or_default();

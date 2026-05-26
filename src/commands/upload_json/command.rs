@@ -6,7 +6,7 @@ use crate::commands::shared::embed_error_handling::{
 };
 use crate::commands::shared::logs::{get_server_name, send_log};
 use crate::commands::shared::models::{LoggerDocument, Mode};
-use crate::commands::upload_json::process_json::{ProcessJsonResult, process_json};
+use crate::commands::upload_json::process_json::{process_json, ProcessJsonResult};
 use crate::Data;
 use mongodb::{bson::doc, Client, Collection};
 use poise::serenity_prelude::CreateEmbed;
@@ -122,16 +122,16 @@ pub async fn upload_json(
         Mode::Anonymized => 2,
         Mode::NoSpeedDetailAndAnonymized => 3,
     };
-let ProcessJsonResult {
-    rta_eff,
-    rta_spd,
-    siege_eff,
-    siege_spd,
-    map_eff,
-    map_spd,
-    wizard_data,
-    account_data,
-} = process_json(json);
+    let ProcessJsonResult {
+        rta_eff,
+        rta_spd,
+        siege_eff,
+        siege_spd,
+        map_eff,
+        map_spd,
+        wizard_data,
+        account_data,
+    } = process_json(json);
 
     let wizard_name = wizard_data
         .get("wizard_name")
