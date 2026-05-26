@@ -60,10 +60,10 @@ fn extract_rune(rune: &Value) -> Option<Rune> {
         }
     }
 
-    Some(Rune::new(
+    Some(Rune::new(super::rune::RuneInput { 
         id,
         slot_location,
-        class_enum,
+        class: class_enum,
         antic,
         set_id,
         upgrade_limit,
@@ -71,22 +71,28 @@ fn extract_rune(rune: &Value) -> Option<Rune> {
         primary_property,
         innate_property,
         secondary_properties,
+    }
     ))
+}
+
+pub type ScoreMap = HashMap<String, HashMap<String, u32>>;
+pub type JsonValueMap = HashMap<&'static str, Value>;
+
+pub struct ProcessJsonResult {
+    pub rta_eff: f32,
+    pub rta_spd: f32,
+    pub siege_eff: f32,
+    pub siege_spd: f32,
+    pub map_eff: ScoreMap,
+    pub map_spd: ScoreMap,
+    pub wizard_data: JsonValueMap,
+    pub account_data: JsonValueMap,
 }
 
 /// Fonction qui traite un objet JSON et retourne un tuple contenant le score, les statistiques de runes et les informations du joueur
 pub fn process_json(
     json: Value,
-) -> (
-    f32,
-    f32,
-    f32,
-    f32,
-    HashMap<String, HashMap<String, u32>>,
-    HashMap<String, HashMap<String, u32>>,
-    HashMap<&'static str, Value>,
-    HashMap<&'static str, Value>,
-) {
+) -> ProcessJsonResult {
     let mut vec_runes: Vec<Rune> = Vec::new();
     if let Some(unit_list) = json.get("unit_list") {
         for unit in unit_list.as_array().expect("unit_list should be an array") {
@@ -273,29 +279,29 @@ pub fn process_json(
         // Mapping set category
         let eff_entry = map_score_eff
             .entry(set_category.clone())
-            .or_insert_with(HashMap::new);
+            .or_default();
         *eff_entry.entry(global_eff_key).or_insert(0) += 1;
         let spd_entry = map_score_spd
             .entry(set_category.clone())
-            .or_insert_with(HashMap::new);
+            .or_default();
         *spd_entry.entry(global_spd_key).or_insert(0) += 1;
 
         // RTA
-        rta_score_eff += rta_set_eff_coeff as f32 * global_coeff_eff as f32;
-        rta_score_spd += rta_set_spd_coeff as f32 * global_coeff_spd as f32;
+        rta_score_eff += rta_set_eff_coeff as f32 * global_coeff_eff;
+        rta_score_spd += rta_set_spd_coeff as f32 * global_coeff_spd;
 
         // Siege
-        siege_score_eff += siege_set_eff_coeff as f32 * global_coeff_eff as f32;
-        siege_score_spd += siege_set_spd_coeff as f32 * global_coeff_spd as f32;
+        siege_score_eff += siege_set_eff_coeff as f32 * global_coeff_eff;
+        siege_score_spd += siege_set_spd_coeff as f32 * global_coeff_spd;
     }
-    (
-        rta_score_eff,
-        rta_score_spd,
-        siege_score_eff,
-        siege_score_spd,
-        map_score_eff,
-        map_score_spd,
-        wizard_info_data,
-        account_info_data,
-    )
+    ProcessJsonResult {
+        rta_eff: rta_score_eff,
+        rta_spd: rta_score_spd,
+        siege_eff: siege_score_eff,
+        siege_spd: siege_score_spd,
+        map_eff: map_score_eff,
+        map_spd: map_score_spd,
+        wizard_data: wizard_info_data,
+        account_data: account_info_data,
+    }
 }

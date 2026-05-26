@@ -85,36 +85,38 @@ pub enum RuneStatId {
     AccuracyPct,
 }
 
+pub struct RuneInput {
+    pub id: u32,
+    pub slot_location: u32,
+    pub class: StarsAmmount,
+    pub antic: bool,
+    pub set_id: RuneSetId,
+    pub upgrade_limit: u32,
+    pub upgrade_current: u32,
+    pub primary_property: Property,
+    pub innate_property: Property,
+    pub secondary_properties: Vec<Property>,
+}
+
 impl Rune {
-    pub fn new(
-        id: u32,
-        slot_location: u32,
-        class: StarsAmmount,
-        antic: bool,
-        set_id: RuneSetId,
-        upgrade_limit: u32,
-        upgrade_current: u32,
-        primary_property: Property,
-        innate_property: Property,
-        secondary_properties: Vec<Property>,
-    ) -> Self {
+    pub fn new(input: RuneInput) -> Self {
         let mut rune = Rune {
-            id,
-            slot_location,
-            class,
-            antic,
-            set_id,
-            upgrade_limit,
-            upgrade_current,
-            primary_property,
-            innate_property,
-            secondary_properties,
+            id: input.id,
+            slot_location: input.slot_location,
+            class: input.class,
+            antic: input.antic,
+            set_id: input.set_id,
+            upgrade_limit: input.upgrade_limit,
+            upgrade_current: input.upgrade_current,
+            primary_property: input.primary_property,
+            innate_property: input.innate_property,
+            secondary_properties: input.secondary_properties,
             efficiency: None,
             speed_value: None,
         };
         rune.efficiency = Some(rune.calculate_efficiency());
         rune.speed_value = rune.get_speed_value();
-        return rune;
+        rune
     }
 
     fn calculate_efficiency(&self) -> f32 {
@@ -140,7 +142,7 @@ impl Rune {
                 }
 
                 // Return the sum of all efficiencies
-                return ((eff_main + eff_innate + eff_subs) / 2.8) * 100.0;
+                ((eff_main + eff_innate + eff_subs) / 2.8) * 100.0
             }
 
             StarsAmmount::Six => {
@@ -160,7 +162,7 @@ impl Rune {
                 }
 
                 // Return the sum of all efficiencies
-                return ((eff_main + eff_innate + eff_subs) / 2.8) * 100.0;
+                ((eff_main + eff_innate + eff_subs) / 2.8) * 100.0
             }
         }
     }
