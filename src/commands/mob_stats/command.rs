@@ -85,7 +85,7 @@ pub async fn get_mob_stats(
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"get_mob_stats".to_string(),
+                "get_mob_stats",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -98,8 +98,7 @@ pub async fn get_mob_stats(
     let token = {
         let guard = API_TOKEN.lock().unwrap();
         guard.clone().ok_or_else(|| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(std::io::Error::other(
                 "Missing API Token, please contact **b4tiste** on Discord : <https://discord.gg/AfANrTVaDJ>.",
             ))
         })?
@@ -112,7 +111,7 @@ pub async fn get_mob_stats(
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"get_mob_stats".to_string(),
+                "get_mob_stats",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -126,11 +125,11 @@ pub async fn get_mob_stats(
 
     let stats = get_monster_stats_swrt(com2us_id, season, &token, current_level)
         .await
-        .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        .map_err(|e| Error::from(std::io::Error::other(e)))?;
 
     let collection = get_mob_emoji_collection()
         .await
-        .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        .map_err(|e| Error::from(std::io::Error::other(e)))?;
 
     let monster_emoji = get_emoji_from_filename(&collection, &stats.image_filename)
         .await
@@ -330,7 +329,7 @@ pub async fn get_mob_stats(
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"get_mob_stats".to_string(),
+        "get_mob_stats",
         &get_server_name(&ctx).await?,
         true,
         chrono::Utc::now().timestamp(),
