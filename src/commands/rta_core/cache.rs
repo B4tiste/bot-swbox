@@ -31,7 +31,7 @@ pub async fn get_monster_duos_cached(
     let loader = {
         let token = token.to_string();
         async move {
-            get_monster_duos(&token, season, &version, monster_id, level)
+            get_monster_duos(&token, season, version, monster_id, level)
                 .await
                 .map_err(|e| format!("Erreur highdata: {}", e))
         }
