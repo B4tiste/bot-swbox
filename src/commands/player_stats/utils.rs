@@ -982,6 +982,12 @@ pub fn create_lucksack_player_embed(
         .get(&info.player_id)
         .map(|alias| format!(" (aka. {})", alias))
         .unwrap_or_default();
+    let display_name = if alias_suffix.is_empty() {
+        info.username.clone()
+    } else {
+        format!("{}{}", info.username, alias_suffix)
+    };
+
 
     let score_3d = if s.score_last_3_days >= 0 {
         format!("+{}", s.score_last_3_days)
@@ -1065,10 +1071,9 @@ pub fn create_lucksack_player_embed(
 
     let mut embed = CreateEmbed::default()
         .title(format!(
-            ":flag_{}: {}{}  (id: {}) - RTA Statistics",
+            ":flag_{}: {} (id: {}) - RTA Statistics",
             info.country.to_lowercase(),
-            info.username,
-            alias_suffix,
+            display_name,
             info.player_id,
         ))
         .thumbnail(info.image.clone())
