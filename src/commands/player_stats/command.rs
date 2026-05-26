@@ -50,7 +50,7 @@ pub async fn get_player_stats(
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"get_player_stats".to_string(),
+        "get_player_stats",
         &get_server_name(&ctx).await?,
         result.is_ok(),
         chrono::Utc::now().timestamp(),
@@ -67,8 +67,7 @@ async fn resolve_player_id<'a>(
     // Discord mention
     if let Some(discord_id) = parse_discord_mention_to_id(player_name) {
         let doc_opt = get_user_link(discord_id).await.map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(std::io::Error::other(
                 format!("DB error: {e}"),
             ))
         })?;
@@ -80,8 +79,7 @@ async fn resolve_player_id<'a>(
         };
 
         let player_id = doc.get_i64("swrt_player_id").map_err(|_| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(std::io::Error::other(
                 "Invalid stored player_id in DB",
             ))
         })?;
@@ -102,8 +100,7 @@ async fn resolve_player_id<'a>(
 
     // Lucksack search
     let players = search_players_lucksack(player_name).await.map_err(|e| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        Error::from(std::io::Error::other( 
             format!("API error: {}", e),
         ))
     })?;
@@ -114,7 +111,7 @@ async fn resolve_player_id<'a>(
 
         send_log(LoggerDocument::new(
             &ctx.author().name,
-            &"get_player_stats".to_string(),
+            "get_player_stats",
             &get_server_name(ctx).await?,
             false,
             chrono::Utc::now().timestamp(),
@@ -195,7 +192,7 @@ async fn select_player_from_menu<'a>(
 
         send_log(LoggerDocument::new(
             &ctx.author().name,
-            &"get_player_stats".to_string(),
+            "get_player_stats",
             &get_server_name(ctx).await?,
             false,
             chrono::Utc::now().timestamp(),
@@ -228,7 +225,7 @@ async fn select_player_from_menu<'a>(
 
     let selected_str = match &component_interaction.data.kind {
         serenity::ComponentInteractionDataKind::StringSelect { values } => {
-            values.get(0).cloned().unwrap_or_default()
+            values.first().cloned().unwrap_or_default()
         }
         _ => String::new(),
     };
@@ -274,8 +271,7 @@ pub(crate) async fn show_player_stats<'a>(
     );
 
     let summary = summary_res.map_err(|e| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        Error::from(std::io::Error::other(
             format!("Error retrieving player summary: {}", e),
         ))
     })?;
@@ -385,4 +381,3 @@ fn country_code_to_flag_emoji(country_code: &str) -> String {
         .map(|c| char::from_u32(0x1F1E6 + (c as u32 - 'A' as u32)).unwrap_or('∅'))
         .collect()
 }
-
