@@ -72,7 +72,7 @@ pub async fn how_to_build(
 
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"how_to_build".to_string(),
+                "how_to_build",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -87,9 +87,12 @@ pub async fn how_to_build(
 
     let (monster_id, collab_id, image, collab_image) = match LUCKSACK_MONSTER_MAP.get(&monster_name)
     {
-        Some((id, collab, image, collab_image)) => {
-            (*id, *collab, image.clone(), collab_image.clone())
-        }
+        Some(monster) => (
+            monster.id,
+            monster.collab_id,
+            monster.image.clone(),
+            monster.collab_image.clone(),
+        ),
         None => {
             let msg = format!(
                 "❌ Cannot find '{}', please use the autocomplete feature for a perfect match.",
@@ -100,7 +103,7 @@ pub async fn how_to_build(
 
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"how_to_build".to_string(),
+                "how_to_build",
                 &server_name,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -150,7 +153,7 @@ pub async fn how_to_build(
 
                         send_log(LoggerDocument::new(
                             &ctx.author().name,
-                            &"how_to_build".to_string(),
+                            "how_to_build",
                             &server_name,
                             false,
                             chrono::Utc::now().timestamp(),
@@ -167,7 +170,7 @@ pub async fn how_to_build(
 
                 send_log(LoggerDocument::new(
                     &ctx.author().name,
-                    &"how_to_build".to_string(),
+                    "how_to_build",
                     &server_name,
                     false,
                     chrono::Utc::now().timestamp(),
@@ -294,7 +297,7 @@ pub async fn how_to_build(
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"how_to_build".to_string(),
+        "how_to_build",
         &server_name,
         true,
         chrono::Utc::now().timestamp(),

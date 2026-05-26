@@ -412,7 +412,6 @@ pub fn create_lucksack_rank_buttons(
                 name: Some("punisher".to_string()),
             })
             .style(style_for(11)),
-
         serenity::CreateButton::new("rank_p2p3")
             .label("P2-P3")
             .disabled(disabled)
@@ -422,7 +421,6 @@ pub fn create_lucksack_rank_buttons(
                 name: Some("punisher".to_string()),
             })
             .style(style_for(103)),
-
         serenity::CreateButton::new("rank_g1g2g3")
             .label("G1-G3")
             .disabled(disabled)
@@ -432,7 +430,6 @@ pub fn create_lucksack_rank_buttons(
                 name: Some("guardian".to_string()),
             })
             .style(style_for(102)),
-
         serenity::CreateButton::new("rank_g3")
             .label("G3")
             .disabled(disabled)
