@@ -1,9 +1,10 @@
-name: Lint
+name: CI + Deploy
 
 on:
   pull_request:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -24,3 +25,51 @@ jobs:
 
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
+
+  deploy:
+    name: Deploy Raspberry Pi (Tailscale)
+    needs: lint
+    # Deploy automatically only on pushes to main; manual dispatch is also allowed.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Le runner rejoint ton tailnet
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      # Build du binaire pour Raspberry Pi 64-bit (aarch64)
+      - name: Install cross
+        run: cargo install cross --locked
+
+      - name: Build release (aarch64)
+        run: cross build --release --target aarch64-unknown-linux-gnu
+
+      # Upload sur la Pi (reseau Tailscale)
+      - name: Upload binary to Pi (rsync)
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p ${{ secrets.PI_PORT }} -H "${{ secrets.PI_HOST }}" >> ~/.ssh/known_hosts
+
+          rsync -av --progress \
+            -e "ssh -p ${{ secrets.PI_PORT }} -i ~/.ssh/id_ed25519" \
+            target/aarch64-unknown-linux-gnu/release/bot-swbox-rust \
+            ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/tmp/shuttle-bot-swbox-rust
+
+      # Deploiement via ton script root (sudoers autorise seulement ca)
+      - name: Deploy + restart service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PI_HOST }}
+          username: ${{ secrets.PI_USER }}
+          key: ${{ secrets.PI_SSH_KEY }}
+          port: ${{ secrets.PI_PORT }}
+          script: |
+            sudo /usr/local/sbin/deploy-discordbot
