@@ -90,7 +90,7 @@ pub async fn services(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
         Ok(_) => {
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"services".to_string(),
+                "services",
                 &get_server_name(&ctx).await?,
                 true,
                 chrono::Utc::now().timestamp(),
@@ -100,7 +100,7 @@ pub async fn services(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
         Err(_err) => {
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"services".to_string(),
+                "services",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),

@@ -1,7 +1,7 @@
 use futures::stream::TryStreamExt;
 use mongodb::bson::{doc, Document};
 use mongodb::Client as MongoClient;
-use poise::serenity_prelude::{ChannelId, Context as SerenityContext, CreateMessage};
+use poise::serenity_prelude::{Context as SerenityContext, CreateMessage};
 
 // pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
 //     let client = Client::builder().cookie_store(true).build()?;
@@ -122,14 +122,10 @@ pub async fn update_coupon_list(mongo_uri: &str) -> anyhow::Result<()> {
             "arena_wings" => "Wings",
             _ => typ,
         };
-        if amount == 1 {
+        if amount == 1 || nice.ends_with('s') {
             format!("{amount} {nice}")
         } else {
-            if nice.ends_with('s') {
-                format!("{amount} {nice}")
-            } else {
-                format!("{amount} {nice}s")
-            }
+            format!("{amount} {nice}s")
         }
     }
 
@@ -193,12 +189,10 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
     let mut applied: Vec<String> = user_doc
         .get_array("applied_coupons")
         .ok()
-        .and_then(|arr| {
-            Some(
-                arr.iter()
-                    .filter_map(|v| v.as_str().map(String::from))
-                    .collect(),
-            )
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
         })
         .unwrap_or_else(Vec::new);
 
@@ -341,7 +335,7 @@ pub async fn notify_new_coupons(
     let mut cursor = coupons_col.find(doc! { "status": "verified" }).await?;
     let mut current_labels = Vec::new();
     while let Some(doc) = cursor.try_next().await? {
-        if let Some(label) = doc.get_str("label").ok() {
+        if let Ok(label) = doc.get_str("label") {
             current_labels.push(label.to_string());
         }
     }
@@ -362,7 +356,7 @@ pub async fn notify_new_coupons(
             if let Some(guild) = cache.guild(guild_id) {
                 for channel in guild.channels.values() {
                     if channel.name.contains("coupons-swbox") {
-                        sample_channels.push(ChannelId::from(channel.id));
+                        sample_channels.push(channel.id);
                     }
                 }
             }

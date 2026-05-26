@@ -6,7 +6,7 @@ use serenity::{
 };
 
 use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlayer};
-use crate::commands::player_stats::get_player_stats::show_player_stats;
+use crate::commands::player_stats::command::show_player_stats;
 use crate::commands::player_stats::utils::get_lucksack_season_numbers;
 use crate::commands::shared::logs::get_server_name;
 use crate::commands::shared::logs::send_log;
@@ -27,24 +27,19 @@ pub async fn get_rta_leaderboard(
     const PAGE_SIZE: i32 = 10;
 
     let seasons = get_lucksack_season_numbers().await.map_err(|e| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Failed to fetch seasons: {}", e),
-        ))
+        Error::from(std::io::Error::other(format!(
+            "Failed to fetch seasons: {}",
+            e
+        )))
     })?;
-    let season = seasons.first().copied().ok_or_else(|| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "No valid season found.",
-        ))
-    })?;
+    let season = seasons
+        .first()
+        .copied()
+        .ok_or_else(|| Error::from(std::io::Error::other("No valid season found.")))?;
 
-    let leaderboard = get_leaderboard_data(season, page, PAGE_SIZE).await.map_err(|e| {
-        Error::from(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("API error: {}", e),
-        ))
-    })?;
+    let leaderboard = get_leaderboard_data(season, page, PAGE_SIZE)
+        .await
+        .map_err(|e| Error::from(std::io::Error::other(format!("API error: {}", e))))?;
 
     let mut players = leaderboard.data;
     let total_count = leaderboard.count;
@@ -80,7 +75,7 @@ pub async fn get_rta_leaderboard(
                     if let serenity::ComponentInteractionDataKind::StringSelect { values } =
                         &interaction.data.kind
                     {
-                        values.get(0).cloned()
+                        values.first()
                     } else {
                         None
                     };
@@ -121,7 +116,9 @@ pub async fn get_rta_leaderboard(
                         &ctx.serenity_context,
                         serenity::CreateInteractionResponse::Message(
                             serenity::CreateInteractionResponseMessage::new()
-                                .content("<a:loading:1358029412716515418> Retrieving player stats...")
+                                .content(
+                                    "<a:loading:1358029412716515418> Retrieving player stats...",
+                                )
                                 .ephemeral(false),
                         ),
                     )
@@ -187,7 +184,7 @@ pub async fn get_rta_leaderboard(
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"get_leaderboard".to_string(),
+        "get_leaderboard",
         &get_server_name(&ctx).await?,
         true,
         chrono::Utc::now().timestamp(),
@@ -197,7 +194,11 @@ pub async fn get_rta_leaderboard(
     Ok(())
 }
 
-fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32, total_count: i64) -> serenity::CreateEmbed {
+fn build_leaderboard_embed(
+    players: &[LeaderboardPlayer],
+    page: i32,
+    total_count: i64,
+) -> serenity::CreateEmbed {
     let mut description = String::new();
 
     for player in players {
@@ -230,13 +231,15 @@ fn build_leaderboard_embed(players: &[LeaderboardPlayer], page: i32, total_count
             "Interaction buttons are disabled after 10 minutes.",
             false,
         )
-        .footer(CreateEmbedFooter::new(
-            "Data is gathered from lucksack.gg",
-        ))
+        .footer(CreateEmbedFooter::new("Data is gathered from lucksack.gg"))
         .color(serenity::Colour::from_rgb(0, 255, 0))
 }
 
-fn create_pagination_buttons(page: i32, total_count: i64, page_size: i32) -> serenity::CreateActionRow {
+fn create_pagination_buttons(
+    page: i32,
+    total_count: i64,
+    page_size: i32,
+) -> serenity::CreateActionRow {
     let last_page = ((total_count + page_size as i64 - 1) / page_size as i64).max(1) as i32;
 
     let previous_button = serenity::CreateButton::new("previous_page")
@@ -269,7 +272,10 @@ fn create_player_select_menu(players: &[LeaderboardPlayer]) -> serenity::CreateA
             };
 
             serenity::CreateSelectMenuOption::new(label, player.player_id.to_string())
-                .description(format!("Rank #{} | Elo: {}", player.rank, player.current_score))
+                .description(format!(
+                    "Rank #{} | Elo: {}",
+                    player.rank, player.current_score
+                ))
                 .emoji(emoji)
         })
         .collect();

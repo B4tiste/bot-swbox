@@ -1,4 +1,4 @@
-use crate::commands::mob_stats::get_mob_stats::autocomplete_monster;
+use crate::commands::mob_stats::command::autocomplete_monster;
 use crate::commands::mob_stats::utils::get_swrt_settings;
 use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use crate::commands::rta_core::cache::get_monster_duos_cached;
@@ -39,8 +39,7 @@ pub async fn get_rta_core(
     let token = {
         let guard = API_TOKEN.lock().unwrap();
         guard.clone().ok_or_else(|| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(std::io::Error::other(
                 "Missing API Token, please contact **b4tiste** on Discord : <https://discord.gg/AfANrTVaDJ>.",
             ))
         })?
@@ -53,7 +52,7 @@ pub async fn get_rta_core(
         schedule_message_deletion(reply, ctx).await?;
         send_log(LoggerDocument::new(
             &ctx.author().name,
-            &"get_rta_core".to_string(),
+            "get_rta_core",
             &get_server_name(&ctx).await?,
             false,
             chrono::Utc::now().timestamp(),
@@ -69,7 +68,7 @@ pub async fn get_rta_core(
         schedule_message_deletion(reply, ctx).await?;
         send_log(LoggerDocument::new(
             &ctx.author().name,
-            &"get_rta_core".to_string(),
+            "get_rta_core",
             &get_server_name(&ctx).await?,
             false,
             chrono::Utc::now().timestamp(),
@@ -87,7 +86,7 @@ pub async fn get_rta_core(
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"get_rta_core".to_string(),
+                "get_rta_core",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -123,7 +122,7 @@ pub async fn get_rta_core(
                         schedule_message_deletion(reply, ctx).await?;
                         send_log(LoggerDocument::new(
                             &ctx.author().name,
-                            &"get_rta_core".to_string(),
+                            "get_rta_core",
                             &get_server_name(&ctx).await?,
                             false,
                             chrono::Utc::now().timestamp(),
@@ -151,7 +150,7 @@ pub async fn get_rta_core(
                     schedule_message_deletion(reply, ctx).await?;
                     send_log(LoggerDocument::new(
                         &ctx.author().name,
-                        &"get_rta_core".to_string(),
+                        "get_rta_core",
                         &get_server_name(&ctx).await?,
                         false,
                         chrono::Utc::now().timestamp(),
@@ -191,7 +190,7 @@ pub async fn get_rta_core(
                     ctx.send(create_embed_error(&err)).await.ok();
                     send_log(LoggerDocument::new(
                         &ctx.author().name,
-                        &"get_rta_core".to_string(),
+                        "get_rta_core",
                         &get_server_name(&ctx).await?,
                         false,
                         chrono::Utc::now().timestamp(),
@@ -209,7 +208,7 @@ pub async fn get_rta_core(
                     ctx.send(create_embed_error(&err)).await.ok();
                     send_log(LoggerDocument::new(
                         &ctx.author().name,
-                        &"get_rta_core".to_string(),
+                        "get_rta_core",
                         &get_server_name(&ctx).await?,
                         false,
                         chrono::Utc::now().timestamp(),
@@ -359,7 +358,7 @@ pub async fn get_rta_core(
                 } else {
                     send_log(LoggerDocument::new(
                         &ctx.author().name,
-                        &"get_rta_core".to_string(),
+                        "get_rta_core",
                         &get_server_name(&ctx).await?,
                         false,
                         chrono::Utc::now().timestamp(),
@@ -373,9 +372,9 @@ pub async fn get_rta_core(
             let mut top = trios.into_iter().take(15).collect::<Vec<_>>();
 
             // Récupération des emojis
-            let collection = get_mob_emoji_collection().await.map_err(|_| {
-                Error::from(std::io::Error::new(std::io::ErrorKind::Other, "DB error"))
-            })?;
+            let collection = get_mob_emoji_collection()
+                .await
+                .map_err(|_| Error::from(std::io::Error::other("DB error")))?;
             for t in &mut top {
                 let emojis_string = format!(
                     "{} {} {}",
@@ -449,7 +448,7 @@ pub async fn get_rta_core(
             }
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"get_rta_core".to_string(),
+                "get_rta_core",
                 &get_server_name(&ctx).await?,
                 true,
                 chrono::Utc::now().timestamp(),
@@ -463,7 +462,7 @@ pub async fn get_rta_core(
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"get_rta_core".to_string(),
+                "get_rta_core",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),

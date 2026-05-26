@@ -1,3 +1,2 @@
-pub mod register;
-pub mod unregister;
+pub mod command;
 pub mod utils;

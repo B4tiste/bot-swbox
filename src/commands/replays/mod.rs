@@ -1,3 +1,3 @@
-pub mod get_replays;
+pub mod command;
 pub mod models;
 pub mod utils;

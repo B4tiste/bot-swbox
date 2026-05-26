@@ -6,7 +6,7 @@ use crate::commands::shared::embed_error_handling::{
 };
 use crate::commands::shared::logs::{get_server_name, send_log};
 use crate::commands::shared::models::{LoggerDocument, Mode};
-use crate::commands::upload_json::process_json::process_json;
+use crate::commands::upload_json::process_json::{process_json, ProcessJsonResult};
 use crate::Data;
 use mongodb::{bson::doc, Client, Collection};
 use poise::serenity_prelude::CreateEmbed;
@@ -32,11 +32,11 @@ pub async fn upload_json(
 
     if file.url.is_empty() {
         let error_message = "No file provided. Please attach a JSON file.";
-        let reply = ctx.send(create_embed_error(&error_message)).await?;
+        let reply = ctx.send(create_embed_error(error_message)).await?;
         schedule_message_deletion(reply, ctx).await?;
         send_log(LoggerDocument::new(
             &ctx.author().name,
-            &"upload_json".to_string(),
+            "upload_json",
             &get_server_name(&ctx).await?,
             false,
             chrono::Utc::now().timestamp(),
@@ -47,11 +47,11 @@ pub async fn upload_json(
 
     if !file.filename.to_lowercase().ends_with(".json") {
         let error_message = "The provided file is not a JSON file.";
-        let reply = ctx.send(create_embed_error(&error_message)).await?;
+        let reply = ctx.send(create_embed_error(error_message)).await?;
         schedule_message_deletion(reply, ctx).await?;
         send_log(LoggerDocument::new(
             &ctx.author().name,
-            &"upload_json".to_string(),
+            "upload_json",
             &get_server_name(&ctx).await?,
             false,
             chrono::Utc::now().timestamp(),
@@ -68,7 +68,7 @@ pub async fn upload_json(
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"upload_json".to_string(),
+                "upload_json",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -86,7 +86,7 @@ pub async fn upload_json(
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"upload_json".to_string(),
+                "upload_json",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -104,7 +104,7 @@ pub async fn upload_json(
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"upload_json".to_string(),
+                "upload_json",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -122,32 +122,31 @@ pub async fn upload_json(
         Mode::Anonymized => 2,
         Mode::NoSpeedDetailAndAnonymized => 3,
     };
+    let ProcessJsonResult {
+        rta_eff,
+        rta_spd,
+        siege_eff,
+        siege_spd,
+        map_eff,
+        map_spd,
+        wizard_data,
+        account_data,
+    } = process_json(json);
 
-    let (
-        rta_score_eff,
-        rta_score_spd,
-        siege_score_eff,
-        siege_score_spd,
-        map_score_eff,
-        map_score_spd,
-        wizard_info_data,
-        account_info_data,
-    ) = process_json(json);
-
-    let wizard_name = wizard_info_data
+    let wizard_name = wizard_data
         .get("wizard_name")
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown");
-    let wizard_id = wizard_info_data
+    let wizard_id = wizard_data
         .get("wizard_id")
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
-    let json_date = wizard_info_data
+    let json_date = wizard_data
         .get("wizard_last_login")
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown");
 
-    let hive_id = account_info_data
+    let hive_id = account_data
         .get("channel_uid")
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
@@ -182,7 +181,7 @@ pub async fn upload_json(
     ];
 
     for key in &row_order_eff {
-        if let Some(category) = map_score_eff.get(&key.to_string()) {
+        if let Some(category) = map_eff.get(*key) {
             let display_key = match *key {
                 "Other" => "Rest",
                 "Intangible" => "Intang.",
@@ -226,7 +225,7 @@ pub async fn upload_json(
     ];
 
     for key in &row_order_spd {
-        if let Some(category) = map_score_spd.get(&key.to_string()) {
+        if let Some(category) = map_spd.get(*key) {
             let display_key = match *key {
                 "Other" => "Rest",
                 "Intangible" => "Intang.",
@@ -290,7 +289,7 @@ pub async fn upload_json(
             "Efficiency Score",
             format!(
                 "RTA: **{}** - Siege: **{}**\n",
-                rta_score_eff, siege_score_eff
+                rta_eff, siege_eff
             ),
             false,
         )
@@ -310,7 +309,7 @@ pub async fn upload_json(
             "Speed Score",
             format!(
                 "RTA: **{}** - Siege: **{}**\n",
-                rta_score_spd, siege_score_spd
+                rta_spd, siege_spd
             ),
             false,
         )
@@ -353,7 +352,7 @@ pub async fn upload_json(
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"upload_json".to_string(),
+        "upload_json",
         &get_server_name(&ctx).await?,
         true,
         chrono::Utc::now().timestamp(),
@@ -379,10 +378,10 @@ pub async fn upload_json(
     let apparition = doc! {
         "date": format!("{}-{}-{}", day, month, year),
         "pseudo": wizard_name,
-        "rta_eff": rta_score_eff,
-        "siege_eff": siege_score_eff,
-        "rta_spd": rta_score_spd,
-        "siege_spd": siege_score_spd,
+        "rta_eff": rta_eff,
+        "siege_eff": siege_eff,
+        "rta_spd": rta_spd,
+        "siege_spd": siege_spd,
         "anonyme": if mode_id == 2 || mode_id == 3 { 1 } else { 0 }
     };
 
@@ -391,7 +390,7 @@ pub async fn upload_json(
     match collection.find_one(filter.clone()).await {
         Ok(Some(existing_doc)) => {
             // Vérifier si la date existe déjà dans le tableau "apparitions"
-            if let Some(apparitions) = existing_doc.get_array("apparitions").ok() {
+            if let Ok(apparitions) = existing_doc.get_array("apparitions") {
                 let date_exists = apparitions.iter().any(|entry| {
                     if let Some(doc) = entry.as_document() {
                         if let Ok(date) = doc.get_str("date") {

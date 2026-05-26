@@ -1,2 +1,2 @@
-pub mod get_leaderboard;
+pub mod command;
 pub mod utils;

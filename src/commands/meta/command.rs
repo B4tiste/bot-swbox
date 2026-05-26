@@ -33,8 +33,7 @@ pub async fn get_meta(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
     let token = {
         let guard = API_TOKEN.lock().unwrap();
         guard.clone().ok_or_else(|| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(std::io::Error::other(
                 "Missing API Token, please contact **b4tiste** on Discord : <https://discord.gg/AfANrTVaDJ>.",
             ))
         })?
@@ -53,7 +52,7 @@ pub async fn get_meta(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"get_meta".to_string(),
+                "get_meta",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -72,7 +71,7 @@ pub async fn get_meta(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"get_meta".to_string(),
+                "get_meta",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -216,7 +215,7 @@ pub async fn get_meta(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result
     // 📝 Logging
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"get_meta".to_string(),
+        "get_meta",
         &get_server_name(&ctx).await?,
         true,
         chrono::Utc::now().timestamp(),

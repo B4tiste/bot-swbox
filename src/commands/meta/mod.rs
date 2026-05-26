@@ -1,2 +1,2 @@
-pub mod meta;
+pub mod command;
 pub mod utils;

@@ -34,7 +34,7 @@ pub async fn best_pve_teams(
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"best_pve_teams".to_string(),
+                "best_pve_teams",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -57,7 +57,7 @@ pub async fn best_pve_teams(
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"best_pve_teams".to_string(),
+                "best_pve_teams",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -104,7 +104,7 @@ pub async fn best_pve_teams(
     // 📝 Logging
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"best_pve_teams".to_string(),
+        "best_pve_teams",
         &get_server_name(&ctx).await?,
         true,
         chrono::Utc::now().timestamp(),

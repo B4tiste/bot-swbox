@@ -1,1 +1,1 @@
-pub mod mystats;
+pub mod command;

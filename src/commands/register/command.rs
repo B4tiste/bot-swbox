@@ -43,8 +43,7 @@ pub async fn register(
             .await?;
 
         let players = search_players_lucksack(&account_name).await.map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(std::io::Error::other(
                 format!("API error: {e}"),
             ))
         })?;
@@ -134,8 +133,7 @@ pub async fn register(
         )
         .await
         .map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(std::io::Error::other(
                 format!("DB error: {e}"),
             ))
         })?;
@@ -162,7 +160,7 @@ pub async fn register(
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"register".to_string(),
+        "register",
         &get_server_name(&ctx).await?,
         result.is_ok(),
         chrono::Utc::now().timestamp(),
@@ -258,7 +256,7 @@ async fn select_player_from_menu_editing(
 
     let selected_str = match &component_interaction.data.kind {
         serenity::ComponentInteractionDataKind::StringSelect { values } => {
-            values.get(0).cloned().unwrap_or_default()
+            values.first().cloned().unwrap_or_default()
         }
         _ => String::new(),
     };

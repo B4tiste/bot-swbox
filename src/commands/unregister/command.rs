@@ -25,10 +25,11 @@ pub async fn unregister(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resu
         let discord_user_id = ctx.author().id.get();
 
         let deleted = delete_user_link(discord_user_id).await.map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(
+                std::io::Error::other(
                 format!("DB error: {e}"),
-            ))
+                )
+            )
         })?;
 
         let content = if deleted == 0 {
@@ -55,7 +56,7 @@ pub async fn unregister(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resu
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"unregister".to_string(),
+        "unregister",
         &get_server_name(&ctx).await?,
         result.is_ok(),
         chrono::Utc::now().timestamp(),

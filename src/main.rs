@@ -19,27 +19,27 @@ use serde::Deserialize;
 use std::{collections::HashMap, fs};
 
 // use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
-use crate::commands::best_pve_teams::best_pve_teams::best_pve_teams;
-use crate::commands::help::help::help;
-use crate::commands::how_to_build::how_to_build::how_to_build;
-use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
-use crate::commands::meta::meta::get_meta;
-use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
-use crate::commands::mystats::mystats::mystats;
-use crate::commands::player_names::track_player_names::track_player_names;
-use crate::commands::player_stats::get_player_stats::get_player_stats;
-use crate::commands::ranks::get_ranks::get_ranks;
-use crate::commands::register::register::register;
-use crate::commands::register::unregister::unregister;
-use crate::commands::replays::get_replays::get_replays;
-use crate::commands::rta_core::get_rta_core::get_rta_core;
-use crate::commands::services::services::services;
+use crate::commands::best_pve_teams::command::best_pve_teams;
+use crate::commands::help::command::help;
+use crate::commands::how_to_build::command::how_to_build;
+use crate::commands::leaderboard::command::get_rta_leaderboard;
+use crate::commands::meta::command::get_meta;
+use crate::commands::mob_stats::command::get_mob_stats;
+use crate::commands::mystats::command::mystats;
+use crate::commands::player_names::command::track_player_names;
+use crate::commands::player_stats::command::get_player_stats;
+use crate::commands::ranks::command::get_ranks;
+use crate::commands::register::command::register;
+use crate::commands::replays::command::get_replays;
+use crate::commands::rta_core::command::get_rta_core;
+use crate::commands::services::command::services;
 use crate::commands::shared::coupons::{
     apply_coupons_to_all_users, notify_new_coupons, update_coupon_list,
 };
-use crate::commands::suggestion::send_suggestion::send_suggestion;
-use crate::commands::support::support::support;
-use crate::commands::upload_json::upload_json::upload_json;
+use crate::commands::suggestion::command::send_suggestion;
+use crate::commands::support::command::support;
+use crate::commands::unregister::command::unregister;
+use crate::commands::upload_json::command::upload_json;
 
 lazy_static! {
     static ref LOG_CHANNEL_ID: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
@@ -106,24 +106,39 @@ static MONSTER_MAP: Lazy<HashMap<String, u32>> = Lazy::new(|| {
         .collect()
 });
 
-pub static LUCKSACK_MONSTER_MAP: Lazy<HashMap<String, (i32, Option<i32>, String, Option<String>)>> =
-    Lazy::new(|| {
-        let data = fs::read_to_string("monsters_catalog.json")
-            .expect("Impossible de lire monsters_catalog.json");
+#[derive(Debug, Clone)]
+pub struct LucksackMonsterMapEntry {
+    pub id: i32,
+    pub collab_id: Option<i32>,
+    pub image: String,
+    pub collab_image: Option<String>,
+}
 
-        let list: Vec<LucksackMonsterEntry> =
-            serde_json::from_str(&data).expect("Impossible de parser monsters_catalog.json");
+pub static LUCKSACK_MONSTER_MAP: Lazy<HashMap<String, LucksackMonsterMapEntry>> = Lazy::new(|| {
+    let data = fs::read_to_string("monsters_catalog.json")
+        .expect("Impossible de lire monsters_catalog.json");
 
-        list.into_iter()
-            .filter(|m| m.searchable)
-            .filter_map(|m| {
-                let id = m.com2us_id.parse::<i32>().ok()?;
-                let collab_id = m.collab_id.as_deref().and_then(|s| s.parse::<i32>().ok());
+    let list: Vec<LucksackMonsterEntry> =
+        serde_json::from_str(&data).expect("Impossible de parser monsters_catalog.json");
 
-                Some((m.label, (id, collab_id, m.image, m.collab_image)))
-            })
-            .collect()
-    });
+    list.into_iter()
+        .filter(|m| m.searchable)
+        .filter_map(|m| {
+            let id = m.com2us_id.parse::<i32>().ok()?;
+            let collab_id = m.collab_id.as_deref().and_then(|s| s.parse::<i32>().ok());
+
+            Some((
+                m.label,
+                LucksackMonsterMapEntry {
+                    id,
+                    collab_id,
+                    image: m.image,
+                    collab_image: m.collab_image,
+                },
+            ))
+        })
+        .collect()
+});
 
 /// Fonction asynchrone qui se connecte au service web et retourne le token
 async fn login(username: String, password: String) -> Result<String> {

@@ -16,4 +16,5 @@ pub mod services;
 pub mod shared;
 pub mod suggestion;
 pub mod support;
+pub mod unregister;
 pub mod upload_json;

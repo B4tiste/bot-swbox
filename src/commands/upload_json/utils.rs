@@ -71,7 +71,7 @@ pub fn get_max_value_stat_6(id: RuneStatId) -> f32 {
 }
 
 pub fn calculate_eff_stat_6(stat: &Property) -> f32 {
-    return (stat.value + stat.boost_value.unwrap_or(0.0)) / (get_max_value_stat_6(stat.id) * 5.0);
+    (stat.value + stat.boost_value.unwrap_or(0.0)) / (get_max_value_stat_6(stat.id) * 5.0)
 }
 
 pub fn get_main_stat_max_value_by_id_5(id: RuneStatId) -> f32 {

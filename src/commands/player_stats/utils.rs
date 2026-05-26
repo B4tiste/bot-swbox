@@ -72,7 +72,11 @@ pub async fn get_mob_emoji_collection() -> Result<Collection<mongodb::bson::Docu
 
 /* ------------------ Replay image generation ------------------ */
 
-pub async fn create_replay_image(recent_replays: Vec<Replay>, rows: i32, cols: i32) -> Result<PathBuf> {
+pub async fn create_replay_image(
+    recent_replays: Vec<Replay>,
+    rows: i32,
+    cols: i32,
+) -> Result<PathBuf> {
     let nb_battles = recent_replays.len();
 
     let mut sections: Vec<RgbaImage> = Vec::new();
@@ -146,13 +150,19 @@ pub async fn create_replay_image(recent_replays: Vec<Replay>, rows: i32, cols: i
         let left_text = if battle.player_one.player_score == 0 {
             battle.player_one.player_name.clone()
         } else {
-            format!("{} - {}", battle.player_one.player_score, battle.player_one.player_name)
+            format!(
+                "{} - {}",
+                battle.player_one.player_score, battle.player_one.player_name
+            )
         };
 
         let right_text = if battle.player_two.player_score == 0 {
             battle.player_two.player_name.clone()
         } else {
-            format!("{} - {}", battle.player_two.player_name, battle.player_two.player_score)
+            format!(
+                "{} - {}",
+                battle.player_two.player_name, battle.player_two.player_score
+            )
         };
 
         let date_text = NaiveDateTime::parse_from_str(&battle.date, "%Y-%m-%d %H:%M:%S")
@@ -301,8 +311,13 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
         let left_text = format!("{} - {}", m.my_score, m.my_username);
         let right_text = format!("{} - {}", m.opponent_username, m.opponent_score);
 
-        let banner =
-            create_match_banner(&left_text, &date_text, &right_text, combined_width, Rgba([0, 0, 0, 0]));
+        let banner = create_match_banner(
+            &left_text,
+            &date_text,
+            &right_text,
+            combined_width,
+            Rgba([0, 0, 0, 0]),
+        );
         let banner_height = banner.height();
 
         let border = 10u32;
@@ -330,7 +345,7 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
     }
 
     let cols = 2u32;
-    let rows = ((sections.len() as u32) + cols - 1) / cols;
+    let rows = (sections.len() as u32).div_ceil(cols);
     let padding = 10u32;
     let sw = sections[0].width();
     let sh = sections[0].height();
@@ -356,7 +371,6 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
     Ok(output_path)
 }
 
-
 async fn create_team_collage_custom_layout(
     image_filenames: &[String],
     monster_ids: &[u32],
@@ -381,7 +395,7 @@ async fn create_team_collage_custom_layout(
         .resize_exact(width, height, image::imageops::FilterType::Lanczos3)
         .to_rgba8();
 
-    let mut grid_slots = vec![(0, 0); 5];
+    let mut grid_slots = [(0, 0); 5];
 
     if first_pick {
         grid_slots[1] = (1, 0);
@@ -451,8 +465,8 @@ async fn load_image_local(
     let local_result = tokio::task::spawn_blocking(move || -> Result<DynamicImage> {
         let data = std::fs::read(&path)
             .with_context(|| format!("Failed to read image file: {}", filename_string))?;
-        Ok(image::load_from_memory(&data)
-            .with_context(|| format!("Failed to decode image: {}", filename_string))?)
+        image::load_from_memory(&data)
+            .with_context(|| format!("Failed to decode image: {}", filename_string))
     })
     .await;
 
@@ -471,7 +485,9 @@ async fn load_image_local(
                 .with_context(|| format!("Failed to download image from: {}", url))?
                 .bytes()
                 .await
-                .with_context(|| format!("Failed to read downloaded bytes for file: {}", filename))?;
+                .with_context(|| {
+                    format!("Failed to read downloaded bytes for file: {}", filename)
+                })?;
 
             img = image::load_from_memory(&bytes)
                 .with_context(|| format!("Failed to decode downloaded image: {}", filename))?;
@@ -595,7 +611,8 @@ fn fit_text_to_width(font: &FontArc, scale: PxScale, text: &str, max_width: f32)
     }
 
     let mut chars: Vec<char> = s.chars().collect();
-    while !chars.is_empty() && text_width(font, scale, &chars.iter().collect::<String>()) > max_width
+    while !chars.is_empty()
+        && text_width(font, scale, &chars.iter().collect::<String>()) > max_width
     {
         chars.pop();
     }
@@ -706,7 +723,10 @@ pub async fn get_lucksack_season_numbers() -> Result<Vec<i32>> {
         .await
         .map_err(|e| anyhow!("Failed to parse seasons JSON: {}", e))?;
 
-    let mut season_numbers: Vec<i32> = seasons.into_iter().filter_map(|s| s.season_number).collect();
+    let mut season_numbers: Vec<i32> = seasons
+        .into_iter()
+        .filter_map(|s| s.season_number)
+        .collect();
     season_numbers.sort_unstable_by(|a, b| b.cmp(a));
     season_numbers.dedup();
 
@@ -751,13 +771,13 @@ pub fn get_rank_emojis_for_bracket(bracket: i32) -> String {
     let guardian = format!("<:guardian:{}>", GUARDIAN_EMOJI_ID.lock().unwrap());
 
     match bracket {
-        8 => conqueror.repeat(1),
+        8 => conqueror.to_string(),
         9 => conqueror.repeat(2),
         10 => conqueror.repeat(3),
-        11 => punisher.repeat(1),
+        11 => punisher.to_string(),
         12 => punisher.repeat(2),
         13 => punisher.repeat(3),
-        14 => guardian.repeat(1),
+        14 => guardian.to_string(),
         15 => guardian.repeat(2),
         16 => guardian.repeat(3),
         _ => "Unranked".to_string(),
@@ -836,8 +856,8 @@ static COMID_TO_IMAGE: OnceLock<HashMap<i32, String>> = OnceLock::new();
 
 fn get_comid_to_image_map() -> &'static HashMap<i32, String> {
     COMID_TO_IMAGE.get_or_init(|| {
-        let file = fs::read_to_string("monsters_elements.json")
-            .expect("monsters_elements.json not found");
+        let file =
+            fs::read_to_string("monsters_elements.json").expect("monsters_elements.json not found");
         let v: Value = serde_json::from_str(&file).expect("invalid monsters_elements.json");
         let arr = v["monsters"].as_array().expect("monsters must be an array");
 
@@ -987,7 +1007,6 @@ pub fn create_lucksack_player_embed(
     } else {
         format!("{}{}", info.username, alias_suffix)
     };
-
 
     let score_3d = if s.score_last_3_days >= 0 {
         format!("+{}", s.score_last_3_days)

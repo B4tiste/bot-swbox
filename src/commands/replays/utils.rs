@@ -63,9 +63,9 @@ pub async fn get_replays_data(ids: &Vec<i32>, level: i32) -> Result<Vec<Replay>>
 }
 
 pub fn create_replays_embed(
-    monster_names: &Vec<String>,
+    monster_names: &[String],
     level: i32,
-    player_names: &Vec<String>,
+    player_names: &[String],
 ) -> CreateEmbed {
     let level_str = match level {
         1 => "G1-G2",
@@ -124,7 +124,7 @@ pub fn create_replays_embed(
         ))
 }
 
-pub fn create_loading_replays_embed(monster_names: &Vec<String>, level: i32) -> CreateEmbed {
+pub fn create_loading_replays_embed(monster_names: &[String], level: i32) -> CreateEmbed {
     let level_str = match level {
         1 => "G1-G2",
         3 => "G3",
