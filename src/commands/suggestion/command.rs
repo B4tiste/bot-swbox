@@ -23,10 +23,10 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
         Ok(None) => return Ok(()),
         Err(_) => {
             let error_message = "Error executing the modal.";
-            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            let reply = ctx.send(create_embed_error(error_message)).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"send_suggestion".to_string(),
+                "send_suggestion",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -60,7 +60,7 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
         Ok(_) => {
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"send_suggestion".to_string(),
+                "send_suggestion",
                 &get_server_name(&ctx).await?,
                 true,
                 chrono::Utc::now().timestamp(),
@@ -69,10 +69,10 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
         }
         Err(_) => {
             let error_message = "Error sending the suggestion.";
-            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            let reply = ctx.send(create_embed_error(error_message)).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"send_suggestion".to_string(),
+                "send_suggestion",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -98,7 +98,7 @@ pub async fn send_suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) ->
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"send_suggestion".to_string(),
+        "send_suggestion",
         &get_server_name(&ctx).await?,
         true,
         chrono::Utc::now().timestamp(),
