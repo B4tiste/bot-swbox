@@ -74,7 +74,7 @@ pub async fn get_replays(
                 schedule_message_deletion(reply, ctx).await?;
                 send_log(LoggerDocument::new(
                     &ctx.author().name,
-                    &"get_replays".to_string(),
+                    "get_replays",
                     &get_server_name(&ctx).await?,
                     false,
                     chrono::Utc::now().timestamp(),
@@ -95,7 +95,7 @@ pub async fn get_replays(
     // 1) Récupération des replays
     let replays = get_replays_data(&monster_ids, current_level)
         .await
-        .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        .map_err(|e| Error::from(std::io::Error::other(e)))?;
 
     // 2) Construction d'un set des IDs recherchés
     let search_ids: Vec<u32> = monster_ids.iter().map(|&i| i as u32).collect();
@@ -131,7 +131,7 @@ pub async fn get_replays(
 
     let replay_image_path = create_replay_image(replays, 4, 4)
         .await
-        .map_err(|e| Error::from(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        .map_err(|e| Error::from(std::io::Error::other(e)))?;
 
     // Create attachment for the replay image
     let attachment = serenity::CreateAttachment::path(&replay_image_path).await?;
@@ -284,7 +284,7 @@ pub async fn get_replays(
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"get_replays".to_string(),
+        "get_replays",
         &get_server_name(&ctx).await?,
         true,
         chrono::Utc::now().timestamp(),
