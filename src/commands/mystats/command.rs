@@ -15,8 +15,7 @@ pub async fn mystats(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
         let discord_user_id = ctx.author().id.get();
 
         let doc_opt = get_user_link(discord_user_id).await.map_err(|e| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(std::io::Error::other(
                 format!("DB error: {e}"),
             ))
         })?;
@@ -28,8 +27,7 @@ pub async fn mystats(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
         };
 
         let player_id = doc.get_i64("swrt_player_id").map_err(|_| {
-            Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            Error::from(std::io::Error::other(
                 "Invalid stored player_id in DB",
             ))
         })?;
@@ -40,7 +38,7 @@ pub async fn mystats(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"mystats".to_string(),
+        "mystats",
         &get_server_name(&ctx).await?,
         result.is_ok(),
         chrono::Utc::now().timestamp(),
