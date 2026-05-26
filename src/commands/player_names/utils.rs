@@ -49,7 +49,7 @@ pub async fn resolve_player_id(
     match modal_result {
         Ok(Some(modal_data)) => {
             if let Some(id) = modal_data.id.clone() {
-                if let Ok(_) = id.parse::<i64>() {
+                if id.parse::<i64>().is_ok() {
                     return Ok(Some(id));
                 } else {
                     let error_message = format!("The ID **{}** is not a valid integer.", id);

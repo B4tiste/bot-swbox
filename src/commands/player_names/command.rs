@@ -25,14 +25,14 @@ pub async fn track_player_names(
 ) -> Result<(), Error> {
     let modal_result = match mode {
         PlayerNamesModalData::Id => {
-            handle_modal::<PlayerNamesInfosModalById, _>(ctx.clone(), |data| PlayerSearchInput {
+            handle_modal::<PlayerNamesInfosModalById, _>(ctx, |data| PlayerSearchInput {
                 id: Some(data.id),
                 name: None,
             })
             .await
         }
         PlayerNamesModalData::Name => {
-            handle_modal::<PlayerNamesInfosModalByName, _>(ctx.clone(), |data| PlayerSearchInput {
+            handle_modal::<PlayerNamesInfosModalByName, _>(ctx, |data| PlayerSearchInput {
                 id: None,
                 name: Some(data.name),
             })
@@ -52,7 +52,7 @@ pub async fn track_player_names(
         Ok(None) => {
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"track_player_names".to_string(),
+                "track_player_names",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -63,7 +63,7 @@ pub async fn track_player_names(
         Err(_) => {
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"track_player_names".to_string(),
+                "track_player_names",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -90,7 +90,7 @@ pub async fn track_player_names(
                         // log doux mais on continue (fallback sur logo par défaut)
                         send_log(LoggerDocument::new(
                             &ctx.author().name,
-                            &"track_player_names".to_string(),
+                            "track_player_names",
                             &get_server_name(&ctx).await?,
                             false,
                             chrono::Utc::now().timestamp(),
@@ -103,7 +103,7 @@ pub async fn track_player_names(
                 // log doux mais on continue
                 send_log(LoggerDocument::new(
                     &ctx.author().name,
-                    &"track_player_names".to_string(),
+                    "track_player_names",
                     &get_server_name(&ctx).await?,
                     false,
                     chrono::Utc::now().timestamp(),
@@ -157,7 +157,7 @@ pub async fn track_player_names(
 
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"track_player_names".to_string(),
+                "track_player_names",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -186,7 +186,7 @@ pub async fn track_player_names(
 
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"track_player_names".to_string(),
+                "track_player_names",
                 &get_server_name(&ctx).await?,
                 true,
                 chrono::Utc::now().timestamp(),
@@ -224,7 +224,7 @@ pub async fn track_player_names(
 
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"track_player_names".to_string(),
+                "track_player_names",
                 &get_server_name(&ctx).await?,
                 true,
                 chrono::Utc::now().timestamp(),
@@ -262,7 +262,7 @@ pub async fn track_player_names(
             // Logging plus informatif
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"track_player_names".to_string(),
+                "track_player_names",
                 &get_server_name(&ctx).await?,
                 current_name.is_some(),
                 chrono::Utc::now().timestamp(),
