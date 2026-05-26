@@ -50,7 +50,7 @@ pub async fn get_rank_info() -> Result<Vec<(String, i32)>, String> {
     let scores = vec![
         (punisher_emote_str.repeat(2), api_response.data.s2.score), // P2
         (punisher_emote_str.repeat(3), api_response.data.s3.score), // P3
-        (guardian_emote_str.repeat(1), api_response.data.g1.score), // G1
+        (guardian_emote_str.to_string(), api_response.data.g1.score), // G1
         (guardian_emote_str.repeat(2), api_response.data.g2.score), // G2
         (guardian_emote_str.repeat(3), api_response.data.g3.score), // G3
     ];
@@ -113,11 +113,11 @@ pub async fn get_prediction_info() -> Result<Vec<(String, i32)>, String> {
     fn emotes_for(rank: &str, p: &str, g: &str) -> String {
         // rank like "P2", "G3"
         let (letter, num) = rank.split_at(1);
-        let repeats = num.parse::<usize>().unwrap_or(1).max(1).min(3);
+        let repeats = num.parse::<usize>().unwrap_or(1).clamp(1, 3);
         match letter {
             "P" => p.repeat(repeats),
             "G" => g.repeat(repeats),
-            _ => p.repeat(1),
+            _ => p.to_string(),
         }
     }
 

@@ -24,11 +24,11 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         Ok(scores) => scores,
         Err(_) => {
             let error_message = "Unable to retrieve ELO information.";
-            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            let reply = ctx.send(create_embed_error(error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
             send_log(LoggerDocument::new(
                 &ctx.author().name,
-                &"get_ranks".to_string(),
+                "get_ranks",
                 &get_server_name(&ctx).await?,
                 false,
                 chrono::Utc::now().timestamp(),
@@ -129,7 +129,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
 
     send_log(LoggerDocument::new(
         &ctx.author().name,
-        &"get_ranks".to_string(),
+        "get_ranks",
         &get_server_name(&ctx).await?,
         true,
         chrono::Utc::now().timestamp(),
