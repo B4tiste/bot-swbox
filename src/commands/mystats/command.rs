@@ -1,6 +1,6 @@
 use poise::serenity_prelude::Error;
 
-use crate::commands::player_stats::get_player_stats::show_player_stats;
+use crate::commands::player_stats::command::show_player_stats;
 use crate::commands::register::utils::get_user_link;
 use crate::commands::shared::logs::{get_server_name, send_log};
 use crate::commands::shared::models::LoggerDocument;

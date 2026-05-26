@@ -9,6 +9,7 @@ pub mod mystats;
 pub mod player_names;
 pub mod player_stats;
 pub mod ranks;
+pub mod unregister;
 pub mod register;
 pub mod replays;
 pub mod rta_core;

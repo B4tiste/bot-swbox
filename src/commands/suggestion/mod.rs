@@ -1,2 +1,2 @@
 pub mod modal;
-pub mod send_suggestion;
+pub mod command;

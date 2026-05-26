@@ -3,7 +3,7 @@ use poise::CreateReply;
 use serenity::builder::{EditAttachments, EditInteractionResponse};
 use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Error};
 
-use crate::commands::mob_stats::get_mob_stats::autocomplete_monster;
+use crate::commands::mob_stats::command::autocomplete_monster;
 use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::player_stats::utils::create_replay_image;
 use crate::commands::replays::utils::{

@@ -1,3 +1,3 @@
-pub mod best_pve_teams;
+pub mod command;
 pub mod models;
 pub mod utils;

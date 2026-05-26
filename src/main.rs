@@ -19,26 +19,26 @@ use serde::Deserialize;
 use std::{collections::HashMap, fs};
 
 // use crate::commands::duo_stats::get_duo_stats::get_duo_stats;
-use crate::commands::best_pve_teams::best_pve_teams::best_pve_teams;
-use crate::commands::help::help::help;
-use crate::commands::how_to_build::how_to_build::how_to_build;
-use crate::commands::leaderboard::get_leaderboard::get_rta_leaderboard;
-use crate::commands::meta::meta::get_meta;
-use crate::commands::mob_stats::get_mob_stats::get_mob_stats;
-use crate::commands::mystats::mystats::mystats;
-use crate::commands::player_names::track_player_names::track_player_names;
-use crate::commands::player_stats::get_player_stats::get_player_stats;
-use crate::commands::ranks::get_ranks::get_ranks;
-use crate::commands::register::register::register;
-use crate::commands::register::unregister::unregister;
-use crate::commands::replays::get_replays::get_replays;
-use crate::commands::rta_core::get_rta_core::get_rta_core;
-use crate::commands::services::services::services;
+use crate::commands::best_pve_teams::command::best_pve_teams;
+use crate::commands::help::command::help;
+use crate::commands::how_to_build::command::how_to_build;
+use crate::commands::leaderboard::command::get_rta_leaderboard;
+use crate::commands::meta::command::get_meta;
+use crate::commands::mob_stats::command::get_mob_stats;
+use crate::commands::mystats::command::mystats;
+use crate::commands::player_names::command::track_player_names;
+use crate::commands::player_stats::command::get_player_stats;
+use crate::commands::ranks::command::get_ranks;
+use crate::commands::register::command::register;
+use crate::commands::unregister::command::unregister;
+use crate::commands::replays::command::get_replays;
+use crate::commands::rta_core::command::get_rta_core;
+use crate::commands::services::command::services;
 use crate::commands::shared::coupons::{
     apply_coupons_to_all_users, notify_new_coupons, update_coupon_list,
 };
-use crate::commands::suggestion::send_suggestion::send_suggestion;
-use crate::commands::support::support::support;
+use crate::commands::suggestion::command::send_suggestion;
+use crate::commands::support::command::support;
 use crate::commands::upload_json::upload_json::upload_json;
 
 lazy_static! {

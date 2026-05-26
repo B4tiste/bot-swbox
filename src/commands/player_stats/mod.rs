@@ -1,3 +1,3 @@
-pub mod get_player_stats;
+pub mod command;
 pub mod models;
 pub mod utils;

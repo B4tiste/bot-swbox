@@ -1,4 +1,4 @@
-use crate::commands::mob_stats::get_mob_stats::autocomplete_monster;
+use crate::commands::mob_stats::command::autocomplete_monster;
 use crate::commands::mob_stats::utils::get_swrt_settings;
 use crate::commands::player_stats::utils::get_mob_emoji_collection;
 use crate::commands::rta_core::cache::get_monster_duos_cached;

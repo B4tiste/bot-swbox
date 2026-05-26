@@ -6,7 +6,7 @@ use serenity::{
 };
 
 use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlayer};
-use crate::commands::player_stats::get_player_stats::show_player_stats;
+use crate::commands::player_stats::command::show_player_stats;
 use crate::commands::player_stats::utils::get_lucksack_season_numbers;
 use crate::commands::shared::logs::get_server_name;
 use crate::commands::shared::logs::send_log;
