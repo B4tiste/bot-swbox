@@ -163,7 +163,7 @@ where
 }
 
 fn extract_monster_id(url: &str) -> Option<String> {
-    let filename = url.split('/').last()?;
+    let filename = url.split('/').next_back()?;
 
     // unit_icon_0080_1_1-thumb.jpg
     let filename = filename.strip_prefix("unit_icon_")?;
