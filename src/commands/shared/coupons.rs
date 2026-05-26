@@ -122,14 +122,10 @@ pub async fn update_coupon_list(mongo_uri: &str) -> anyhow::Result<()> {
             "arena_wings" => "Wings",
             _ => typ,
         };
-        if amount == 1 {
+        if amount == 1 || nice.ends_with('s') {
             format!("{amount} {nice}")
         } else {
-            if nice.ends_with('s') {
-                format!("{amount} {nice}")
-            } else {
-                format!("{amount} {nice}s")
-            }
+            format!("{amount} {nice}s")
         }
     }
 

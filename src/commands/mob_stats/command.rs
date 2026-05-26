@@ -55,10 +55,7 @@ pub async fn autocomplete_monster<'a>(
     });
 
     // Enfin on concatène et on prend les 10 premiers
-    prefix_matches
-        .into_iter()
-        .chain(contains_matches.into_iter())
-        .take(10)
+    prefix_matches.into_iter().chain(contains_matches).take(10)
 }
 
 /// 📂 Display monster stats

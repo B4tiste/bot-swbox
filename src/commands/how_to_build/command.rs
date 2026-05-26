@@ -47,10 +47,7 @@ pub async fn autocomplete_lucksack_monster<'a>(
         la.cmp(&lb).then(a.len().cmp(&b.len()))
     });
 
-    prefix_matches
-        .into_iter()
-        .chain(contains_matches.into_iter())
-        .take(10)
+    prefix_matches.into_iter().chain(contains_matches).take(10)
 }
 
 /// 📂 Shows RTA runes and artifacts data for a given monster
