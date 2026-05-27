@@ -61,7 +61,7 @@ jobs:
           rsync -av --progress \
             -e "ssh -p ${{ secrets.PI_PORT }} -i ~/.ssh/id_ed25519" \
             target/aarch64-unknown-linux-gnu/release/bot-swbox-rust \
-            ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/tmp/shuttle-bot-swbox-rust
+            ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/tmp/bot-swbox-rust
 
       # Deploiement via ton script root (sudoers autorise seulement ca)
       - name: Deploy + restart service
