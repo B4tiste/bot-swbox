@@ -1,7 +1,8 @@
 use futures::stream::TryStreamExt;
 use mongodb::bson::{doc, Document};
-use mongodb::Client as MongoClient;
 use poise::serenity_prelude::{Context as SerenityContext, CreateMessage};
+
+use crate::commands::shared::clients::{http_client, mongo_client};
 
 // pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
 //     let client = Client::builder().cookie_store(true).build()?;
@@ -56,8 +57,6 @@ pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
 
     let url = "https://sw-coupons.netlify.app/.netlify/functions/get-coupons";
 
-    let client = reqwest::Client::builder().build()?;
-
     let mut headers = HeaderMap::new();
     headers.insert("accept", HeaderValue::from_static("*/*"));
     headers.insert(
@@ -88,7 +87,7 @@ pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
         HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"),
     );
 
-    let resp = client.get(url).headers(headers).send().await?;
+    let resp = http_client().get(url).headers(headers).send().await?;
 
     if !resp.status().is_success() {
         let status = resp.status();
@@ -102,9 +101,9 @@ pub async fn fetch_fresh_coupons() -> Result<serde_json::Value, anyhow::Error> {
     Ok(json)
 }
 
-pub async fn update_coupon_list(mongo_uri: &str) -> anyhow::Result<()> {
+pub async fn update_coupon_list() -> anyhow::Result<()> {
     let coupons_json = fetch_fresh_coupons().await?;
-    let mongo = MongoClient::with_uri_str(mongo_uri).await?;
+    let mongo = mongo_client()?;
     let db = mongo.database("bot-swbox-db");
     let coupons_col = db.collection::<Document>("coupons");
 
@@ -173,8 +172,8 @@ pub async fn update_coupon_list(mongo_uri: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> anyhow::Result<()> {
-    let mongo = MongoClient::with_uri_str(mongo_uri).await?;
+pub async fn apply_missing_coupons_to_user(hive_id: &str) -> anyhow::Result<()> {
+    let mongo = mongo_client()?;
     let db = mongo.database("bot-swbox-db");
     let users_col = db.collection::<Document>("registered_users");
     let coupons_col = db.collection::<Document>("coupons");
@@ -213,7 +212,6 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
             ("hiveid", hive_id),
             ("coupon", label),
         ];
-        let client = reqwest::Client::new();
         let mut headers = reqwest::header::HeaderMap::new();
         headers.insert(
             "Accept",
@@ -252,7 +250,7 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
         headers.insert(reqwest::header::COOKIE, "gdpr_section=true; _ga=GA1.1.1229236292.1730271769; _ga_FWV2C4HMXW=GS1.1.1730271768.1.1.1730271786.0.0.0; language=fr".parse().unwrap());
         let coupon_url = "https://event.withhive.com/ci/smon/evt_coupon/useCoupon";
 
-        let res = client
+        let res = http_client()
             .post(coupon_url)
             .headers(headers.clone())
             .form(&params)
@@ -293,14 +291,14 @@ pub async fn apply_missing_coupons_to_user(mongo_uri: &str, hive_id: &str) -> an
     Ok(())
 }
 
-pub async fn apply_coupons_to_all_users(mongo_uri: &str) -> anyhow::Result<()> {
-    let mongo = MongoClient::with_uri_str(mongo_uri).await?;
+pub async fn apply_coupons_to_all_users() -> anyhow::Result<()> {
+    let mongo = mongo_client()?;
     let db = mongo.database("bot-swbox-db");
     let users_col = db.collection::<Document>("registered_users");
     let mut cursor = users_col.find(doc! {}).await?;
     while let Some(user_doc) = cursor.try_next().await? {
         let hive_id = user_doc.get_str("hive_id")?;
-        apply_missing_coupons_to_user(mongo_uri, hive_id).await?;
+        apply_missing_coupons_to_user(hive_id).await?;
         // Simulate a random delay to avoid rate limiting beetween 5 and 10s
         let delay_ms = rand::random::<u64>() % 5000 + 5000;
 
@@ -312,10 +310,9 @@ pub async fn apply_coupons_to_all_users(mongo_uri: &str) -> anyhow::Result<()> {
 
 pub async fn notify_new_coupons(
     serenity_ctx: &SerenityContext,
-    mongo_uri: &str,
 ) -> anyhow::Result<()> {
     // Connexion Mongo
-    let mongo = MongoClient::with_uri_str(mongo_uri).await?;
+    let mongo = mongo_client()?;
     let db = mongo.database("bot-swbox-db");
     let sent_coupons_col = db.collection::<Document>("sent_coupons");
     let coupons_col = db.collection::<Document>("coupons");

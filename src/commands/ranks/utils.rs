@@ -1,6 +1,8 @@
 use crate::{GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 use serde::Deserialize;
 
+use crate::commands::shared::clients::http_client;
+
 /// Global toggle for prediction gathering (set to false to disable)
 pub const ENABLE_PREDICTION: bool = false;
 
@@ -30,7 +32,7 @@ struct RankInfo {
 /// Returns in fixed order: P2,P3,G1,G2,G3
 pub async fn get_rank_info() -> Result<Vec<(String, i32)>, String> {
     let url = "https://m.swranking.com/api/player/nowline";
-    let response = match reqwest::get(url).await {
+    let response = match http_client().get(url).send().await {
         Ok(response) => response,
         Err(_) => return Err("Error sending the request.".into()),
     };
@@ -64,7 +66,9 @@ pub async fn get_rank_info() -> Result<Vec<(String, i32)>, String> {
 /// Returns in fixed order: P2,P3,G1,G2,G3
 pub async fn get_prediction_info() -> Result<Vec<(String, i32)>, String> {
     let url = "https://swrta.top/predict";
-    let resp = reqwest::get(url)
+    let resp = http_client()
+        .get(url)
+        .send()
         .await
         .map_err(|_| "Error sending the request.".to_string())?;
 

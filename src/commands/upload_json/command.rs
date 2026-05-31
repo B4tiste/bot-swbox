@@ -1,6 +1,6 @@
-use crate::MONGO_URI;
 use std::collections::HashMap;
 
+use crate::commands::shared::clients::{http_client, mongo_client};
 use crate::commands::shared::embed_error_handling::{
     create_embed_error, schedule_message_deletion,
 };
@@ -8,13 +8,12 @@ use crate::commands::shared::logs::{get_server_name, send_log};
 use crate::commands::shared::models::{LoggerDocument, Mode};
 use crate::commands::upload_json::process_json::{process_json, ProcessJsonResult};
 use crate::Data;
-use mongodb::{bson::doc, Client, Collection};
+use mongodb::{bson::doc, Collection};
 use poise::serenity_prelude::CreateEmbed;
 use poise::{
     serenity_prelude::{self as serenity, Attachment, Error},
     CreateReply,
 };
-use reqwest;
 use serde_json::Value;
 use serenity::builder::CreateEmbedFooter;
 
@@ -60,7 +59,7 @@ pub async fn upload_json(
         return Ok(());
     }
 
-    let response = match reqwest::get(&file.url).await {
+    let response = match http_client().get(&file.url).send().await {
         Ok(resp) => resp,
         Err(e) => {
             let error_message = format!("Failed to download the file: {}", e);
@@ -253,7 +252,9 @@ pub async fn upload_json(
     let pp_url = format!("{}{}.jpg", pp_base_url, hive_id);
 
     // Télécharger l'image
-    let response = reqwest::get(pp_url)
+    let response = http_client()
+        .get(pp_url)
+        .send()
         .await
         .map_err(|_| serenity::Error::Other("Failed to download pp image"))?;
     let image_bytes = response
@@ -360,12 +361,7 @@ pub async fn upload_json(
     .await?;
 
     // Préparation des données pour MongoDB
-    let mongo_uri = {
-        let uri_guard = MONGO_URI.lock().unwrap();
-        uri_guard.clone()
-    };
-
-    let collection = match get_mongo_collection(&mongo_uri).await {
+    let collection = match get_mongo_collection().await {
         Ok(collection) => collection,
         Err(e) => {
             let error_message = format!("Failed to get MongoDB collection: {}", e);
@@ -446,10 +442,8 @@ pub async fn upload_json(
     Ok(())
 }
 
-async fn get_mongo_collection(
-    mongo_uri: &str,
-) -> Result<Collection<mongodb::bson::Document>, mongodb::error::Error> {
-    let client = Client::with_uri_str(mongo_uri).await?;
+async fn get_mongo_collection() -> anyhow::Result<Collection<mongodb::bson::Document>> {
+    let client = mongo_client()?;
 
     let db = client.database("bot-swbox-db");
     Ok(db.collection("upload-json"))

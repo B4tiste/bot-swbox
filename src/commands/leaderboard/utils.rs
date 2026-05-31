@@ -1,6 +1,8 @@
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 
+use crate::commands::shared::clients::http_client;
+
 #[derive(Debug, Deserialize)]
 pub struct LeaderboardResponse {
     pub count: i64,
@@ -30,9 +32,7 @@ pub async fn get_leaderboard_data(
         season, safe_size, offset
     );
 
-    let client = reqwest::Client::new();
-
-    let res = client
+    let res = http_client()
         .get(&url)
         .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
         .header("sec-fetch-site", "none")

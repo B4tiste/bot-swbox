@@ -1,18 +1,13 @@
 use anyhow::Result;
 use mongodb::{
     bson::{doc, Document},
-    Client, Collection,
+    Collection,
 };
 
-use crate::MONGO_URI;
+use crate::commands::shared::clients::mongo_client;
 
 pub async fn get_user_links_collection() -> Result<Collection<Document>> {
-    let mongo_uri = {
-        let uri_guard = MONGO_URI.lock().unwrap();
-        uri_guard.clone()
-    };
-
-    let client = Client::with_uri_str(&mongo_uri).await?;
+    let client = mongo_client()?;
     Ok(client
         .database("bot-swbox-db")
         .collection::<Document>("user-links"))

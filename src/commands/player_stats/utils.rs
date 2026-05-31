@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use image::GenericImage;
 use image::{DynamicImage, ImageBuffer, Rgba, RgbaImage};
 use imageproc::drawing::draw_text_mut;
-use mongodb::{bson::doc, Client, Collection};
+use mongodb::{bson::doc, Collection};
 use poise::serenity_prelude as serenity;
 use serde::Deserialize;
 use serde_json::Value;
@@ -14,8 +14,9 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
+use crate::commands::shared::clients::{http_client, mongo_client};
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
-use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, MONGO_URI, PUNISHER_EMOJI_ID};
+use crate::{CONQUEROR_EMOJI_ID, GUARDIAN_EMOJI_ID, PUNISHER_EMOJI_ID};
 
 /* ------------------ Replay types ------------------ */
 #[derive(Debug, Deserialize)]
@@ -59,12 +60,7 @@ pub struct ReplayMonster {
 /* ------------------ Mongo / emojis helpers ------------------ */
 
 pub async fn get_mob_emoji_collection() -> Result<Collection<mongodb::bson::Document>> {
-    let mongo_uri = {
-        let uri_guard = MONGO_URI.lock().unwrap();
-        uri_guard.clone()
-    };
-
-    let client = Client::with_uri_str(&mongo_uri).await?;
+    let client = mongo_client()?;
     Ok(client
         .database("bot-swbox-db")
         .collection::<mongodb::bson::Document>("mob-emoji"))
@@ -480,7 +476,9 @@ async fn load_image_local(
                 "https://swarfarm.com/static/herders/images/monsters/{}",
                 filename
             );
-            let bytes = reqwest::get(&url)
+            let bytes = http_client()
+                .get(&url)
+                .send()
                 .await
                 .with_context(|| format!("Failed to download image from: {}", url))?
                 .bytes()
@@ -685,8 +683,7 @@ pub struct LucksackSummaryData {
 
 pub async fn search_players_lucksack(username: &str) -> Result<Vec<LucksackSearchPlayer>> {
     let url = format!("https://api.lucksack.gg/players/search/{}", username);
-    let client = reqwest::Client::new();
-    let res = client
+    let res = http_client()
         .get(&url)
         .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
         .header("sec-fetch-site", "none")
@@ -705,8 +702,7 @@ pub async fn search_players_lucksack(username: &str) -> Result<Vec<LucksackSearc
 
 pub async fn get_lucksack_season_numbers() -> Result<Vec<i32>> {
     let url = "https://api.lucksack.gg/seasons";
-    let client = reqwest::Client::new();
-    let res = client
+    let res = http_client()
         .get(url)
         .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
         .header("sec-fetch-site", "none")
@@ -745,8 +741,7 @@ pub async fn get_lucksack_player_summary(
         "https://api.lucksack.gg/players/{}/summary?season={}",
         player_id, season
     );
-    let client = reqwest::Client::new();
-    let res = client
+    let res = http_client()
         .get(&url)
         .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
         .header("sec-fetch-site", "none")
@@ -807,8 +802,7 @@ pub async fn get_lucksack_player_picks(
         "https://api.lucksack.gg/players/{}/picks?season={}&min_game_played=3",
         player_id, season
     );
-    let client = reqwest::Client::new();
-    let res = client
+    let res = http_client()
         .get(&url)
         .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
         .header("sec-fetch-site", "none")
@@ -833,8 +827,7 @@ pub async fn get_lucksack_player_ld5_box(
         "https://api.lucksack.gg/players/{}/box?season={}&element=light%2Cdark&ld5=true",
         player_id, season
     );
-    let client = reqwest::Client::new();
-    let res = client
+    let res = http_client()
         .get(&url)
         .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
         .header("sec-fetch-site", "none")
@@ -1156,8 +1149,7 @@ pub async fn get_lucksack_player_matches(
         "https://api.lucksack.gg/players/{}/matches?season={}&limit=20&offset=0",
         player_id, season
     );
-    let client = reqwest::Client::new();
-    let res = client
+    let res = http_client()
         .get(&url)
         .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
         .header("sec-fetch-site", "none")

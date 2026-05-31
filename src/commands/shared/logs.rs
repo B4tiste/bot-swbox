@@ -1,16 +1,12 @@
-use mongodb::Client;
 use poise::serenity_prelude::Error;
 
-use crate::{commands::shared::models::LoggerDocument, Data, MONGO_URI};
+use crate::{
+    commands::shared::{clients::mongo_client, models::LoggerDocument},
+    Data,
+};
 
 pub async fn send_log(log: LoggerDocument) -> Result<(), Error> {
-    let mongo_uri = {
-        let uri_guard = MONGO_URI.lock().unwrap();
-        uri_guard.clone()
-    };
-    let client = Client::with_uri_str(mongo_uri)
-        .await
-        .map_err(|e| Error::Other(Box::leak(Box::new(e.to_string()))))?;
+    let client = mongo_client().map_err(|e| Error::Other(Box::leak(Box::new(e.to_string()))))?;
     let database = client.database("bot-swbox-db");
     let collection = database.collection::<LoggerDocument>("logs");
 

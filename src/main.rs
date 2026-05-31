@@ -33,6 +33,7 @@ use crate::commands::register::command::register;
 use crate::commands::replays::command::get_replays;
 use crate::commands::rta_core::command::get_rta_core;
 use crate::commands::services::command::services;
+use crate::commands::shared::clients::{http_client, init_mongo_client};
 use crate::commands::shared::coupons::{
     apply_coupons_to_all_users, notify_new_coupons, update_coupon_list,
 };
@@ -46,7 +47,6 @@ lazy_static! {
     static ref GUARDIAN_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     static ref PUNISHER_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     static ref CONQUEROR_EMOJI_ID: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
-    static ref MONGO_URI: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     // Variable globale pour stocker le token de l'API
     static ref API_TOKEN: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
 }
@@ -249,12 +249,12 @@ async fn main() -> Result<()> {
         .parse()
         .context("LOG_CHANNEL_ID must be a valid u64")?;
     let mongo_uri = env_required("MONGO_URI")?;
+    init_mongo_client(&mongo_uri).await?;
 
     *GUARDIAN_EMOJI_ID.lock().unwrap() = guardian_emoji_id;
     *PUNISHER_EMOJI_ID.lock().unwrap() = punisher_emoji_id;
     *CONQUEROR_EMOJI_ID.lock().unwrap() = conqueror_emoji_id;
     *LOG_CHANNEL_ID.lock().unwrap() = log_channel_id;
-    *MONGO_URI.lock().unwrap() = mongo_uri.clone();
 
     let username = env_required("USERNAME")?;
     let password = env_required("PASSWORD")?;
@@ -296,17 +296,17 @@ async fn main() -> Result<()> {
             sleep(Duration::from_secs(1)).await;
         }
         loop {
-            if let Err(e) = update_coupon_list(&mongo_uri).await {
+            if let Err(e) = update_coupon_list().await {
                 eprintln!("Failed to update coupons: {e:?}");
             }
 
             if let Some(ctx) = SERENITY_CTX.get() {
-                if let Err(e) = notify_new_coupons(ctx, &mongo_uri).await {
+                if let Err(e) = notify_new_coupons(ctx).await {
                     eprintln!("Failed to notify new coupons: {e:?}");
                 }
             }
 
-            if let Err(e) = apply_coupons_to_all_users(&mongo_uri).await {
+            if let Err(e) = apply_coupons_to_all_users().await {
                 eprintln!("Failed to apply coupons: {e:?}");
             }
             sleep(Duration::from_secs(1800)).await;
@@ -316,15 +316,18 @@ async fn main() -> Result<()> {
     // Download monsters json
     let monsters_url =
         "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json";
-    let monsters_content = reqwest::get(monsters_url).await?.text().await?;
+    let monsters_content = http_client()
+        .get(monsters_url)
+        .send()
+        .await?
+        .text()
+        .await?;
     tokio::fs::write("monsters_elements.json", &monsters_content).await?;
     println!("monsters_elements.json downloaded");
 
     // Download lucksack monsters catalog
     let lucksack_catalog_url = "https://static.lucksack.gg/data/monsters_catalog.json";
-    let http = reqwest::Client::new();
-
-    let lucksack_catalog_content = http
+    let lucksack_catalog_content = http_client()
         .get(lucksack_catalog_url)
         .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
         .header("sec-fetch-site", "none")

@@ -2,8 +2,8 @@ use futures::future;
 use poise::serenity_prelude::Error;
 use poise::Modal;
 
-use crate::MONGO_URI;
-use mongodb::{bson::doc, Client};
+use crate::commands::shared::clients::{http_client, mongo_client};
+use mongodb::bson::doc;
 
 use crate::{
     commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion},
@@ -26,7 +26,9 @@ where
 
 async fn get_player_id_by_name(name: String) -> Result<String, String> {
     let url = format!("https://api.swarena.gg/player/search/{}", name);
-    let response = reqwest::get(url)
+    let response = http_client()
+        .get(url)
+        .send()
         .await
         .map_err(|_| "Failed to send request".to_string())?;
 
@@ -81,7 +83,9 @@ pub async fn resolve_player_id(
 
 async fn get_player_seasons_played(player_id: String) -> Result<Vec<i64>, String> {
     let url = format!("https://api.swarena.gg/player/{}/seasons", player_id);
-    let response = reqwest::get(url)
+    let response = http_client()
+        .get(url)
+        .send()
         .await
         .map_err(|_| "Failed to send request".to_string())?;
 
@@ -108,7 +112,9 @@ async fn get_player_name(player_id: String, seasons_played: String) -> Result<St
         "https://api.swarena.gg/player/{}/summary?season={}",
         player_id, seasons_played
     );
-    let response = reqwest::get(url)
+    let response = http_client()
+        .get(url)
+        .send()
         .await
         .map_err(|_| "Failed to send request".to_string())?;
 
@@ -150,16 +156,7 @@ pub async fn get_player_all_names(player_id: String) -> Result<Vec<String>, Stri
 }
 
 pub async fn get_swrt_id_from_db_by_player_id(player_id: i64) -> Result<i64, String> {
-    let mongo_uri = {
-        let guard = MONGO_URI
-            .lock()
-            .map_err(|_| "Failed to lock MONGO_URI".to_string())?;
-        guard.clone()
-    };
-
-    let client = Client::with_uri_str(&mongo_uri)
-        .await
-        .map_err(|e| format!("Mongo connection error: {e}"))?;
+    let client = mongo_client().map_err(|e| format!("Mongo client error: {e}"))?;
 
     let coll = client
         .database("bot-swbox-db")
@@ -198,8 +195,7 @@ pub async fn get_current_detail_from_swrt(
         "https://m.swranking.com/api/player/detail?swrtPlayerId={}",
         swrt_player_id
     );
-    let client = reqwest::Client::new();
-    let res = client
+    let res = http_client()
         .get(&url)
         .header("Authentication", token)
         .header("Content-Type", "application/json")
