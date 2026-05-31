@@ -316,12 +316,7 @@ async fn main() -> Result<()> {
     // Download monsters json
     let monsters_url =
         "https://raw.githubusercontent.com/B4tiste/BP-data/refs/heads/main/data/monsters_elements.json";
-    let monsters_content = http_client()
-        .get(monsters_url)
-        .send()
-        .await?
-        .text()
-        .await?;
+    let monsters_content = http_client().get(monsters_url).send().await?.text().await?;
     tokio::fs::write("monsters_elements.json", &monsters_content).await?;
     println!("monsters_elements.json downloaded");
 
