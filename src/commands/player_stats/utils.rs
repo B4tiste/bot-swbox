@@ -296,20 +296,17 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
             .copy_from(&img_opp, img_me.width() + spacing, 0)
             .unwrap();
 
-        // Parse ISO 8601 date → "DD-MM-YYYY"
-        let date_text = m
-            .battle_time
-            .get(..10)
-            .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-            .map(|d| d.format("%d-%m-%Y").to_string())
-            .unwrap_or_else(|| m.battle_time.get(..10).unwrap_or("").to_string());
+        // Parse the match timestamp → "DD/MM - HH:MM"
+        let time_text = chrono::DateTime::parse_from_rfc3339(&m.battle_time)
+            .map(|dt| dt.format("%d/%m - %H:%M").to_string())
+            .unwrap_or_else(|_| m.battle_time.get(..16).unwrap_or("").replace('-', "/"));
 
         let left_text = format!("{} - {}", m.my_score, m.my_username);
         let right_text = format!("{} - {}", m.opponent_username, m.opponent_score);
 
         let banner = create_match_banner(
             &left_text,
-            &date_text,
+            &time_text,
             &right_text,
             combined_width,
             Rgba([0, 0, 0, 0]),
@@ -1146,7 +1143,7 @@ pub async fn get_lucksack_player_matches(
     season: i32,
 ) -> Result<Vec<LucksackMatch>> {
     let url = format!(
-        "https://api.lucksack.gg/players/{}/matches?season={}&limit=20&offset=0",
+        "https://api.lucksack.gg/players/{}/matches?season={}&limit=6&offset=0",
         player_id, season
     );
     let res = http_client()
