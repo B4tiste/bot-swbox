@@ -308,9 +308,7 @@ pub async fn apply_coupons_to_all_users() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn notify_new_coupons(
-    serenity_ctx: &SerenityContext,
-) -> anyhow::Result<()> {
+pub async fn notify_new_coupons(serenity_ctx: &SerenityContext) -> anyhow::Result<()> {
     // Connexion Mongo
     let mongo = mongo_client()?;
     let db = mongo.database("bot-swbox-db");
