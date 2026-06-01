@@ -114,12 +114,13 @@ pub async fn get_rta_leaderboard(
                 interaction
                     .create_response(
                         &ctx.serenity_context,
-                        serenity::CreateInteractionResponse::Message(
+                        serenity::CreateInteractionResponse::UpdateMessage(
                             serenity::CreateInteractionResponseMessage::new()
-                                .content(
-                                    "<a:loading:1358029412716515418> Retrieving player stats...",
-                                )
-                                .ephemeral(false),
+                                .add_embed(build_leaderboard_embed(&players, page, total_count))
+                                .components(vec![
+                                    create_pagination_buttons(page, total_count, PAGE_SIZE),
+                                    create_player_select_menu(&players),
+                                ]),
                         ),
                     )
                     .await?;
