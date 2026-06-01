@@ -11,8 +11,9 @@ use serde_json::Value;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
-use std::sync::OnceLock;
+use std::sync::{OnceLock, RwLock};
 
 use crate::commands::shared::clients::{http_client, mongo_client};
 use crate::commands::shared::player_alias::PLAYER_ALIAS_MAP;
@@ -67,6 +68,98 @@ pub async fn get_mob_emoji_collection() -> Result<Collection<mongodb::bson::Docu
 }
 
 /* ------------------ Replay image generation ------------------ */
+
+static GLOBAL_MONSTER_IMAGE_CACHE: OnceLock<RwLock<HashMap<String, DynamicImage>>> =
+    OnceLock::new();
+static CROSS_IMAGE_100: OnceLock<RgbaImage> = OnceLock::new();
+static BANNER_FONT: OnceLock<FontArc> = OnceLock::new();
+static LUCKSACK_REPLAY_PATH_CACHE: OnceLock<RwLock<HashMap<u64, PathBuf>>> = OnceLock::new();
+
+fn global_monster_image_cache() -> &'static RwLock<HashMap<String, DynamicImage>> {
+    GLOBAL_MONSTER_IMAGE_CACHE.get_or_init(|| RwLock::new(HashMap::new()))
+}
+
+fn cross_image_100() -> &'static RgbaImage {
+    CROSS_IMAGE_100.get_or_init(|| {
+        const CROSS_BYTES: &[u8] = include_bytes!("cross.png");
+        image::load_from_memory(CROSS_BYTES)
+            .expect("Erreur lors du chargement de cross.png")
+            .resize_exact(100, 100, image::imageops::FilterType::Triangle)
+            .to_rgba8()
+    })
+}
+
+fn banner_font() -> &'static FontArc {
+    BANNER_FONT.get_or_init(|| {
+        const FONT_BYTES: &[u8] = include_bytes!("NotoSansCJK-Regular.otf");
+        FontArc::try_from_vec(FONT_BYTES.to_vec()).expect("Police invalide")
+    })
+}
+
+fn lucksack_replay_path_cache() -> &'static RwLock<HashMap<u64, PathBuf>> {
+    LUCKSACK_REPLAY_PATH_CACHE.get_or_init(|| RwLock::new(HashMap::new()))
+}
+
+fn lucksack_matches_cache_key(matches: &[LucksackMatch]) -> u64 {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+
+    for m in matches.iter().take(6) {
+        m.won.hash(&mut hasher);
+        m.had_first_pick.hash(&mut hasher);
+        m.battle_time.hash(&mut hasher);
+
+        m.my_monsters.hash(&mut hasher);
+        m.my_leader.hash(&mut hasher);
+        m.my_bans.hash(&mut hasher);
+        m.my_username.hash(&mut hasher);
+        m.my_score.hash(&mut hasher);
+
+        m.opponent_monsters.hash(&mut hasher);
+        m.opponent_leader.hash(&mut hasher);
+        m.opponent_bans.hash(&mut hasher);
+        m.opponent_username.hash(&mut hasher);
+        m.opponent_score.hash(&mut hasher);
+    }
+
+    hasher.finish()
+}
+
+fn prune_tmp_replay_files(max_files: usize) {
+    let Ok(entries) = fs::read_dir("/tmp") else {
+        return;
+    };
+
+    let mut files: Vec<(PathBuf, std::time::SystemTime)> = entries
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path();
+            let name = path.file_name().and_then(|n| n.to_str())?;
+
+            if !(name.starts_with("replay-") && name.ends_with(".png")) {
+                return None;
+            }
+
+            let modified = entry
+                .metadata()
+                .ok()
+                .and_then(|m| m.modified().ok())
+                .unwrap_or(std::time::UNIX_EPOCH);
+
+            Some((path, modified))
+        })
+        .collect();
+
+    let overflow = files.len().saturating_sub(max_files);
+    if overflow == 0 {
+        return;
+    }
+
+    // Remove oldest files first to keep most recent replay images.
+    files.sort_by_key(|(_, modified)| *modified);
+    for (path, _) in files.into_iter().take(overflow) {
+        let _ = fs::remove_file(path);
+    }
+}
 
 pub async fn create_replay_image(
     recent_replays: Vec<Replay>,
@@ -242,6 +335,28 @@ pub async fn create_replay_image(
 }
 
 pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<PathBuf> {
+    prune_tmp_replay_files(128);
+
+    let key = lucksack_matches_cache_key(matches);
+    let latest_path = PathBuf::from("/tmp/replay.png");
+
+    let cached_path = if let Ok(read_guard) = lucksack_replay_path_cache().read() {
+        read_guard.get(&key).cloned()
+    } else {
+        None
+    };
+
+    if let Some(cached_path) = cached_path.filter(|p| p.exists()) {
+        let latest_path_clone = latest_path.clone();
+        tokio::task::spawn_blocking(move || {
+            std::fs::create_dir_all("/tmp")?;
+            std::fs::copy(&cached_path, &latest_path_clone)?;
+            Ok::<_, anyhow::Error>(latest_path_clone)
+        })
+        .await??;
+        return Ok(latest_path);
+    }
+
     let img_map = get_comid_to_image_map();
     let mut sections: Vec<RgbaImage> = Vec::new();
     let mut image_cache: HashMap<String, DynamicImage> = HashMap::new();
@@ -352,7 +467,7 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
         canvas.copy_from(section, col * (sw + padding), row * (sh + padding))?;
     }
 
-    let output_path = PathBuf::from("/tmp/replay.png");
+    let output_path = PathBuf::from(format!("/tmp/replay-{}.png", key));
     let output_path_clone = output_path.clone();
     tokio::task::spawn_blocking(move || {
         std::fs::create_dir_all("/tmp")?;
@@ -361,7 +476,23 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
     })
     .await??;
 
-    Ok(output_path)
+    let output_path_clone = output_path.clone();
+    let latest_path_clone = latest_path.clone();
+    tokio::task::spawn_blocking(move || {
+        std::fs::copy(&output_path_clone, &latest_path_clone)?;
+        Ok::<_, anyhow::Error>(())
+    })
+    .await??;
+
+    if let Ok(mut write_guard) = lucksack_replay_path_cache().write() {
+        if write_guard.len() >= 128 {
+            prune_tmp_replay_files(128);
+            write_guard.clear();
+        }
+        write_guard.insert(key, output_path.clone());
+    }
+
+    Ok(latest_path)
 }
 
 async fn create_team_collage_custom_layout(
@@ -382,11 +513,16 @@ async fn create_team_collage_custom_layout(
     let height = images[0].height();
     let mut collage = ImageBuffer::new(width * 3, height * 2);
 
-    const CROSS_BYTES: &[u8] = include_bytes!("cross.png");
-    let cross = image::load_from_memory(CROSS_BYTES)
-        .expect("Erreur lors du chargement de cross.png")
-        .resize_exact(width, height, image::imageops::FilterType::Lanczos3)
-        .to_rgba8();
+    let cross = if width == 100 && height == 100 {
+        cross_image_100().clone()
+    } else {
+        image::imageops::resize(
+            cross_image_100(),
+            width,
+            height,
+            image::imageops::FilterType::Triangle,
+        )
+    };
 
     let mut grid_slots = [(0, 0); 5];
 
@@ -450,6 +586,14 @@ async fn load_image_local(
         return Ok(img.clone());
     }
 
+    if let Ok(read_guard) = global_monster_image_cache().read() {
+        if let Some(img) = read_guard.get(filename) {
+            let cloned = img.clone();
+            cache.insert(filename.to_string(), cloned.clone());
+            return Ok(cloned);
+        }
+    }
+
     let path = format!("assets/monster_images/{}", filename);
     let filename_string = filename.to_string();
 
@@ -497,7 +641,12 @@ async fn load_image_local(
         }
     }
 
-    let img = img.resize_exact(100, 100, image::imageops::FilterType::Lanczos3);
+    let img = img.resize_exact(100, 100, image::imageops::FilterType::Triangle);
+
+    if let Ok(mut write_guard) = global_monster_image_cache().write() {
+        write_guard.insert(filename.to_string(), img.clone());
+    }
+
     cache.insert(filename.to_string(), img.clone());
     Ok(img)
 }
@@ -512,8 +661,7 @@ fn create_match_banner(
     let height = 40;
     let mut image = ImageBuffer::from_pixel(width, height, color);
 
-    const FONT_BYTES: &[u8] = include_bytes!("NotoSansCJK-Regular.otf");
-    let font = FontArc::try_from_vec(FONT_BYTES.to_vec()).expect("Police invalide");
+    let font = banner_font();
 
     let scale = PxScale::from(26.0);
     let margin = 8.0_f32;
@@ -523,12 +671,12 @@ fn create_match_banner(
     let max_center_width = width_f / 3.0 - margin * 2.0;
     let max_right_width = width_f / 3.0 - margin * 2.0;
 
-    let left = fit_text_to_width(&font, scale, left_text, max_left_width);
-    let center = fit_text_to_width(&font, scale, center_text, max_center_width);
-    let right = fit_text_to_width(&font, scale, right_text, max_right_width);
+    let left = fit_text_to_width(font, scale, left_text, max_left_width);
+    let center = fit_text_to_width(font, scale, center_text, max_center_width);
+    let right = fit_text_to_width(font, scale, right_text, max_right_width);
 
-    let center_w = text_width(&font, scale, &center);
-    let right_w = text_width(&font, scale, &right);
+    let center_w = text_width(font, scale, &center);
+    let right_w = text_width(font, scale, &right);
 
     let y = 8;
 
@@ -538,7 +686,7 @@ fn create_match_banner(
         margin as i32,
         y,
         scale,
-        &font,
+        font,
         &left,
     );
 
@@ -549,7 +697,7 @@ fn create_match_banner(
         center_x,
         y,
         scale,
-        &font,
+        font,
         &center,
     );
 
@@ -560,7 +708,7 @@ fn create_match_banner(
         right_x,
         y,
         scale,
-        &font,
+        font,
         &right,
     );
 

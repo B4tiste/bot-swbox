@@ -337,7 +337,12 @@ pub(crate) async fn show_player_stats<'a>(
         .unwrap_or_default();
 
     let replay_image_path = if !matches.is_empty() {
-        create_lucksack_replay_image(&matches).await.ok()
+        // println!("Generating replay image for {} matches...", matches.len());
+        // let start = std::time::Instant::now();
+        let result = create_lucksack_replay_image(&matches).await.ok();
+        // let duration = start.elapsed();
+        // println!("Replay image generation took: {:?}", duration);
+        result
     } else {
         None
     };
