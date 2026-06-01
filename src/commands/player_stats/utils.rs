@@ -124,6 +124,43 @@ fn lucksack_matches_cache_key(matches: &[LucksackMatch]) -> u64 {
     hasher.finish()
 }
 
+fn prune_tmp_replay_files(max_files: usize) {
+    let Ok(entries) = fs::read_dir("/tmp") else {
+        return;
+    };
+
+    let mut files: Vec<(PathBuf, std::time::SystemTime)> = entries
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path();
+            let name = path.file_name().and_then(|n| n.to_str())?;
+
+            if !(name.starts_with("replay-") && name.ends_with(".png")) {
+                return None;
+            }
+
+            let modified = entry
+                .metadata()
+                .ok()
+                .and_then(|m| m.modified().ok())
+                .unwrap_or(std::time::UNIX_EPOCH);
+
+            Some((path, modified))
+        })
+        .collect();
+
+    let overflow = files.len().saturating_sub(max_files);
+    if overflow == 0 {
+        return;
+    }
+
+    // Remove oldest files first to keep most recent replay images.
+    files.sort_by_key(|(_, modified)| *modified);
+    for (path, _) in files.into_iter().take(overflow) {
+        let _ = fs::remove_file(path);
+    }
+}
+
 pub async fn create_replay_image(
     recent_replays: Vec<Replay>,
     rows: i32,
@@ -298,6 +335,8 @@ pub async fn create_replay_image(
 }
 
 pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<PathBuf> {
+    prune_tmp_replay_files(128);
+
     let key = lucksack_matches_cache_key(matches);
     let latest_path = PathBuf::from("/tmp/replay.png");
 
@@ -447,6 +486,7 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
 
     if let Ok(mut write_guard) = lucksack_replay_path_cache().write() {
         if write_guard.len() >= 128 {
+            prune_tmp_replay_files(128);
             write_guard.clear();
         }
         write_guard.insert(key, output_path.clone());
