@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::commands::player_stats::utils::Replay;
+use crate::commands::replays::utils::Replay;
 
 // Replay
 #[derive(Debug, Deserialize)]

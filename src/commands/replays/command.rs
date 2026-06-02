@@ -5,10 +5,9 @@ use serenity::{CreateInteractionResponse, CreateInteractionResponseMessage, Erro
 
 use crate::commands::mob_stats::command::autocomplete_monster;
 use crate::commands::mob_stats::utils::remap_monster_id;
-use crate::commands::player_stats::utils::create_replay_image;
 use crate::commands::replays::utils::{
-    create_loading_replays_embed, create_replay_level_buttons, create_replays_embed,
-    get_replays_data,
+    create_loading_replays_embed, create_replay_image, create_replay_level_buttons,
+    create_replays_embed, get_replays_data,
 };
 
 use crate::commands::shared::embed_error_handling::{
