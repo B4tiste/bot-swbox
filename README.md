@@ -170,4 +170,3 @@ If you want to contribute, open an issue or contact the maintainers on Discord.
 ### `/get_mob_stats`
 
 ![mob](Images/mob.gif)
-aze
