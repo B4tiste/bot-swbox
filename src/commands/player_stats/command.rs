@@ -1,9 +1,9 @@
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::CreateSelectMenuKind;
 use poise::CreateReply;
-use rand::seq::IndexedRandom;
 use serenity::{
     builder::{CreateActionRow, CreateSelectMenu, CreateSelectMenuOption},
+    builder::{EditAttachments, EditInteractionResponse},
     Error,
 };
 
@@ -25,6 +25,9 @@ use crate::commands::{
     },
 };
 use crate::Data;
+
+const REPLAY_PAGE_SIZE: usize = 6;
+const PLAYER_STATS_LOADING_REPLAY_GIF_URL: &str = "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif";
 
 struct ResolvedPlayer<'a> {
     player_id: i64,
@@ -283,15 +286,11 @@ pub(crate) async fn show_player_stats<'a>(
     let top_monsters = format_lucksack_top_monsters(&picks).await;
     let ld_monsters = format_lucksack_ld_monsters_emojis(&ld_box).await;
     let rank_emojis = get_rank_emojis_for_bracket(summary.summary.current_rank_bracket);
+    let total_matches = summary.summary.total_matches.max(0) as usize;
+    let last_replay_page = total_matches.div_ceil(REPLAY_PAGE_SIZE).max(1) as i32;
+    let mut replay_page = 1i32;
 
-    let gifs = [
-        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif",
-        "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeXRmY2locjR2cnJ5d2JvdWF5djN5cTRlajdna3JxeTA4d2RsdzVxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rGDZbxkkjo0hfLe4EA/giphy.gif",
-        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTRsODVtNThvbTl2bW50NnhzYjB5MWN3aHF5dW40NTIwMmpoaGk0ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/WiIuC6fAOoXD2/giphy.gif",
-        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHFreWtobWUwdmx4MGlpYXZvZjVubDd4ejBuOTcweTh1d3IyaGtzeiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/KDZdynDNJUrrp7EjTM/giphy.gif",
-    ];
-
-    let loading_gif = *gifs.choose(&mut rand::rng()).unwrap_or(&gifs[0]);
+    let loading_gif_image_ref = PLAYER_STATS_LOADING_REPLAY_GIF_URL;
 
     let initial_embed = create_lucksack_player_embed(
         &summary,
@@ -299,7 +298,7 @@ pub(crate) async fn show_player_stats<'a>(
         top_monsters.clone(),
         ld_monsters.clone(),
     )
-    .image(loading_gif);
+    .image(loading_gif_image_ref);
 
     let reply_handle = match existing_reply {
         Some(handle) => {
@@ -324,7 +323,7 @@ pub(crate) async fn show_player_stats<'a>(
                     top_monsters.clone(),
                     ld_monsters.clone(),
                 )
-                .image(loading_gif)],
+                .image(loading_gif_image_ref)],
                 ..Default::default()
             })
             .await?
@@ -332,7 +331,7 @@ pub(crate) async fn show_player_stats<'a>(
     };
 
     // --- Step 2: fetch matches, generate replay image, update embed ---
-    let matches = get_lucksack_player_matches(player_id, season)
+    let matches = get_lucksack_player_matches(player_id, season, REPLAY_PAGE_SIZE, 0)
         .await
         .unwrap_or_default();
 
@@ -348,17 +347,35 @@ pub(crate) async fn show_player_stats<'a>(
     };
 
     let final_embed = {
-        let mut e = create_lucksack_player_embed(&summary, rank_emojis, top_monsters, ld_monsters);
+        let mut e = create_lucksack_player_embed(
+            &summary,
+            rank_emojis.clone(),
+            top_monsters.clone(),
+            ld_monsters.clone(),
+        );
         if replay_image_path.is_some() {
             e = e.image("attachment://replay.png");
         }
+        e = e.field(
+            "Recent Replays",
+            format!("Page {}/{}", replay_page, last_replay_page),
+            false,
+        );
         e
     };
 
     let mut final_reply = CreateReply {
         content: Some("".to_string()),
         embeds: vec![final_embed],
-        components: Some(vec![]),
+        components: Some(if last_replay_page > 1 {
+            vec![create_replay_pagination_buttons(
+                replay_page,
+                last_replay_page,
+                false,
+            )]
+        } else {
+            vec![]
+        }),
         ..Default::default()
     };
     if let Some(ref path) = replay_image_path {
@@ -370,7 +387,137 @@ pub(crate) async fn show_player_stats<'a>(
         .edit(poise::Context::Application(*ctx), final_reply)
         .await?;
 
+    if last_replay_page <= 1 {
+        return Ok(());
+    }
+
+    let message_id = reply_handle.message().await?.id;
+    let channel_id = ctx.channel_id();
+    let user_id = ctx.author().id;
+
+    while let Some(interaction) =
+        serenity::ComponentInteractionCollector::new(&ctx.serenity_context.shard)
+            .channel_id(channel_id)
+            .message_id(message_id)
+            .filter(move |i| i.user.id == user_id)
+            .timeout(std::time::Duration::from_secs(600))
+            .await
+    {
+        match interaction.data.custom_id.as_str() {
+            "player_stats_replays_previous_page" if replay_page > 1 => replay_page -= 1,
+            "player_stats_replays_next_page" if replay_page < last_replay_page => replay_page += 1,
+            _ => continue,
+        }
+
+        let mut loading_embed = create_lucksack_player_embed(
+            &summary,
+            rank_emojis.clone(),
+            top_monsters.clone(),
+            ld_monsters.clone(),
+        )
+        .image(loading_gif_image_ref);
+        loading_embed = loading_embed.field(
+            "Recent Replays",
+            format!("Loading page {}/{}...", replay_page, last_replay_page),
+            false,
+        );
+
+        let loading_message = serenity::CreateInteractionResponseMessage::new()
+            .add_embed(loading_embed)
+            .components(vec![create_replay_pagination_buttons(
+                replay_page,
+                last_replay_page,
+                true,
+            )]);
+
+        interaction
+            .create_response(
+                &ctx.serenity_context,
+                serenity::CreateInteractionResponse::UpdateMessage(loading_message),
+            )
+            .await?;
+
+        let offset = ((replay_page - 1) as usize) * REPLAY_PAGE_SIZE;
+        let matches = get_lucksack_player_matches(player_id, season, REPLAY_PAGE_SIZE, offset)
+            .await
+            .unwrap_or_default();
+
+        let replay_image_path = if !matches.is_empty() {
+            create_lucksack_replay_image(&matches).await.ok()
+        } else {
+            None
+        };
+
+        let updated_embed = {
+            let mut e = create_lucksack_player_embed(
+                &summary,
+                rank_emojis.clone(),
+                top_monsters.clone(),
+                ld_monsters.clone(),
+            );
+            if replay_image_path.is_some() {
+                e = e.image("attachment://replay.png");
+            }
+            e.field(
+                "Recent Replays",
+                format!("Page {}/{}", replay_page, last_replay_page),
+                false,
+            )
+        };
+
+        let mut response = EditInteractionResponse::new()
+            .embeds(vec![updated_embed])
+            .components(vec![create_replay_pagination_buttons(
+                replay_page,
+                last_replay_page,
+                false,
+            )])
+            .attachments(EditAttachments::new());
+
+        if let Some(path) = replay_image_path {
+            if let Ok(attachment) = serenity::CreateAttachment::path(path).await {
+                response = response.attachments(EditAttachments::new().add(attachment));
+            }
+        }
+
+        interaction
+            .edit_response(&ctx.serenity_context.http, response)
+            .await?;
+    }
+
+    reply_handle
+        .edit(
+            poise::Context::Application(*ctx),
+            CreateReply {
+                components: Some(vec![create_replay_pagination_buttons(
+                    replay_page,
+                    last_replay_page,
+                    true,
+                )]),
+                ..Default::default()
+            },
+        )
+        .await?;
+
     Ok(())
+}
+
+fn create_replay_pagination_buttons(
+    page: i32,
+    last_page: i32,
+    disabled: bool,
+) -> serenity::CreateActionRow {
+    let previous_button = serenity::CreateButton::new("player_stats_replays_previous_page")
+        .label("⬅️ Previous")
+        .style(serenity::ButtonStyle::Primary)
+        .disabled(disabled || page <= 1);
+
+    let next_button = serenity::CreateButton::new("player_stats_replays_next_page")
+        .label("➡️ Next")
+        .style(serenity::ButtonStyle::Primary)
+        .disabled(disabled || page >= last_page);
+
+    serenity::CreateActionRow::Buttons(vec![previous_button, next_button])
 }
 
 fn country_code_to_flag_emoji(country_code: &str) -> String {

@@ -1076,10 +1076,12 @@ pub struct LucksackMatch {
 pub async fn get_lucksack_player_matches(
     player_id: i64,
     season: i32,
+    limit: usize,
+    offset: usize,
 ) -> Result<Vec<LucksackMatch>> {
     let url = format!(
-        "https://api.lucksack.gg/players/{}/matches?season={}&limit=6&offset=0",
-        player_id, season
+        "https://api.lucksack.gg/players/{}/matches?season={}&limit={}&offset={}",
+        player_id, season, limit, offset
     );
     let res = http_client()
         .get(&url)
