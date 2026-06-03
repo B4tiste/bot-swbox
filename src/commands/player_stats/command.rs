@@ -27,7 +27,8 @@ use crate::commands::{
 use crate::Data;
 
 const REPLAY_PAGE_SIZE: usize = 6;
-const PLAYER_STATS_LOADING_REPLAY_GIF_PATH: &str = "assets/loading/player_stats_loading_1350x800.gif";
+const PLAYER_STATS_LOADING_REPLAY_GIF_PATH: &str =
+    "assets/loading/player_stats_loading_1350x800.gif";
 const PLAYER_STATS_LOADING_REPLAY_GIF_FALLBACK_URL: &str = "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif";
 
 struct ResolvedPlayer<'a> {
@@ -288,7 +289,7 @@ pub(crate) async fn show_player_stats<'a>(
     let ld_monsters = format_lucksack_ld_monsters_emojis(&ld_box).await;
     let rank_emojis = get_rank_emojis_for_bracket(summary.summary.current_rank_bracket);
     let total_matches = summary.summary.total_matches.max(0) as usize;
-    let last_replay_page = ((total_matches + REPLAY_PAGE_SIZE - 1) / REPLAY_PAGE_SIZE).max(1) as i32;
+    let last_replay_page = total_matches.div_ceil(REPLAY_PAGE_SIZE).max(1) as i32;
     let mut replay_page = 1i32;
 
     let loading_gif_attachment = load_player_stats_loading_gif_attachment().await;
