@@ -3,7 +3,7 @@ use poise::serenity_prelude::CreateSelectMenuKind;
 use poise::CreateReply;
 use serenity::{
     builder::{CreateActionRow, CreateSelectMenu, CreateSelectMenuOption},
-    builder::{EditAttachments, EditInteractionResponse},
+    builder::{EditAttachments, EditInteractionResponse, EditMessage},
     Error,
 };
 
@@ -485,17 +485,15 @@ pub(crate) async fn show_player_stats<'a>(
             .await?;
     }
 
-    reply_handle
+    let mut message = reply_handle.message().await?.into_owned();
+    message
         .edit(
-            poise::Context::Application(*ctx),
-            CreateReply {
-                components: Some(vec![create_replay_pagination_buttons(
-                    replay_page,
-                    last_replay_page,
-                    true,
-                )]),
-                ..Default::default()
-            },
+            &ctx.serenity_context.http,
+            EditMessage::new().components(vec![create_replay_pagination_buttons(
+                replay_page,
+                last_replay_page,
+                true,
+            )]),
         )
         .await?;
 
