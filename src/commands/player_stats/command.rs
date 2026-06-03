@@ -27,9 +27,7 @@ use crate::commands::{
 use crate::Data;
 
 const REPLAY_PAGE_SIZE: usize = 6;
-const PLAYER_STATS_LOADING_REPLAY_GIF_PATH: &str =
-    "assets/loading/player_stats_loading_1350x800.gif";
-const PLAYER_STATS_LOADING_REPLAY_GIF_FALLBACK_URL: &str = "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif";
+const PLAYER_STATS_LOADING_REPLAY_GIF_URL: &str = "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif";
 
 struct ResolvedPlayer<'a> {
     player_id: i64,
@@ -292,12 +290,7 @@ pub(crate) async fn show_player_stats<'a>(
     let last_replay_page = total_matches.div_ceil(REPLAY_PAGE_SIZE).max(1) as i32;
     let mut replay_page = 1i32;
 
-    let loading_gif_attachment = load_player_stats_loading_gif_attachment().await;
-    let loading_gif_image_ref = if loading_gif_attachment.is_some() {
-        "attachment://loading.gif"
-    } else {
-        PLAYER_STATS_LOADING_REPLAY_GIF_FALLBACK_URL
-    };
+    let loading_gif_image_ref = PLAYER_STATS_LOADING_REPLAY_GIF_URL;
 
     let initial_embed = create_lucksack_player_embed(
         &summary,
@@ -316,7 +309,6 @@ pub(crate) async fn show_player_stats<'a>(
                         content: Some("".to_string()),
                         embeds: vec![initial_embed],
                         components: Some(vec![]),
-                        attachments: loading_gif_attachment.into_iter().collect(),
                         ..Default::default()
                     },
                 )
@@ -332,10 +324,6 @@ pub(crate) async fn show_player_stats<'a>(
                     ld_monsters.clone(),
                 )
                 .image(loading_gif_image_ref)],
-                attachments: load_player_stats_loading_gif_attachment()
-                    .await
-                    .into_iter()
-                    .collect(),
                 ..Default::default()
             })
             .await?
@@ -434,17 +422,13 @@ pub(crate) async fn show_player_stats<'a>(
             false,
         );
 
-        let mut loading_message = serenity::CreateInteractionResponseMessage::new()
+        let loading_message = serenity::CreateInteractionResponseMessage::new()
             .add_embed(loading_embed)
             .components(vec![create_replay_pagination_buttons(
                 replay_page,
                 last_replay_page,
                 true,
             )]);
-
-        if let Some(attachment) = load_player_stats_loading_gif_attachment().await {
-            loading_message = loading_message.add_file(attachment);
-        }
 
         interaction
             .create_response(
@@ -516,16 +500,6 @@ pub(crate) async fn show_player_stats<'a>(
         .await?;
 
     Ok(())
-}
-
-async fn load_player_stats_loading_gif_attachment() -> Option<serenity::CreateAttachment> {
-    serenity::CreateAttachment::path(PLAYER_STATS_LOADING_REPLAY_GIF_PATH)
-        .await
-        .ok()
-        .map(|mut attachment| {
-            attachment.filename = "loading.gif".to_string();
-            attachment
-        })
 }
 
 fn create_replay_pagination_buttons(
