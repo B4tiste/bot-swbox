@@ -485,17 +485,21 @@ pub(crate) async fn show_player_stats<'a>(
             .await?;
     }
 
-    let mut message = reply_handle.message().await?.into_owned();
-    message
-        .edit(
-            &ctx.serenity_context.http,
-            EditMessage::new().components(vec![create_replay_pagination_buttons(
-                replay_page,
-                last_replay_page,
-                true,
-            )]),
-        )
-        .await?;
+    // Disabling the buttons after timeout is cosmetic; ignore permission errors
+    // (e.g. "Missing access" in servers where the bot cannot edit interaction
+    // responses via the REST API after the interaction token window closes).
+    if let Ok(mut message) = reply_handle.message().await.map(|m| m.into_owned()) {
+        let _ = message
+            .edit(
+                &ctx.serenity_context.http,
+                EditMessage::new().components(vec![create_replay_pagination_buttons(
+                    replay_page,
+                    last_replay_page,
+                    true,
+                )]),
+            )
+            .await;
+    }
 
     Ok(())
 }
