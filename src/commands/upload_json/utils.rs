@@ -1,3 +1,6 @@
+use crate::commands::upload_json::artifact::{
+    ArtifactArchetypeId, ArtifactAttributeId, ArtifactEffectId, ArtifactMainStatId, ArtifactTypeId,
+};
 use crate::commands::upload_json::rune::{Property, RuneSetId, RuneStatId, StarsAmmount};
 
 pub fn get_stars_ammount_by_id(id: u32) -> StarsAmmount {
@@ -105,5 +108,60 @@ pub fn get_main_stat_max_value_by_id_6(id: RuneStatId) -> f32 {
         RuneStatId::ResistPct => 64.0,
         RuneStatId::AccuracyPct => 64.0,
         _ => 0.0,
+    }
+}
+
+pub fn get_artifact_type_id_by_id(id: u32) -> Option<ArtifactTypeId> {
+    match id {
+        1 => Some(ArtifactTypeId::Attribute),
+        2 => Some(ArtifactTypeId::Archetype),
+        _ => None,
+    }
+}
+
+pub fn get_artifact_attribute_id_by_id(id: u32) -> Option<ArtifactAttributeId> {
+    match id {
+        1 => Some(ArtifactAttributeId::Water),
+        2 => Some(ArtifactAttributeId::Fire),
+        3 => Some(ArtifactAttributeId::Wind),
+        4 => Some(ArtifactAttributeId::Light),
+        5 => Some(ArtifactAttributeId::Dark),
+        _ => None,
+    }
+}
+
+pub fn get_artifact_archetype_id_by_id(id: u32) -> Option<ArtifactArchetypeId> {
+    match id {
+        1 => Some(ArtifactArchetypeId::Attack),
+        2 => Some(ArtifactArchetypeId::Defense),
+        3 => Some(ArtifactArchetypeId::Hp),
+        4 => Some(ArtifactArchetypeId::Support),
+        _ => None,
+    }
+}
+
+pub fn get_artifact_main_stat_id_by_id(id: u32) -> Option<ArtifactMainStatId> {
+    match id {
+        100 => Some(ArtifactMainStatId::Hp),
+        101 => Some(ArtifactMainStatId::Atk),
+        102 => Some(ArtifactMainStatId::Def),
+        _ => None,
+    }
+}
+
+pub fn get_artifact_effect_id_by_id(id: u32) -> Option<ArtifactEffectId> {
+    match id {
+        206 => Some(ArtifactEffectId::SpdIncreaseEffect),
+        300 => Some(ArtifactEffectId::DDOFire),
+        301 => Some(ArtifactEffectId::DDOWater),
+        302 => Some(ArtifactEffectId::DDOWind),
+        303 => Some(ArtifactEffectId::DDOLight),
+        304 => Some(ArtifactEffectId::DDODark),
+        305 => Some(ArtifactEffectId::DRFFire),
+        306 => Some(ArtifactEffectId::DRFWater),
+        307 => Some(ArtifactEffectId::DRFWind),
+        308 => Some(ArtifactEffectId::DRFLight),
+        309 => Some(ArtifactEffectId::DRFDark),
+        _ => None,
     }
 }

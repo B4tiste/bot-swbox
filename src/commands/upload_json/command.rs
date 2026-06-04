@@ -128,6 +128,9 @@ pub async fn upload_json(
         siege_spd,
         map_eff,
         map_spd,
+        artifact_ddo_fire_hp,
+        artifact_ddo_fire_atk,
+        artifact_ddo_fire_def,
         wizard_data,
         account_data,
     } = process_json(json);
@@ -312,6 +315,21 @@ pub async fn upload_json(
                 "RTA: **{}** - Siege: **{}**\n",
                 rta_spd, siege_spd
             ),
+            false,
+        )
+        .field(
+            "Artifacts: Top 3 DDOFire (HP main)",
+            format!("```autohotkey\n{}\n```", artifact_ddo_fire_hp),
+            false,
+        )
+        .field(
+            "Artifacts: Top 3 DDOFire (ATK main)",
+            format!("```autohotkey\n{}\n```", artifact_ddo_fire_atk),
+            false,
+        )
+        .field(
+            "Artifacts: Top 3 DDOFire (DEF main)",
+            format!("```autohotkey\n{}\n```", artifact_ddo_fire_def),
             false,
         )
         .field(

@@ -1,6 +1,12 @@
+use crate::commands::upload_json::artifact::{
+    Artifact, ArtifactAttributeId, ArtifactEffectId, ArtifactMainStat, ArtifactMainStatId,
+    ArtifactTypeId, Effect,
+};
 use crate::commands::upload_json::rune::Property;
 use crate::commands::upload_json::rune::Rune;
 use crate::commands::upload_json::utils::{
+    get_artifact_archetype_id_by_id, get_artifact_attribute_id_by_id,
+    get_artifact_effect_id_by_id, get_artifact_main_stat_id_by_id, get_artifact_type_id_by_id,
     get_rune_set_id_by_id, get_rune_stat_id_by_id, get_stars_ammount_by_id,
 };
 use serde_json::Value;
@@ -74,6 +80,102 @@ fn extract_rune(rune: &Value) -> Option<Rune> {
     }))
 }
 
+fn extract_artifact(artifact: &Value) -> Option<Artifact> {
+    let id = artifact.get("rid")?.as_u64()? as u32;
+    let artifact_type = get_artifact_type_id_by_id(artifact.get("type")?.as_u64()? as u32)?;
+
+    let artifact_attribute = match artifact_type {
+        ArtifactTypeId::Attribute => {
+            get_artifact_attribute_id_by_id(artifact.get("attribute")?.as_u64()? as u32)
+        }
+        ArtifactTypeId::Archetype => None,
+    };
+
+    let artifact_archetype = match artifact_type {
+        ArtifactTypeId::Archetype => {
+            get_artifact_archetype_id_by_id(artifact.get("unit_style")?.as_u64()? as u32)
+        }
+        ArtifactTypeId::Attribute => None,
+    };
+
+    let pri_effect = artifact.get("pri_effect")?.as_array()?;
+    let main_stat = ArtifactMainStat::new(
+        get_artifact_main_stat_id_by_id(pri_effect[0].as_u64()? as u32)?,
+        pri_effect[1].as_u64()? as u32,
+    );
+
+    let mut secondary_effects = Vec::new();
+    if let Some(sec_eff) = artifact.get("sec_effects") {
+        for sec_eff in sec_eff.as_array()? {
+            let sec_eff_array = sec_eff.as_array()?;
+            let effect_id = get_artifact_effect_id_by_id(sec_eff_array[0].as_u64()? as u32)?;
+            let value = sec_eff_array[1].as_f64()? as f32;
+            secondary_effects.push(Effect::new(effect_id, value));
+        }
+    }
+
+    Some(Artifact {
+        id,
+        artifact_type,
+        artifact_attribute,
+        artifact_archetype,
+        main_stat,
+        secondary_effects,
+    })
+}
+
+fn format_top3(values: &mut Vec<f32>) -> String {
+    values.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
+    let top = values
+        .iter()
+        .take(3)
+        .map(|v| format!("{:.1}", v))
+        .collect::<Vec<_>>();
+
+    if top.is_empty() {
+        "-".to_string()
+    } else {
+        top.join(" / ")
+    }
+}
+
+fn build_ddo_fire_report(artifacts: &[Artifact], main_stat: ArtifactMainStatId) -> String {
+    let mut report = String::from("Elem     Top3 DDOFire\n");
+    let element_order = [
+        ArtifactAttributeId::Water,
+        ArtifactAttributeId::Fire,
+        ArtifactAttributeId::Wind,
+        ArtifactAttributeId::Light,
+        ArtifactAttributeId::Dark,
+    ];
+
+    for element in element_order {
+        let mut values = Vec::new();
+        for artifact in artifacts {
+            if artifact.artifact_type != ArtifactTypeId::Attribute {
+                continue;
+            }
+            if artifact.main_stat.id != main_stat {
+                continue;
+            }
+            if artifact.artifact_attribute != Some(element) {
+                continue;
+            }
+
+            for effect in &artifact.secondary_effects {
+                if effect.id == ArtifactEffectId::DDOFire {
+                    values.push(effect.value);
+                }
+            }
+        }
+
+        let top3 = format_top3(&mut values);
+        report.push_str(&format!("{:<8} {}\n", element, top3));
+    }
+
+    report
+}
+
 pub type ScoreMap = HashMap<String, HashMap<String, u32>>;
 pub type JsonValueMap = HashMap<&'static str, Value>;
 
@@ -84,6 +186,9 @@ pub struct ProcessJsonResult {
     pub siege_spd: f32,
     pub map_eff: ScoreMap,
     pub map_spd: ScoreMap,
+    pub artifact_ddo_fire_hp: String,
+    pub artifact_ddo_fire_atk: String,
+    pub artifact_ddo_fire_def: String,
     pub wizard_data: JsonValueMap,
     pub account_data: JsonValueMap,
 }
@@ -91,12 +196,20 @@ pub struct ProcessJsonResult {
 /// Fonction qui traite un objet JSON et retourne un tuple contenant le score, les statistiques de runes et les informations du joueur
 pub fn process_json(json: Value) -> ProcessJsonResult {
     let mut vec_runes: Vec<Rune> = Vec::new();
+    let mut vec_artifacts: Vec<Artifact> = Vec::new();
     if let Some(unit_list) = json.get("unit_list") {
         for unit in unit_list.as_array().expect("unit_list should be an array") {
             if let Some(runes) = unit.get("runes") {
                 for rune in runes.as_array().expect("runes should be an array") {
                     if let Some(parsed_rune) = extract_rune(rune) {
                         vec_runes.push(parsed_rune);
+                    }
+                }
+            }
+            if let Some(artifacts) = unit.get("artifacts") {
+                for artifact in artifacts.as_array().expect("artifacts should be an array") {
+                    if let Some(parsed_artifact) = extract_artifact(artifact) {
+                        vec_artifacts.push(parsed_artifact);
                     }
                 }
             }
@@ -109,6 +222,18 @@ pub fn process_json(json: Value) -> ProcessJsonResult {
             }
         }
     }
+    if let Some(artifacts) = json.get("artifacts") {
+        for artifact in artifacts.as_array().expect("artifacts should be an array") {
+            if let Some(parsed_artifact) = extract_artifact(artifact) {
+                vec_artifacts.push(parsed_artifact);
+            }
+        }
+    }
+
+    let artifact_ddo_fire_hp = build_ddo_fire_report(&vec_artifacts, ArtifactMainStatId::Hp);
+    let artifact_ddo_fire_atk = build_ddo_fire_report(&vec_artifacts, ArtifactMainStatId::Atk);
+    let artifact_ddo_fire_def = build_ddo_fire_report(&vec_artifacts, ArtifactMainStatId::Def);
+
     let mut wizard_info_data = HashMap::new();
     if let Some(wizard_info) = json.get("wizard_info") {
         if let Some(wizard_name) = wizard_info.get("wizard_name") {
@@ -294,6 +419,9 @@ pub fn process_json(json: Value) -> ProcessJsonResult {
         siege_spd: siege_score_spd,
         map_eff: map_score_eff,
         map_spd: map_score_spd,
+        artifact_ddo_fire_hp,
+        artifact_ddo_fire_atk,
+        artifact_ddo_fire_def,
         wizard_data: wizard_info_data,
         account_data: account_info_data,
     }
