@@ -106,11 +106,22 @@ fn extract_artifact(artifact: &Value) -> Option<Artifact> {
 
     let mut secondary_effects = Vec::new();
     if let Some(sec_eff) = artifact.get("sec_effects") {
-        for sec_eff in sec_eff.as_array()? {
-            let sec_eff_array = sec_eff.as_array()?;
-            let effect_id = get_artifact_effect_id_by_id(sec_eff_array[0].as_u64()? as u32)?;
-            let value = sec_eff_array[1].as_f64()? as f32;
-            secondary_effects.push(Effect::new(effect_id, value));
+        if let Some(sec_eff_array) = sec_eff.as_array() {
+            for sec_eff in sec_eff_array {
+                if let Some(sec_eff_values) = sec_eff.as_array() {
+                    if sec_eff_values.len() >= 2 {
+                        let effect_raw = sec_eff_values[0].as_u64();
+                        let value_raw = sec_eff_values[1].as_f64();
+
+                        if let (Some(effect_id_num), Some(value_num)) = (effect_raw, value_raw) {
+                            if let Some(effect_id) = get_artifact_effect_id_by_id(effect_id_num as u32)
+                            {
+                                secondary_effects.push(Effect::new(effect_id, value_num as f32));
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -229,6 +240,8 @@ pub fn process_json(json: Value) -> ProcessJsonResult {
             }
         }
     }
+
+    println!("Extracted {} runes and {} artifacts", vec_runes.len(), vec_artifacts.len());
 
     let artifact_ddo_fire_hp = build_ddo_fire_report(&vec_artifacts, ArtifactMainStatId::Hp);
     let artifact_ddo_fire_atk = build_ddo_fire_report(&vec_artifacts, ArtifactMainStatId::Atk);
