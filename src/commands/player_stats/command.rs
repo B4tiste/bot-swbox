@@ -364,10 +364,10 @@ pub(crate) async fn show_player_stats<'a>(
         e
     };
 
-    let mut final_reply = CreateReply {
-        content: Some("".to_string()),
-        embeds: vec![final_embed],
-        components: Some(if last_replay_page > 1 {
+    let mut final_message = EditMessage::new()
+        .content("")
+        .embeds(vec![final_embed])
+        .components(if last_replay_page > 1 {
             vec![create_replay_pagination_buttons(
                 replay_page,
                 last_replay_page,
@@ -375,16 +375,18 @@ pub(crate) async fn show_player_stats<'a>(
             )]
         } else {
             vec![]
-        }),
-        ..Default::default()
-    };
+        })
+        .attachments(EditAttachments::new());
+
     if let Some(ref path) = replay_image_path {
         if let Ok(attachment) = serenity::CreateAttachment::path(path).await {
-            final_reply.attachments.push(attachment);
+            final_message = final_message.attachments(EditAttachments::new().add(attachment));
         }
     }
-    reply_handle
-        .edit(poise::Context::Application(*ctx), final_reply)
+
+    let mut message = reply_handle.message().await?.into_owned();
+    message
+        .edit(&ctx.serenity_context.http, final_message)
         .await?;
 
     if last_replay_page <= 1 {
