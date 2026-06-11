@@ -346,6 +346,12 @@ pub(crate) async fn show_player_stats<'a>(
         None
     };
 
+    let replay_attachment_name = replay_image_path
+        .as_ref()
+        .and_then(|path| path.file_name())
+        .and_then(|name| name.to_str())
+        .map(|name| name.to_string());
+
     let final_embed = {
         let mut e = create_lucksack_player_embed(
             &summary,
@@ -353,8 +359,8 @@ pub(crate) async fn show_player_stats<'a>(
             top_monsters.clone(),
             ld_monsters.clone(),
         );
-        if replay_image_path.is_some() {
-            e = e.image("attachment://replay.png");
+        if let Some(attachment_name) = replay_attachment_name.as_deref() {
+            e = e.image(format!("attachment://{}", attachment_name));
         }
         e = e.field(
             "Recent Replays",
@@ -450,6 +456,12 @@ pub(crate) async fn show_player_stats<'a>(
             None
         };
 
+        let replay_attachment_name = replay_image_path
+            .as_ref()
+            .and_then(|path| path.file_name())
+            .and_then(|name| name.to_str())
+            .map(|name| name.to_string());
+
         let updated_embed = {
             let mut e = create_lucksack_player_embed(
                 &summary,
@@ -457,8 +469,8 @@ pub(crate) async fn show_player_stats<'a>(
                 top_monsters.clone(),
                 ld_monsters.clone(),
             );
-            if replay_image_path.is_some() {
-                e = e.image("attachment://replay.png");
+            if let Some(attachment_name) = replay_attachment_name.as_deref() {
+                e = e.image(format!("attachment://{}", attachment_name));
             }
             e.field(
                 "Recent Replays",
