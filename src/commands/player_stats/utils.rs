@@ -255,7 +255,6 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
     })
     .await??;
 
-
     if let Ok(mut write_guard) = lucksack_replay_path_cache().write() {
         if write_guard.len() >= 128 {
             prune_tmp_replay_files(128);
