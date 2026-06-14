@@ -1,7 +1,9 @@
 use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::rta_core::models::{
-    Monster, MonsterDuoStat, MonsterEntry, MonstersFile, TierListData,
+    LucksackPatch, LucksackTrioRecord, LucksackTrioResponse, LucksackWithTrioResponse, Monster,
+    MonsterEntry, MonstersFile, TierListData, TrioStat,
 };
+use crate::commands::shared::clients::http_client;
 use anyhow::{Context, Result};
 use chrono::NaiveDate;
 use mongodb::{bson::doc, Collection};
@@ -9,6 +11,9 @@ use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::fs;
+
+/// Nombre maximal de pages (100 trios chacune) récupérées par appel Lucksack.
+const MAX_TRIO_PAGES: i32 = 15;
 
 /// Lit le JSON dynamique (upload), extrait les unit_master_id,
 /// puis charge monsters.json et renvoie les Monster correspondants.
@@ -121,94 +126,155 @@ pub async fn get_tierlist_data(api_level: i32, token: &str) -> Result<TierListDa
     Ok(tierlist_data)
 }
 
-pub async fn get_swrt_version(token: &str) -> Result<String, String> {
-    let url = "https://m.swranking.com/api/setting/settingMap";
+/// Récupère le dernier patch d'une saison Lucksack (celui avec le patch_order maximal).
+pub async fn get_latest_patch(season: i32) -> Result<i32, String> {
+    let url = format!("https://api.lucksack.gg/seasons/{}/patches", season);
 
-    let client = Client::new();
-    let response = client
-        .get(url)
-        .header("Authentication", token)
-        .header("Referer", "https://m.swranking.com/")
-        .header("User-Agent", "Mozilla/5.0")
-        .send()
-        .await
-        .map_err(|_| "Failed get settings".to_string())?;
-
-    let json = response
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|_| "Failed to parse settings JSON".to_string())?;
-
-    let version_str = json["data"]["nowVersion"]
-        .as_str()
-        .ok_or("Missing nowVersion".to_string())?;
-
-    Ok(version_str.to_string())
-}
-
-/// Récupère les duos (highOneWithTwoList) pour un monstre donné
-pub async fn get_monster_duos(
-    token: &str,
-    season: i64,
-    version: &str,
-    monster_id: u32,
-    level: i32,
-) -> Result<Vec<MonsterDuoStat>> {
-    let url = format!(
-        "https://m.swranking.com/api/monster/highdata?pageNum=1&pageSize=20&monsterId={}&season={}&version={}&level={}&factor=0.01&real=0",
-        monster_id, season, version, level
-    );
-    let client = Client::new();
-    let resp = client
+    let res = http_client()
         .get(&url)
-        .header("Authentication", token)
-        .header("Referer", "https://m.swranking.com/")
-        .header("User-Agent", "Mozilla/5.0")
+        .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+        .header("sec-fetch-site", "none")
         .send()
-        .await?
-        .json::<Value>()
-        .await?;
-    let list = resp["data"]["highOneWithTwoList"]
-        .as_array()
-        .context("Missing highOneWithTwoList")?;
-    let duos = serde_json::from_value(Value::Array(list.clone()))?;
-    Ok(duos)
+        .await
+        .map_err(|_| "Failed to send request".to_string())?;
+
+    if !res.status().is_success() {
+        return Err(format!("HTTP {}", res.status()));
+    }
+
+    let patches = res
+        .json::<Vec<LucksackPatch>>()
+        .await
+        .map_err(|_| "Failed to parse patches JSON".to_string())?;
+
+    patches
+        .into_iter()
+        .max_by_key(|p| p.patch_order)
+        .map(|p| p.patch_id)
+        .ok_or_else(|| "No patch found".to_string())
 }
 
-pub fn filter_monster(tierlist_data: &TierListData, monsters: &[Monster]) -> TierListData {
-    let mut filtered_tierlist = tierlist_data.clone();
-    filtered_tierlist.sss_monster.retain(|m| {
-        monsters
-            .iter()
-            .any(|monster| monster.unit_master_id == m.monster_id)
-    });
-    filtered_tierlist.ss_monster.retain(|m| {
-        monsters
-            .iter()
-            .any(|monster| monster.unit_master_id == m.monster_id)
-    });
-    filtered_tierlist.s_monster.retain(|m| {
-        monsters
-            .iter()
-            .any(|monster| monster.unit_master_id == m.monster_id)
-    });
-    filtered_tierlist.a_monster.retain(|m| {
-        monsters
-            .iter()
-            .any(|monster| monster.unit_master_id == m.monster_id)
-    });
-    filtered_tierlist.b_monster.retain(|m| {
-        monsters
-            .iter()
-            .any(|monster| monster.unit_master_id == m.monster_id)
-    });
-    filtered_tierlist.c_monster.retain(|m| {
-        monsters
-            .iter()
-            .any(|monster| monster.unit_master_id == m.monster_id)
-    });
+/// Récupère les trios globaux d'un rank pour une saison/patch, filtrés localement
+/// par min_games (statistics/trio ne supporte pas min_appearances).
+pub async fn fetch_global_trios(
+    season: i32,
+    patch: i32,
+    rank: i32,
+    min_games: u32,
+) -> Result<Vec<TrioStat>, String> {
+    let mut result: Vec<TrioStat> = Vec::new();
 
-    filtered_tierlist
+    for page in 0..MAX_TRIO_PAGES {
+        let offset = page * 100;
+        let url = format!(
+            "https://api.lucksack.gg/statistics/trio?season={}&rank={}&patch={}&limit=100&offset={}&order_by=Pick&order_direction=Desc",
+            season, rank, patch, offset
+        );
+
+        let res = http_client()
+            .get(&url)
+            .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+            .header("sec-fetch-site", "none")
+            .send()
+            .await
+            .map_err(|_| "Failed to send request".to_string())?;
+
+        if !res.status().is_success() {
+            return Err(format!("HTTP {}", res.status()));
+        }
+
+        let body = res
+            .json::<LucksackTrioResponse>()
+            .await
+            .map_err(|_| "Failed to parse trio JSON".to_string())?;
+
+        let page_len = body.records.len();
+
+        for record in body.records {
+            let LucksackTrioRecord {
+                monster_id,
+                played_count,
+                win_rate,
+            } = record;
+
+            if monster_id.len() != 3 {
+                continue;
+            }
+
+            if played_count < min_games {
+                continue;
+            }
+
+            result.push(TrioStat {
+                ids: [monster_id[0], monster_id[1], monster_id[2]],
+                count: played_count,
+                win_rate,
+            });
+        }
+
+        if page_len < 100 {
+            break;
+        }
+    }
+
+    Ok(result)
+}
+
+/// Récupère les trios contenant un monstre donné. min_games est appliqué côté serveur
+/// via min_appearances.
+pub async fn fetch_monster_trios(
+    season: i32,
+    patch: i32,
+    rank: i32,
+    monster_id: u32,
+    min_games: u32,
+) -> Result<Vec<TrioStat>, String> {
+    let mut result: Vec<TrioStat> = Vec::new();
+
+    for page in 0..MAX_TRIO_PAGES {
+        let offset = page * 100;
+        let url = format!(
+            "https://api.lucksack.gg/monsters/{}/with-trio?season={}&rank={}&patch={}&limit=100&offset={}&order_by=appearances&order_direction=desc&min_appearances={}",
+            monster_id, season, rank, patch, offset, min_games
+        );
+
+        let res = http_client()
+            .get(&url)
+            .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
+            .header("sec-fetch-site", "none")
+            .send()
+            .await
+            .map_err(|_| "Failed to send request".to_string())?;
+
+        if !res.status().is_success() {
+            return Err(format!("HTTP {}", res.status()));
+        }
+
+        let body = res
+            .json::<LucksackWithTrioResponse>()
+            .await
+            .map_err(|_| "Failed to parse with-trio JSON".to_string())?;
+
+        let page_len = body.records.len();
+
+        for record in body.records {
+            result.push(TrioStat {
+                ids: [
+                    record.units1.monster_id,
+                    record.units2.monster_id,
+                    record.units3.monster_id,
+                ],
+                count: record.appearances,
+                win_rate: record.winrate,
+            });
+        }
+
+        if page_len < 100 {
+            break;
+        }
+    }
+
+    Ok(result)
 }
 
 pub async fn get_emoji_from_id(
