@@ -21,8 +21,13 @@ use std::fs;
 /// Nombre maximal de pages (100 trios chacune) récupérées par appel Lucksack.
 const MAX_TRIO_PAGES: i32 = 15;
 
-/// Lit le JSON dynamique (upload), extrait les unit_master_id,
-/// puis charge monsters.json et renvoie les Monster correspondants.
+/// Construit la box jouable à partir d'un export SW. Source = roster réelle
+/// (`unit_list`, toutes étoiles) **∪** nat5 possédés d'après le bestiaire
+/// (`unit_collection`, `open == 1`). Les nat5 étant indestructibles (non
+/// nourrissables/sacrifiables), `open == 1` y est une possession fiable, ce qui
+/// rattrape les nat5 de storage absents d'un export partiel. Toute unité non
+/// éveillée est mappée vers sa forme éveillée (id éveillé = id non éveillé + 10),
+/// car Lucksack indexe ses statistiques sur l'id éveillé.
 pub fn get_monsters_from_json_bytes(
     upload_bytes: &[u8],
     monsters_json_path: &str,
@@ -31,12 +36,12 @@ pub fn get_monsters_from_json_bytes(
     let dynamic: Value =
         serde_json::from_slice(upload_bytes).context("Failed to parse uploaded JSON")?;
 
-    // 2) Extraire la liste des unit_master_id
+    // 2) Roster réelle : unit_master_id de unit_list
     let unit_list = dynamic
         .get("unit_list")
         .and_then(|v| v.as_array())
         .context("Champ unit_list introuvable ou pas un tableau")?;
-    let wanted_ids: HashSet<u32> = unit_list
+    let roster_ids: HashSet<u32> = unit_list
         .iter()
         .filter_map(|u| {
             u.get("unit_master_id")?
@@ -45,31 +50,54 @@ pub fn get_monsters_from_json_bytes(
         })
         .collect();
 
+    // 2b) Bestiaire : monstres marqués possédés (open == 1). Fiable uniquement
+    //     pour les nat5 (filtrage par étoiles fait à l'étape 4).
+    let collection_ids: HashSet<u32> = dynamic
+        .get("unit_collection")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter(|c| c.get("open").and_then(|o| o.as_i64()) == Some(1))
+                .filter_map(|c| {
+                    c.get("unit_master_id")?
+                        .as_u64()
+                        .map(|id| remap_monster_id(id as i32) as u32)
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
     // 3) Lire et parser monsters.json
     let monsters_data =
         fs::read_to_string(monsters_json_path).context("Impossible de lire monsters.json")?;
     let all: MonstersFile =
         serde_json::from_str(&monsters_data).context("Impossible de parser monsters.json")?;
 
-    // 4) Filtrer selon unit_list **et** vos critères d’éveil / étoiles
+    // 4) Ne garder que les formes ÉVEILLÉES 3★+ élémentaires possédées.
     let result = all
         .monsters
         .into_iter()
         .filter(|m: &MonsterEntry| {
-            // doit appartenir à unit_list
-            if !wanted_ids.contains(&m.com2us_id) {
+            // forme éveillée, élémentaire, 3★+
+            if m.awaken_level < 1 || m.natural_stars < 3 {
                 return false;
             }
-            // awaken_level ≥ 1
-            if m.awaken_level < 1 {
+            if !matches!(
+                m.element.as_str(),
+                "Fire" | "Water" | "Wind" | "Light" | "Dark"
+            ) {
                 return false;
             }
-            // règle par élément
-            match m.element.as_str() {
-                "Fire" | "Water" | "Wind" => m.natural_stars >= 3,
-                "Light" | "Dark" => m.natural_stars >= 3,
-                _ => false,
-            }
+            // id non éveillé correspondant (id éveillé - 10)
+            let base = m.com2us_id.checked_sub(10);
+            // possédée dans la roster (forme éveillée ou non)
+            let in_roster =
+                roster_ids.contains(&m.com2us_id) || base.is_some_and(|b| roster_ids.contains(&b));
+            // nat5 possédée d'après le bestiaire (open == 1, fiable car indestructible)
+            let in_collection_nat5 = m.natural_stars == 5
+                && (collection_ids.contains(&m.com2us_id)
+                    || base.is_some_and(|b| collection_ids.contains(&b)));
+            in_roster || in_collection_nat5
         })
         .map(|m| Monster {
             unit_master_id: m.com2us_id,
