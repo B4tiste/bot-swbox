@@ -14,8 +14,10 @@
 
 use crate::commands::how_to_build::utils::get_latest_lucksack_season;
 use crate::commands::rta_core::cache::get_trios_cached;
-use crate::commands::rta_core::models::TrioStat;
-use crate::commands::rta_core::utils::{get_latest_patch, get_monsters_from_json_bytes};
+use crate::commands::rta_core::models::{Companion, TrioStat};
+use crate::commands::rta_core::utils::{
+    derive_companions, get_latest_patch, get_monsters_from_json_bytes,
+};
 use crate::MONSTER_MAP;
 use std::collections::{HashMap, HashSet};
 
@@ -132,9 +134,10 @@ async fn rta_core_dryrun() {
     println!("{} trios récupérés (avant filtre box)", pool.len());
 
     let playable: Vec<TrioStat> = pool
-        .into_iter()
+        .iter()
         .filter(|t| t.ids.iter().all(|id| player_box_ids.contains(id)))
         .filter(|t| exclude_id.is_none_or(|ex| !t.ids.contains(&ex)))
+        .cloned()
         .collect();
     println!("{} trios jouables (box 3/3)", playable.len());
 
@@ -151,4 +154,55 @@ async fn rta_core_dryrun() {
     });
     let best_wr: Vec<TrioStat> = by_wr.into_iter().take(5).collect();
     print_section("Best Winrate", &best_wr, &id_to_name);
+
+    // Compagnons (4e/5e picks) dérivés du pool brut pour le trio le plus joué.
+    if let Some(top) = most_played.first() {
+        let companions = derive_companions(&pool, top.ids, exclude_id, 4);
+        print_companions(top, &companions, &player_box_ids, &id_to_name);
+    }
+}
+
+fn print_companions(
+    trio: &TrioStat,
+    companions: &[Companion],
+    box_ids: &HashSet<u32>,
+    id_to_name: &HashMap<u32, String>,
+) {
+    let name = |id: u32| {
+        id_to_name
+            .get(&id)
+            .cloned()
+            .unwrap_or_else(|| id.to_string())
+    };
+    println!(
+        "\n== Companions for {} / {} / {} ==",
+        name(trio.ids[0]),
+        name(trio.ids[1]),
+        name(trio.ids[2])
+    );
+    if companions.is_empty() {
+        println!("  (aucun compagnon fiable)");
+        return;
+    }
+    let max_count = companions.iter().map(|c| c.count).max().unwrap_or(0);
+    for c in companions {
+        let badge = if box_ids.contains(&c.id) {
+            "OWNED"
+        } else {
+            "MISSING"
+        };
+        let ratio = if max_count > 0 {
+            c.count as f32 / max_count as f32
+        } else {
+            0.0
+        };
+        println!(
+            "  {} [{}]  pop {:.0}% · {:.0}% WR ({} co-occ.)",
+            name(c.id),
+            badge,
+            ratio * 100.0,
+            c.win_rate * 100.0,
+            c.count
+        );
+    }
 }

@@ -1,15 +1,21 @@
 use crate::commands::mob_stats::utils::remap_monster_id;
 use crate::commands::rta_core::models::{
-    LucksackPatch, LucksackTrioRecord, LucksackTrioResponse, LucksackWithTrioResponse, Monster,
-    MonsterEntry, MonstersFile, TierListData, TrioStat,
+    Companion, LucksackPatch, LucksackTrioRecord, LucksackTrioResponse, LucksackWithTrioResponse,
+    Monster, MonsterEntry, MonstersFile, Sort, TierListData, TrioStat,
 };
 use crate::commands::shared::clients::http_client;
 use anyhow::{Context, Result};
 use chrono::NaiveDate;
+use futures::stream::TryStreamExt;
 use mongodb::{bson::doc, Collection};
+use poise::serenity_prelude as serenity;
 use reqwest::Client;
 use serde_json::Value;
-use std::collections::HashSet;
+use serenity::builder::{
+    CreateActionRow, CreateEmbed, CreateEmbedFooter, CreateSelectMenu, CreateSelectMenuOption,
+};
+use serenity::CreateSelectMenuKind;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 
 /// Nombre maximal de pages (100 trios chacune) récupérées par appel Lucksack.
@@ -296,4 +302,306 @@ pub async fn get_emoji_from_id(
     // println!("Extracted emoji_id: {}, emoji_name: {}", emoji_id, emoji_name);
 
     Some(format!("<:{}:{}>", emoji_name, emoji_id))
+}
+
+/// Charge toute la collection mob-emoji en `HashMap<com2us_id, "<:name:id>">`,
+/// pour éviter un `find_one` par monstre à chaque rendu interactif.
+pub async fn load_all_mob_emojis(
+    collection: &Collection<mongodb::bson::Document>,
+) -> HashMap<u32, String> {
+    let mut map = HashMap::new();
+    let Ok(mut cursor) = collection.find(doc! {}).await else {
+        return map;
+    };
+    while let Ok(Some(d)) = cursor.try_next().await {
+        let com2us_id = d
+            .get_i64("com2us_id")
+            .ok()
+            .map(|v| v as u32)
+            .or_else(|| d.get_i32("com2us_id").ok().map(|v| v as u32));
+        let (Some(id), Ok(emoji_id), Ok(emoji_name)) =
+            (com2us_id, d.get_str("id"), d.get_str("name"))
+        else {
+            continue;
+        };
+        map.insert(id, format!("<:{}:{}>", emoji_name, emoji_id));
+    }
+    map
+}
+
+/// Dérive les compagnons (4e/5e picks) d'un trio à partir du pool déjà récupéré :
+/// un trio du pool partageant exactement 2 membres avec `{A,B,C}` révèle son 3e
+/// membre comme compagnon. Aucun appel réseau. Exclut les membres du trio et
+/// le monstre `exclude` éventuel. `count` = somme des co-occurrences.
+pub fn derive_companions(
+    pool: &[TrioStat],
+    trio: [u32; 3],
+    exclude: Option<u32>,
+    max: usize,
+) -> Vec<Companion> {
+    let mut agg: HashMap<u32, (u64, f64)> = HashMap::new();
+    for t in pool {
+        let shared = t.ids.iter().filter(|id| trio.contains(id)).count();
+        if shared != 2 {
+            continue;
+        }
+        let Some(other) = t.ids.iter().copied().find(|id| !trio.contains(id)) else {
+            continue;
+        };
+        if Some(other) == exclude {
+            continue;
+        }
+        let entry = agg.entry(other).or_insert((0, 0.0));
+        entry.0 += t.count as u64;
+        entry.1 += t.win_rate as f64 * t.count as f64;
+    }
+
+    let mut companions: Vec<Companion> = agg
+        .into_iter()
+        .map(|(id, (count, wr_sum))| Companion {
+            id,
+            count: count.min(u32::MAX as u64) as u32,
+            win_rate: if count > 0 {
+                (wr_sum / count as f64) as f32
+            } else {
+                0.0
+            },
+        })
+        .collect();
+    companions.sort_by_key(|c| std::cmp::Reverse(c.count));
+    companions.truncate(max);
+    companions
+}
+
+/// Sections affichées selon le tri demandé : sans tri, 5 Most Played + 5 Best Winrate ;
+/// avec tri, une seule section de 10. Tuple = (titre, icône, trios).
+pub fn build_sections(
+    playable: &[TrioStat],
+    sort: Option<&Sort>,
+) -> Vec<(&'static str, &'static str, Vec<TrioStat>)> {
+    match sort {
+        None => vec![
+            ("Most Played", "🔥", top_by_count(playable, 5)),
+            ("Best Winrate", "🏆", top_by_wr(playable, 5)),
+        ],
+        Some(Sort::MostPlayed) => vec![("Most Played", "🔥", top_by_count(playable, 10))],
+        Some(Sort::BestWinrate) => vec![("Best Winrate", "🏆", top_by_wr(playable, 10))],
+    }
+}
+
+fn top_by_count(playable: &[TrioStat], n: usize) -> Vec<TrioStat> {
+    let mut v = playable.to_vec();
+    v.sort_by_key(|t| std::cmp::Reverse(t.count));
+    v.truncate(n);
+    v
+}
+
+fn top_by_wr(playable: &[TrioStat], n: usize) -> Vec<TrioStat> {
+    let mut v = playable.to_vec();
+    v.sort_by(|a, b| {
+        b.win_rate
+            .partial_cmp(&a.win_rate)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    v.truncate(n);
+    v
+}
+
+fn short_name(full: &str) -> String {
+    full.split(" - ").next().unwrap_or(full).to_string()
+}
+
+fn emoji_or_fallback(
+    emoji_map: &HashMap<u32, String>,
+    id_to_name: &HashMap<u32, String>,
+    id: u32,
+) -> String {
+    if let Some(e) = emoji_map.get(&id) {
+        e.clone()
+    } else if let Some(name) = id_to_name.get(&id) {
+        short_name(name)
+    } else {
+        "❓".to_string()
+    }
+}
+
+/// Étoiles de popularité relatives au compagnon le plus fréquent (5★ = max).
+fn companion_stars(count: u32, max_count: u32) -> String {
+    if max_count == 0 {
+        return "☆☆☆☆☆".to_string();
+    }
+    let ratio = (count as f32 / max_count as f32).clamp(0.0, 1.0);
+    let full = ((ratio * 5.0).round() as usize).clamp(1, 5);
+    format!("{}{}", "★".repeat(full), "☆".repeat(5 - full))
+}
+
+/// Convertit "<:name:id>" en ReactionType::Custom pour l'emoji d'une option de menu.
+fn custom_emoji_reaction(render: &str) -> Option<serenity::ReactionType> {
+    let inner = render.strip_prefix("<:")?.strip_suffix('>')?;
+    let (name, id) = inner.rsplit_once(':')?;
+    let id: u64 = id.parse().ok()?;
+    Some(serenity::ReactionType::Custom {
+        animated: false,
+        id: id.into(),
+        name: Some(name.to_string()),
+    })
+}
+
+/// Joint des lignes en respectant un budget de caractères (limite de champ Discord).
+fn join_within(lines: &[String], max: usize) -> String {
+    let mut out = String::new();
+    for line in lines {
+        let extra = line.chars().count() + usize::from(!out.is_empty());
+        if out.chars().count() + extra > max {
+            break;
+        }
+        if !out.is_empty() {
+            out.push('\n');
+        }
+        out.push_str(line);
+    }
+    out
+}
+
+/// Construit l'embed principal de /get_rta_core. Rendu synchrone (emoji_map préchargé).
+#[allow(clippy::too_many_arguments)]
+pub fn build_rta_core_embed(
+    wizard_name: &str,
+    rank_label: &str,
+    focus_name: Option<&str>,
+    exclude_name: Option<&str>,
+    playable_count: usize,
+    sections: &[(&'static str, &'static str, Vec<TrioStat>)],
+    emoji_map: &HashMap<u32, String>,
+    id_to_name: &HashMap<u32, String>,
+    box_ids: &HashSet<u32>,
+    selected: Option<&([u32; 3], Vec<Companion>)>,
+) -> CreateEmbed {
+    let mut embed = CreateEmbed::default()
+        .title(format!("🎯 Trios for {} — {}", wizard_name, rank_label))
+        .color(serenity::Colour::from_rgb(120, 153, 255))
+        .footer(CreateEmbedFooter::new(format!(
+            "Data from lucksack.gg · {} playable trios",
+            playable_count
+        )));
+
+    let mut desc = String::new();
+    if let Some(f) = focus_name {
+        desc.push_str(&format!("🔎 Focusing on **{}**\n", short_name(f)));
+    }
+    if let Some(e) = exclude_name {
+        desc.push_str(&format!("🚫 Excluding **{}**\n", short_name(e)));
+    }
+    if !desc.is_empty() {
+        embed = embed.description(desc);
+    }
+
+    for (title, icon, trios) in sections {
+        let value = if trios.is_empty() {
+            "- No Trio Found".to_string()
+        } else {
+            let lines: Vec<String> = trios
+                .iter()
+                .map(|t| {
+                    format!(
+                        "{} {} {} → **{:.1} %** WR ({})",
+                        emoji_or_fallback(emoji_map, id_to_name, t.ids[0]),
+                        emoji_or_fallback(emoji_map, id_to_name, t.ids[1]),
+                        emoji_or_fallback(emoji_map, id_to_name, t.ids[2]),
+                        t.win_rate * 100.0,
+                        t.count
+                    )
+                })
+                .collect();
+            join_within(&lines, 1024)
+        };
+        embed = embed.field(format!("{} {}", icon, title), value, false);
+    }
+
+    if let Some((trio, companions)) = selected {
+        let header = format!(
+            "🧩 Companions for {} {} {}",
+            emoji_or_fallback(emoji_map, id_to_name, trio[0]),
+            emoji_or_fallback(emoji_map, id_to_name, trio[1]),
+            emoji_or_fallback(emoji_map, id_to_name, trio[2]),
+        );
+        let value = if companions.is_empty() {
+            "No reliable companion data for this trio.".to_string()
+        } else {
+            let max_count = companions.iter().map(|c| c.count).max().unwrap_or(0);
+            let mut lines: Vec<String> = companions
+                .iter()
+                .map(|c| {
+                    let badge = if box_ids.contains(&c.id) {
+                        "✅"
+                    } else {
+                        "❌"
+                    };
+                    format!(
+                        "{} {}  {} · {:.0}% WR",
+                        emoji_or_fallback(emoji_map, id_to_name, c.id),
+                        badge,
+                        companion_stars(c.count, max_count),
+                        c.win_rate * 100.0
+                    )
+                })
+                .collect();
+            lines.push("✅ = in your box · ❌ = missing".to_string());
+            join_within(&lines, 1024)
+        };
+        embed = embed.field(header, value, false);
+    }
+
+    embed
+}
+
+/// Menu de sélection listant les trios affichés (dédupliqués). Sélectionner un trio
+/// déclenche l'affichage de ses compagnons. Valeur de l'option = "id_id_id".
+pub fn build_trio_select_menu(
+    displayed: &[TrioStat],
+    emoji_map: &HashMap<u32, String>,
+    id_to_name: &HashMap<u32, String>,
+) -> Option<CreateActionRow> {
+    if displayed.is_empty() {
+        return None;
+    }
+    let mut seen: HashSet<[u32; 3]> = HashSet::new();
+    let mut options: Vec<CreateSelectMenuOption> = Vec::new();
+    for t in displayed {
+        let mut key = t.ids;
+        key.sort_unstable();
+        if !seen.insert(key) {
+            continue;
+        }
+        let value = format!("{}_{}_{}", t.ids[0], t.ids[1], t.ids[2]);
+        let label: String = format!(
+            "{} + {} + {}",
+            short_name(id_to_name.get(&t.ids[0]).map(|s| s.as_str()).unwrap_or("?")),
+            short_name(id_to_name.get(&t.ids[1]).map(|s| s.as_str()).unwrap_or("?")),
+            short_name(id_to_name.get(&t.ids[2]).map(|s| s.as_str()).unwrap_or("?")),
+        )
+        .chars()
+        .take(100)
+        .collect();
+
+        let mut option = CreateSelectMenuOption::new(label, value);
+        if let Some(reaction) = emoji_map
+            .get(&t.ids[0])
+            .and_then(|e| custom_emoji_reaction(e))
+        {
+            option = option.emoji(reaction);
+        }
+        options.push(option);
+        if options.len() >= 25 {
+            break;
+        }
+    }
+
+    let menu = CreateSelectMenu::new(
+        "rta_core_trio_select",
+        CreateSelectMenuKind::String { options },
+    )
+    .placeholder("Pick a trio to reveal its 4th/5th picks");
+
+    Some(CreateActionRow::SelectMenu(menu))
 }

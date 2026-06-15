@@ -21,15 +21,6 @@ impl Rank {
             Rank::G3 => 16,
         }
     }
-
-    pub fn label(&self) -> &'static str {
-        match self {
-            Rank::P1 => "P1",
-            Rank::P2P3 => "P2-P3",
-            Rank::G1G2G3 => "G1-G3",
-            Rank::G3 => "G3",
-        }
-    }
 }
 
 #[derive(Debug, poise::ChoiceParameter)]
@@ -107,6 +98,15 @@ pub struct MonsterStat {
 #[derive(Clone)]
 pub struct TrioStat {
     pub ids: [u32; 3],
+    pub count: u32,
+    pub win_rate: f32,
+}
+
+/// Monstre compagnon dérivé d'un trio : 4e/5e pick fréquent.
+/// `count` = somme des co-occurrences, `win_rate` = WR moyen pondéré des sous-trios.
+#[derive(Clone)]
+pub struct Companion {
+    pub id: u32,
     pub count: u32,
     pub win_rate: f32,
 }

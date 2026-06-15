@@ -107,6 +107,10 @@ Supported modes:
 
 Computes the best trios you can field from your account box, using live trio statistics from Lucksack for the selected rank and current patch. Only trios whose three monsters are all in your box are shown.
 
+The reply is an interactive embed:
+- **Rank buttons** (P1 / P2-P3 / G1-G3 / G3) switch the bracket without re-uploading the file.
+- **Trio select menu**: pick a displayed trio to reveal its most frequent 4th/5th companions (popularity stars + winrate), each flagged ✅ if you own it or ❌ if it is missing from your box.
+
 Supported rank values:
 - `P1`, `P2-P3`, `G1-G3`, `G3`
 
