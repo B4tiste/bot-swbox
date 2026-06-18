@@ -5,6 +5,7 @@ use crate::{
     commands::shared::embed_error_handling::{create_embed_error, schedule_message_deletion},
     Data,
 };
+use chrono::TimeZone;
 use poise::{
     serenity_prelude::{self as serenity, Error},
     CreateReply,
@@ -91,6 +92,19 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
     } else {
         full_description.push_str("Format → [ELO : live threshold]\n\n");
     }
+
+    // Exact season end date/time provided by maintainer: 27/06/2026 09:00:00 (UTC)
+    let date = chrono::Utc
+        .with_ymd_and_hms(2026, 6, 27, 7, 0, 0)
+        .single()
+        .expect("Invalid hardcoded season end date");
+
+    full_description.push_str(&format!(
+        "Season end date: <t:{}:F>\nRemaining time: <t:{}:R>\n\n",
+        date.timestamp(),
+        date.timestamp()
+    ));
+
     full_description.push_str(&build_grouped_description(&scores, &prediction));
 
     full_description.push_str("Check out `/services` or [MyShop](https://discord.gg/myshop) if you need help reaching your desired rank.\n");
