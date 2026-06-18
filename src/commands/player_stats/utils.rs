@@ -125,7 +125,6 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
     prune_tmp_replay_files(128);
 
     let key = lucksack_matches_cache_key(matches);
-    let latest_path = PathBuf::from("/tmp/replay.png");
 
     let cached_path = if let Ok(read_guard) = lucksack_replay_path_cache().read() {
         read_guard.get(&key).cloned()
@@ -134,14 +133,7 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
     };
 
     if let Some(cached_path) = cached_path.filter(|p| p.exists()) {
-        let latest_path_clone = latest_path.clone();
-        tokio::task::spawn_blocking(move || {
-            std::fs::create_dir_all("/tmp")?;
-            std::fs::copy(&cached_path, &latest_path_clone)?;
-            Ok::<_, anyhow::Error>(latest_path_clone)
-        })
-        .await??;
-        return Ok(latest_path);
+        return Ok(cached_path);
     }
 
     let img_map = get_comid_to_image_map();
@@ -263,14 +255,6 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
     })
     .await??;
 
-    let output_path_clone = output_path.clone();
-    let latest_path_clone = latest_path.clone();
-    tokio::task::spawn_blocking(move || {
-        std::fs::copy(&output_path_clone, &latest_path_clone)?;
-        Ok::<_, anyhow::Error>(())
-    })
-    .await??;
-
     if let Ok(mut write_guard) = lucksack_replay_path_cache().write() {
         if write_guard.len() >= 128 {
             prune_tmp_replay_files(128);
@@ -279,7 +263,7 @@ pub async fn create_lucksack_replay_image(matches: &[LucksackMatch]) -> Result<P
         write_guard.insert(key, output_path.clone());
     }
 
-    Ok(latest_path)
+    Ok(output_path)
 }
 
 async fn create_team_collage_custom_layout(
