@@ -99,10 +99,28 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         .single()
         .expect("Invalid hardcoded season end date");
 
+    // Calculate the remaining time
+    let now = chrono::Utc::now();
+    let remaining = date.signed_duration_since(now);
+
+    // Format as "X days and YY hours, MM minutes"
+    let total_seconds = remaining.num_seconds().max(0) as i64;
+    let days = total_seconds / 86400;
+    let hours = (total_seconds % 86400) / 3600;
+    let minutes = (total_seconds % 3600) / 60;
+
+    let formatted_time = if days > 0 {
+        format!("{}d {}h {}m", days, hours, minutes)
+    } else if hours > 0 {
+        format!("{}h {}m", hours, minutes)
+    } else {
+        format!("{}m", minutes)
+    };
+
     full_description.push_str(&format!(
-        "Season end date: <t:{}:F>\nRemaining time: <t:{}:R>\n\n",
+        "Season end date : <t:{}:F>\nRemaining time : `{}`\n\n",
         date.timestamp(),
-        date.timestamp()
+        formatted_time
     ));
 
     full_description.push_str(&build_grouped_description(&scores, &prediction));
