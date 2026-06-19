@@ -104,7 +104,7 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
     let remaining = date.signed_duration_since(now);
 
     // Format as "X days and YY hours, MM minutes"
-    let total_seconds = remaining.num_seconds().max(0) as i64;
+    let total_seconds = remaining.num_seconds().max(0);
     let days = total_seconds / 86400;
     let hours = (total_seconds % 86400) / 3600;
     let minutes = (total_seconds % 3600) / 60;
