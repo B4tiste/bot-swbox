@@ -598,7 +598,10 @@ pub struct LucksackSummaryData {
 /* ------------------ Lucksack API calls ------------------ */
 
 pub async fn search_players_lucksack(username: &str) -> Result<Vec<LucksackSearchPlayer>> {
-    let url = format!("https://api.lucksack.gg/players/search/{}", username);
+    let url = format!(
+        "https://api.lucksack.gg/players/search/{}?limit=20",
+        username
+    );
     let res = http_client()
         .get(&url)
         .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64)")
