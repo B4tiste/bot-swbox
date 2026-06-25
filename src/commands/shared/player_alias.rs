@@ -134,6 +134,11 @@ lazy_static! {
                 "en_names": ["Craig Boosted"],
                 "swarena_id": 21744282,
                 "lucksack_id": 260486,
+            },
+            {
+                "og_names": "?",
+                "en_names": ["Compte Raigeki"],
+                "lucksack_id": 213111,
             }
         ]
     });
