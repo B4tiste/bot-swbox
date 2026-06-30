@@ -1002,7 +1002,7 @@ pub fn create_lucksack_player_embed(
 
     let mut embed = CreateEmbed::default()
         .title(format!(
-            ":flag_{}: {} (id: {}) - RTA Statistics",
+            ":flag_{}: {} (Lucksack ID: {}) - RTA Statistics",
             info.country.to_lowercase(),
             display_name,
             info.player_id,
