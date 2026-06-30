@@ -93,9 +93,9 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         full_description.push_str("Format → [ELO : live threshold]\n\n");
     }
 
-    // Exact season end date/time provided by maintainer: 27/06/2026 09:00:00 (UTC)
+    // Exact season end date/time provided by maintainer: 26/11/2026 07:00:00 (UTC)
     let date = chrono::Utc
-        .with_ymd_and_hms(2026, 6, 27, 7, 0, 0)
+        .with_ymd_and_hms(2026, 11, 26, 7, 0, 0)
         .single()
         .expect("Invalid hardcoded season end date");
 
