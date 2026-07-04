@@ -93,9 +93,9 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
         full_description.push_str("Format → [ELO : live threshold]\n\n");
     }
 
-    // Exact season end date/time provided by maintainer: 26/11/2026 07:00:00 (UTC)
+    // Exact season end date/time provided by maintainer: 26/09/2026 07:00:00 (UTC)
     let date = chrono::Utc
-        .with_ymd_and_hms(2026, 11, 26, 7, 0, 0)
+        .with_ymd_and_hms(2026, 9, 26, 7, 0, 0)
         .single()
         .expect("Invalid hardcoded season end date");
 
@@ -105,11 +105,14 @@ pub async fn get_ranks(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resul
 
     // Format as "X days and YY hours, MM minutes"
     let total_seconds = remaining.num_seconds().max(0);
-    let days = total_seconds / 86400;
+    let months = total_seconds / 2592000;
+    let days = (total_seconds % 2592000) / 86400;
     let hours = (total_seconds % 86400) / 3600;
     let minutes = (total_seconds % 3600) / 60;
 
-    let formatted_time = if days > 0 {
+    let formatted_time = if months > 0 {
+        format!("{}mo {}d", months, days)
+    } else if days > 0 {
         format!("{}d {}h {}m", days, hours, minutes)
     } else if hours > 0 {
         format!("{}h {}m", hours, minutes)
