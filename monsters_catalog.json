@@ -1794,16 +1794,6 @@
         "com2us_id": "20405"
     },
     {
-        "label": "Dark Aragorn",
-        "natural_stars": 5,
-        "searchable": true,
-        "element": "Dark",
-        "image": "unit_icon_0206_1_5.png",
-        "slabel": "Dark Aragorn",
-        "slug": "dark-aragorn",
-        "com2us_id": "34615"
-    },
-    {
         "label": "Dark Arcane Weapon",
         "natural_stars": 5,
         "searchable": false,
@@ -2270,6 +2260,18 @@
         "com2us_id": "23015"
     },
     {
+        "label": "Dark Elder Horn - Legolas",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Dark",
+        "collab_image": "unit_icon_0218_1_5.png",
+        "image": "unit_icon_0205_1_5.png",
+        "collab_id": "34715",
+        "slabel": "Legolas",
+        "slug": "dark-elder-horn",
+        "com2us_id": "35315"
+    },
+    {
         "label": "Dark Elemental",
         "natural_stars": 3,
         "searchable": false,
@@ -2320,6 +2322,16 @@
         "com2us_id": "21105"
     },
     {
+        "label": "Dark Fern",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0222_1_5.png",
+        "slabel": "Dark Fern",
+        "slug": "dark-fern",
+        "com2us_id": "35815"
+    },
+    {
         "label": "Dark Frankenstein",
         "natural_stars": 3,
         "searchable": false,
@@ -2330,14 +2342,14 @@
         "com2us_id": "20805"
     },
     {
-        "label": "Dark Gandalf",
+        "label": "Dark Frieren",
         "natural_stars": 5,
         "searchable": true,
         "element": "Dark",
-        "image": "unit_icon_0204_1_5.png",
-        "slabel": "Dark Gandalf",
-        "slug": "dark-gandalf",
-        "com2us_id": "34415"
+        "image": "unit_icon_0220_1_5.png",
+        "slabel": "Dark Frieren",
+        "slug": "dark-frieren",
+        "com2us_id": "35715"
     },
     {
         "label": "Dark Gargoyle",
@@ -2694,16 +2706,6 @@
         "com2us_id": "17305"
     },
     {
-        "label": "Dark Legolas",
-        "natural_stars": 4,
-        "searchable": true,
-        "element": "Dark",
-        "image": "unit_icon_0205_1_5.png",
-        "slabel": "Dark Legolas",
-        "slug": "dark-legolas",
-        "com2us_id": "34715"
-    },
-    {
         "label": "Dark Lich",
         "natural_stars": 4,
         "searchable": false,
@@ -2742,6 +2744,18 @@
         "slabel": "Dark Lizardman",
         "slug": "dark-lizardman",
         "com2us_id": "17805"
+    },
+    {
+        "label": "Dark Lob Ear - Gollum",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Dark",
+        "collab_image": "unit_icon_0217_1_5.png",
+        "image": "unit_icon_0207_1_5.png",
+        "collab_id": "34815",
+        "slabel": "Gollum",
+        "slug": "dark-lob-ear",
+        "com2us_id": "35415"
     },
     {
         "label": "Dark Low Elemental",
@@ -2954,6 +2968,18 @@
         "com2us_id": "20005"
     },
     {
+        "label": "Dark Night Fang - Aragorn",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Dark",
+        "collab_image": "unit_icon_0216_1_5.png",
+        "image": "unit_icon_0206_1_5.png",
+        "collab_id": "34615",
+        "slabel": "Aragorn",
+        "slug": "dark-night-fang",
+        "com2us_id": "35215"
+    },
+    {
         "label": "Dark Nine-tailed Fox",
         "natural_stars": 4,
         "searchable": false,
@@ -2982,6 +3008,18 @@
         "slabel": "Dark Occult Girl",
         "slug": "dark-occult-girl",
         "com2us_id": "16105"
+    },
+    {
+        "label": "Dark Old Wood - Gandalf",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Dark",
+        "collab_image": "unit_icon_0215_1_5.png",
+        "image": "unit_icon_0204_1_5.png",
+        "collab_id": "34415",
+        "slabel": "Gandalf",
+        "slug": "dark-old-wood",
+        "com2us_id": "35015"
     },
     {
         "label": "Dark Onimusha",
@@ -3320,6 +3358,16 @@
         "com2us_id": "31305"
     },
     {
+        "label": "Dark Stark",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0221_1_5.png",
+        "slabel": "Dark Stark",
+        "slug": "dark-stark",
+        "com2us_id": "35915"
+    },
+    {
         "label": "Dark Steel Commander",
         "natural_stars": 4,
         "searchable": false,
@@ -3598,6 +3646,16 @@
         "slabel": "Dark Yeti",
         "slug": "dark-yeti",
         "com2us_id": "10405"
+    },
+    {
+        "label": "Dark Übel",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0223_1_5.png",
+        "slabel": "Dark Übel",
+        "slug": "dark-ubel",
+        "com2us_id": "36015"
     },
     {
         "label": "Deborah (Dark Rune Blacksmith)",
@@ -4446,16 +4504,6 @@
         "com2us_id": "20402"
     },
     {
-        "label": "Fire Aragorn",
-        "natural_stars": 5,
-        "searchable": true,
-        "element": "Fire",
-        "image": "unit_icon_0206_1_2.png",
-        "slabel": "Fire Aragorn",
-        "slug": "fire-aragorn",
-        "com2us_id": "34612"
-    },
-    {
         "label": "Fire Arcane Weapon",
         "natural_stars": 5,
         "searchable": false,
@@ -4924,6 +4972,18 @@
         "com2us_id": "33812"
     },
     {
+        "label": "Fire Elder Horn - Legolas",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Fire",
+        "collab_image": "unit_icon_0218_1_2.png",
+        "image": "unit_icon_0205_1_2.png",
+        "collab_id": "34712",
+        "slabel": "Legolas",
+        "slug": "fire-elder-horn",
+        "com2us_id": "35312"
+    },
+    {
         "label": "Fire Elemental",
         "natural_stars": 2,
         "searchable": false,
@@ -4974,6 +5034,16 @@
         "com2us_id": "21102"
     },
     {
+        "label": "Fire Fern",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0222_1_2.png",
+        "slabel": "Fire Fern",
+        "slug": "fire-fern",
+        "com2us_id": "35812"
+    },
+    {
         "label": "Fire Forest Keeper",
         "natural_stars": 1,
         "searchable": true,
@@ -4994,14 +5064,14 @@
         "com2us_id": "20802"
     },
     {
-        "label": "Fire Gandalf",
+        "label": "Fire Frieren",
         "natural_stars": 5,
         "searchable": true,
         "element": "Fire",
-        "image": "unit_icon_0204_1_2.png",
-        "slabel": "Fire Gandalf",
-        "slug": "fire-gandalf",
-        "com2us_id": "34412"
+        "image": "unit_icon_0220_1_2.png",
+        "slabel": "Fire Frieren",
+        "slug": "fire-frieren",
+        "com2us_id": "35712"
     },
     {
         "label": "Fire Gargoyle",
@@ -5346,16 +5416,6 @@
         "com2us_id": "17302"
     },
     {
-        "label": "Fire Legolas",
-        "natural_stars": 5,
-        "searchable": true,
-        "element": "Fire",
-        "image": "unit_icon_0205_1_2.png",
-        "slabel": "Fire Legolas",
-        "slug": "fire-legolas",
-        "com2us_id": "34712"
-    },
-    {
         "label": "Fire Lich",
         "natural_stars": 4,
         "searchable": false,
@@ -5394,6 +5454,18 @@
         "slabel": "Fire Lizardman",
         "slug": "fire-lizardman",
         "com2us_id": "17802"
+    },
+    {
+        "label": "Fire Lob Ear - Gollum",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Fire",
+        "collab_image": "unit_icon_0217_1_2.png",
+        "image": "unit_icon_0207_1_2.png",
+        "collab_id": "34812",
+        "slabel": "Gollum",
+        "slug": "fire-lob-ear",
+        "com2us_id": "35412"
     },
     {
         "label": "Fire Low Elemental",
@@ -5636,6 +5708,18 @@
         "com2us_id": "20002"
     },
     {
+        "label": "Fire Night Fang - Aragorn",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Fire",
+        "collab_image": "unit_icon_0216_1_2.png",
+        "image": "unit_icon_0206_1_2.png",
+        "collab_id": "34612",
+        "slabel": "Aragorn",
+        "slug": "fire-night-fang",
+        "com2us_id": "35212"
+    },
+    {
         "label": "Fire Nine-tailed Fox",
         "natural_stars": 4,
         "searchable": false,
@@ -5664,6 +5748,18 @@
         "slabel": "Fire Occult Girl",
         "slug": "fire-occult-girl",
         "com2us_id": "16102"
+    },
+    {
+        "label": "Fire Old Wood - Gandalf",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Fire",
+        "collab_image": "unit_icon_0215_1_2.png",
+        "image": "unit_icon_0204_1_2.png",
+        "collab_id": "34412",
+        "slabel": "Gandalf",
+        "slug": "fire-old-wood",
+        "com2us_id": "35012"
     },
     {
         "label": "Fire Onimusha",
@@ -6032,6 +6128,16 @@
         "com2us_id": "31302"
     },
     {
+        "label": "Fire Stark",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0221_1_2.png",
+        "slabel": "Fire Stark",
+        "slug": "fire-stark",
+        "com2us_id": "35912"
+    },
+    {
         "label": "Fire Steel Commander",
         "natural_stars": 5,
         "searchable": false,
@@ -6300,6 +6406,16 @@
         "slabel": "Fire Yeti",
         "slug": "fire-yeti",
         "com2us_id": "10402"
+    },
+    {
+        "label": "Fire Übel",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0223_1_2.png",
+        "slabel": "Fire Übel",
+        "slug": "fire-ubel",
+        "com2us_id": "36012"
     },
     {
         "label": "Fran",
@@ -8374,16 +8490,6 @@
         "com2us_id": "20404"
     },
     {
-        "label": "Light Aragorn",
-        "natural_stars": 4,
-        "searchable": true,
-        "element": "Light",
-        "image": "unit_icon_0206_1_4.png",
-        "slabel": "Light Aragorn",
-        "slug": "light-aragorn",
-        "com2us_id": "34614"
-    },
-    {
         "label": "Light Arcane Weapon",
         "natural_stars": 5,
         "searchable": false,
@@ -8840,6 +8946,18 @@
         "com2us_id": "33814"
     },
     {
+        "label": "Light Elder Horn - Legolas",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Light",
+        "collab_image": "unit_icon_0218_1_4.png",
+        "image": "unit_icon_0205_1_4.png",
+        "collab_id": "34714",
+        "slabel": "Legolas",
+        "slug": "light-elder-horn",
+        "com2us_id": "35314"
+    },
+    {
         "label": "Light Elemental",
         "natural_stars": 3,
         "searchable": false,
@@ -8910,6 +9028,16 @@
         "com2us_id": "19104"
     },
     {
+        "label": "Light Fern",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0222_1_4.png",
+        "slabel": "Light Fern",
+        "slug": "light-fern",
+        "com2us_id": "35814"
+    },
+    {
         "label": "Light Frankenstein",
         "natural_stars": 3,
         "searchable": false,
@@ -8920,14 +9048,14 @@
         "com2us_id": "20804"
     },
     {
-        "label": "Light Gandalf",
+        "label": "Light Frieren",
         "natural_stars": 5,
         "searchable": true,
         "element": "Light",
-        "image": "unit_icon_0204_1_4.png",
-        "slabel": "Light Gandalf",
-        "slug": "light-gandalf",
-        "com2us_id": "34414"
+        "image": "unit_icon_0220_1_4.png",
+        "slabel": "Light Frieren",
+        "slug": "light-frieren",
+        "com2us_id": "35714"
     },
     {
         "label": "Light Gargoyle",
@@ -9252,16 +9380,6 @@
         "com2us_id": "17304"
     },
     {
-        "label": "Light Legolas",
-        "natural_stars": 5,
-        "searchable": true,
-        "element": "Light",
-        "image": "unit_icon_0205_1_4.png",
-        "slabel": "Light Legolas",
-        "slug": "light-legolas",
-        "com2us_id": "34714"
-    },
-    {
         "label": "Light Lich",
         "natural_stars": 4,
         "searchable": false,
@@ -9300,6 +9418,18 @@
         "slabel": "Light Lizardman",
         "slug": "light-lizardman",
         "com2us_id": "17804"
+    },
+    {
+        "label": "Light Lob Ear - Gollum",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Light",
+        "collab_image": "unit_icon_0217_1_4.png",
+        "image": "unit_icon_0207_1_4.png",
+        "collab_id": "34814",
+        "slabel": "Gollum",
+        "slug": "light-lob-ear",
+        "com2us_id": "35414"
     },
     {
         "label": "Light Macaron Guard",
@@ -9482,6 +9612,18 @@
         "com2us_id": "20004"
     },
     {
+        "label": "Light Night Fang - Aragorn",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Light",
+        "collab_image": "unit_icon_0216_1_4.png",
+        "image": "unit_icon_0206_1_4.png",
+        "collab_id": "34614",
+        "slabel": "Aragorn",
+        "slug": "light-night-fang",
+        "com2us_id": "35214"
+    },
+    {
         "label": "Light Nine-tailed Fox",
         "natural_stars": 4,
         "searchable": false,
@@ -9510,6 +9652,18 @@
         "slabel": "Light Occult Girl",
         "slug": "light-occult-girl",
         "com2us_id": "16104"
+    },
+    {
+        "label": "Light Old Wood - Gandalf",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Light",
+        "collab_image": "unit_icon_0215_1_4.png",
+        "image": "unit_icon_0204_1_4.png",
+        "collab_id": "34414",
+        "slabel": "Gandalf",
+        "slug": "light-old-wood",
+        "com2us_id": "35014"
     },
     {
         "label": "Light Onimusha",
@@ -9838,6 +9992,16 @@
         "com2us_id": "31304"
     },
     {
+        "label": "Light Stark",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0221_1_4.png",
+        "slabel": "Light Stark",
+        "slug": "light-stark",
+        "com2us_id": "35914"
+    },
+    {
         "label": "Light Steel Commander",
         "natural_stars": 5,
         "searchable": false,
@@ -10106,6 +10270,16 @@
         "slabel": "Light Yeti",
         "slug": "light-yeti",
         "com2us_id": "10404"
+    },
+    {
+        "label": "Light Übel",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0223_1_4.png",
+        "slabel": "Light Übel",
+        "slug": "light-ubel",
+        "com2us_id": "36014"
     },
     {
         "label": "Liliana (Dark Devil Maiden)",
@@ -13854,16 +14028,6 @@
         "com2us_id": "20401"
     },
     {
-        "label": "Water Aragorn",
-        "natural_stars": 5,
-        "searchable": true,
-        "element": "Water",
-        "image": "unit_icon_0206_1_1.png",
-        "slabel": "Water Aragorn",
-        "slug": "water-aragorn",
-        "com2us_id": "34611"
-    },
-    {
         "label": "Water Arcane Weapon",
         "natural_stars": 5,
         "searchable": false,
@@ -14320,6 +14484,18 @@
         "com2us_id": "33811"
     },
     {
+        "label": "Water Elder Horn - Legolas",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Water",
+        "collab_image": "unit_icon_0218_1_1.png",
+        "image": "unit_icon_0205_1_1.png",
+        "collab_id": "34711",
+        "slabel": "Legolas",
+        "slug": "water-elder-horn",
+        "com2us_id": "35311"
+    },
+    {
         "label": "Water Elemental",
         "natural_stars": 2,
         "searchable": false,
@@ -14370,6 +14546,16 @@
         "com2us_id": "21101"
     },
     {
+        "label": "Water Fern",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0222_1_1.png",
+        "slabel": "Water Fern",
+        "slug": "water-fern",
+        "com2us_id": "35811"
+    },
+    {
         "label": "Water Forest Keeper",
         "natural_stars": 1,
         "searchable": true,
@@ -14390,24 +14576,14 @@
         "com2us_id": "20801"
     },
     {
-        "label": "Water Frodo",
+        "label": "Water Frieren",
         "natural_stars": 5,
         "searchable": true,
         "element": "Water",
-        "image": "unit_icon_0203_1_1.png",
-        "slabel": "Water Frodo",
-        "slug": "water-frodo",
-        "com2us_id": "34311"
-    },
-    {
-        "label": "Water Gandalf",
-        "natural_stars": 5,
-        "searchable": true,
-        "element": "Water",
-        "image": "unit_icon_0204_1_1.png",
-        "slabel": "Water Gandalf",
-        "slug": "water-gandalf",
-        "com2us_id": "34411"
+        "image": "unit_icon_0220_1_1.png",
+        "slabel": "Water Frieren",
+        "slug": "water-frieren",
+        "com2us_id": "35711"
     },
     {
         "label": "Water Gargoyle",
@@ -14568,6 +14744,16 @@
         "slabel": "Water High Elemental",
         "slug": "water-high-elemental",
         "com2us_id": "12001"
+    },
+    {
+        "label": "Water Himmel",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0224_1_1.png",
+        "slabel": "Water Himmel",
+        "slug": "water-himmel",
+        "com2us_id": "35611"
     },
     {
         "label": "Water Homunculus",
@@ -14752,16 +14938,6 @@
         "com2us_id": "17301"
     },
     {
-        "label": "Water Legolas",
-        "natural_stars": 4,
-        "searchable": true,
-        "element": "Water",
-        "image": "unit_icon_0205_1_1.png",
-        "slabel": "Water Legolas",
-        "slug": "water-legolas",
-        "com2us_id": "34711"
-    },
-    {
         "label": "Water Lich",
         "natural_stars": 4,
         "searchable": false,
@@ -14800,6 +14976,18 @@
         "slabel": "Water Lizardman",
         "slug": "water-lizardman",
         "com2us_id": "17801"
+    },
+    {
+        "label": "Water Lob Ear - Gollum",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Water",
+        "collab_image": "unit_icon_0217_1_1.png",
+        "image": "unit_icon_0207_1_1.png",
+        "collab_id": "34811",
+        "slabel": "Gollum",
+        "slug": "water-lob-ear",
+        "com2us_id": "35411"
     },
     {
         "label": "Water Low Elemental",
@@ -15042,6 +15230,18 @@
         "com2us_id": "20001"
     },
     {
+        "label": "Water Night Fang - Aragorn",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Water",
+        "collab_image": "unit_icon_0216_1_1.png",
+        "image": "unit_icon_0206_1_1.png",
+        "collab_id": "34611",
+        "slabel": "Aragorn",
+        "slug": "water-night-fang",
+        "com2us_id": "35211"
+    },
+    {
         "label": "Water Nine-tailed Fox",
         "natural_stars": 4,
         "searchable": false,
@@ -15070,6 +15270,18 @@
         "slabel": "Water Occult Girl",
         "slug": "water-occult-girl",
         "com2us_id": "16101"
+    },
+    {
+        "label": "Water Old Wood - Gandalf",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Water",
+        "collab_image": "unit_icon_0215_1_1.png",
+        "image": "unit_icon_0204_1_1.png",
+        "collab_id": "34411",
+        "slabel": "Gandalf",
+        "slug": "water-old-wood",
+        "com2us_id": "35011"
     },
     {
         "label": "Water Onimusha",
@@ -15358,6 +15570,18 @@
         "com2us_id": "33911"
     },
     {
+        "label": "Water Silver Tail - Frodo",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Water",
+        "collab_image": "unit_icon_0219_1_1.png",
+        "image": "unit_icon_0203_1_1.png",
+        "collab_id": "34311",
+        "slabel": "Frodo",
+        "slug": "water-silver-tail",
+        "com2us_id": "34911"
+    },
+    {
         "label": "Water Skull Soldier",
         "natural_stars": 2,
         "searchable": true,
@@ -15426,6 +15650,16 @@
         "slabel": "Water Specter Princess",
         "slug": "water-specter-princess",
         "com2us_id": "31301"
+    },
+    {
+        "label": "Water Stark",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0221_1_1.png",
+        "slabel": "Water Stark",
+        "slug": "water-stark",
+        "com2us_id": "35911"
     },
     {
         "label": "Water Steel Commander",
@@ -15698,6 +15932,16 @@
         "com2us_id": "10401"
     },
     {
+        "label": "Water Übel",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0223_1_1.png",
+        "slabel": "Water Übel",
+        "slug": "water-ubel",
+        "com2us_id": "36011"
+    },
+    {
         "label": "Wayne (Water Bounty Hunter)",
         "natural_stars": 3,
         "searchable": true,
@@ -15746,16 +15990,6 @@
         "slabel": "Wind Anubis",
         "slug": "wind-anubis",
         "com2us_id": "20403"
-    },
-    {
-        "label": "Wind Aragorn",
-        "natural_stars": 4,
-        "searchable": true,
-        "element": "Wind",
-        "image": "unit_icon_0206_1_3.png",
-        "slabel": "Wind Aragorn",
-        "slug": "wind-aragorn",
-        "com2us_id": "34613"
     },
     {
         "label": "Wind Arcane Weapon",
@@ -16226,6 +16460,18 @@
         "com2us_id": "33813"
     },
     {
+        "label": "Wind Elder Horn - Legolas",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Wind",
+        "collab_image": "unit_icon_0218_1_3.png",
+        "image": "unit_icon_0205_1_3.png",
+        "collab_id": "34713",
+        "slabel": "Legolas",
+        "slug": "wind-elder-horn",
+        "com2us_id": "35313"
+    },
+    {
         "label": "Wind Elemental",
         "natural_stars": 2,
         "searchable": false,
@@ -16276,6 +16522,16 @@
         "com2us_id": "21103"
     },
     {
+        "label": "Wind Fern",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0222_1_3.png",
+        "slabel": "Wind Fern",
+        "slug": "wind-fern",
+        "com2us_id": "35813"
+    },
+    {
         "label": "Wind Forest Keeper",
         "natural_stars": 1,
         "searchable": true,
@@ -16296,14 +16552,14 @@
         "com2us_id": "20803"
     },
     {
-        "label": "Wind Gandalf",
+        "label": "Wind Frieren",
         "natural_stars": 5,
         "searchable": true,
         "element": "Wind",
-        "image": "unit_icon_0204_1_3.png",
-        "slabel": "Wind Gandalf",
-        "slug": "wind-gandalf",
-        "com2us_id": "34413"
+        "image": "unit_icon_0220_1_3.png",
+        "slabel": "Wind Frieren",
+        "slug": "wind-frieren",
+        "com2us_id": "35713"
     },
     {
         "label": "Wind Gargoyle",
@@ -16648,16 +16904,6 @@
         "com2us_id": "17303"
     },
     {
-        "label": "Wind Legolas",
-        "natural_stars": 5,
-        "searchable": true,
-        "element": "Wind",
-        "image": "unit_icon_0205_1_3.png",
-        "slabel": "Wind Legolas",
-        "slug": "wind-legolas",
-        "com2us_id": "34713"
-    },
-    {
         "label": "Wind Lich",
         "natural_stars": 4,
         "searchable": false,
@@ -16696,6 +16942,18 @@
         "slabel": "Wind Lizardman",
         "slug": "wind-lizardman",
         "com2us_id": "17803"
+    },
+    {
+        "label": "Wind Lob Ear - Gollum",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Wind",
+        "collab_image": "unit_icon_0217_1_3.png",
+        "image": "unit_icon_0207_1_3.png",
+        "collab_id": "34813",
+        "slabel": "Gollum",
+        "slug": "wind-lob-ear",
+        "com2us_id": "35413"
     },
     {
         "label": "Wind Lollipop Warrior",
@@ -16948,6 +17206,18 @@
         "com2us_id": "20003"
     },
     {
+        "label": "Wind Night Fang - Aragorn",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Wind",
+        "collab_image": "unit_icon_0216_1_3.png",
+        "image": "unit_icon_0206_1_3.png",
+        "collab_id": "34613",
+        "slabel": "Aragorn",
+        "slug": "wind-night-fang",
+        "com2us_id": "35213"
+    },
+    {
         "label": "Wind Nine-tailed Fox",
         "natural_stars": 4,
         "searchable": false,
@@ -16976,6 +17246,18 @@
         "slabel": "Wind Occult Girl",
         "slug": "wind-occult-girl",
         "com2us_id": "16103"
+    },
+    {
+        "label": "Wind Old Wood - Gandalf",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Wind",
+        "collab_image": "unit_icon_0215_1_3.png",
+        "image": "unit_icon_0204_1_3.png",
+        "collab_id": "34413",
+        "slabel": "Gandalf",
+        "slug": "wind-old-wood",
+        "com2us_id": "35013"
     },
     {
         "label": "Wind Onimusha",
@@ -17334,6 +17616,16 @@
         "com2us_id": "31303"
     },
     {
+        "label": "Wind Stark",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0221_1_3.png",
+        "slabel": "Wind Stark",
+        "slug": "wind-stark",
+        "com2us_id": "35913"
+    },
+    {
         "label": "Wind Steel Commander",
         "natural_stars": 4,
         "searchable": false,
@@ -17602,6 +17894,16 @@
         "slabel": "Wind Yeti",
         "slug": "wind-yeti",
         "com2us_id": "10403"
+    },
+    {
+        "label": "Wind Übel",
+        "natural_stars": 4,
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0223_1_3.png",
+        "slabel": "Wind Übel",
+        "slug": "wind-ubel",
+        "com2us_id": "36013"
     },
     {
         "label": "Windy (Wind Jack-o'-lantern)",
