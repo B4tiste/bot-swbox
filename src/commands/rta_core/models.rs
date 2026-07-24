@@ -1,22 +1,34 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, poise::ChoiceParameter)]
-pub enum Mode {
-    MetaSlayer,
-    FunAndCasual,
+pub enum Rank {
+    #[name = "P1"]
+    P1,
+    #[name = "P2-P3"]
+    P2P3,
+    #[name = "G1-G3"]
+    G1G2G3,
+    #[name = "G3"]
+    G3,
+}
+
+impl Rank {
+    pub fn lucksack_rank(&self) -> i32 {
+        match self {
+            Rank::P1 => 11,
+            Rank::P2P3 => 103,
+            Rank::G1G2G3 => 102,
+            Rank::G3 => 16,
+        }
+    }
 }
 
 #[derive(Debug, poise::ChoiceParameter)]
-pub enum Rank {
-    C1,
-    C2,
-    C3,
-    P1,
-    P2,
-    P3,
-    G1,
-    G2,
-    G3,
+pub enum Sort {
+    #[name = "Most Played"]
+    MostPlayed,
+    #[name = "Best Winrate"]
+    BestWinrate,
 }
 
 /// Représente une entrée brute du fichier monsters.json
@@ -82,32 +94,59 @@ pub struct MonsterStat {
     pub last_pick_total: u32,
 }
 
-/// Représente une entrée de la réponse highdata (duo pour un monstre de base)
-#[derive(Deserialize, Clone)]
-pub struct MonsterDuoStat {
-    #[serde(rename = "teamMonsterOneId")]
-    pub team_one_id: u32,
-    // #[serde(rename = "teamOneImgFilename")]
-    // pub team_one_img: String,
-    #[serde(rename = "teamMonsterTwoId")]
-    pub team_two_id: u32,
-    // #[serde(rename = "teamTwoImgFilename")]
-    // pub team_two_img: String,
-    // #[serde(rename = "winTotal")]
-    // pub win_total: u32,
-    #[serde(rename = "pickTotal")]
-    pub pick_total: u32,
-    #[serde(rename = "winRate")]
-    pub win_rate: String,
+/// Modèle local normalisé pour un trio
+#[derive(Clone)]
+pub struct TrioStat {
+    pub ids: [u32; 3],
+    pub count: u32,
+    pub win_rate: f32,
 }
 
-/// Modèle local pour un trio, avec métrique pondérée
-pub struct Trio {
-    pub base: u32,
-    pub one: u32,
-    pub two: u32,
-    pub win_rate: f32,          // ex. 0.55
-    pub pick_total: u32,        // ex. 1432
-    pub weighted_score: f32,    // win_rate * pick_total
-    pub emojis: Option<String>, // emojis
+/// Monstre compagnon dérivé d'un trio : 4e/5e pick fréquent.
+/// `count` = somme des co-occurrences, `win_rate` = WR moyen pondéré des sous-trios.
+#[derive(Clone)]
+pub struct Companion {
+    pub id: u32,
+    pub count: u32,
+    pub win_rate: f32,
+}
+
+/// Réponse statistics/trio
+#[derive(Deserialize, Clone)]
+pub struct LucksackTrioResponse {
+    pub records: Vec<LucksackTrioRecord>,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct LucksackTrioRecord {
+    pub monster_id: Vec<u32>,
+    pub played_count: u32,
+    pub win_rate: f32,
+}
+
+/// Réponse monsters/{id}/with-trio
+#[derive(Deserialize, Clone)]
+pub struct LucksackWithTrioResponse {
+    pub records: Vec<LucksackWithTrioRecord>,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct LucksackWithTrioRecord {
+    pub units1: LucksackUnitRef,
+    pub units2: LucksackUnitRef,
+    pub units3: LucksackUnitRef,
+    pub appearances: u32,
+    pub winrate: f32,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct LucksackUnitRef {
+    pub monster_id: u32,
+}
+
+/// Réponse patches
+#[derive(Deserialize, Clone)]
+pub struct LucksackPatch {
+    pub patch_id: i32,
+    pub patch_order: i32,
 }
