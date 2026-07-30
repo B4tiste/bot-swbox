@@ -103,16 +103,14 @@ async fn resolve_player_id<'a>(
     }
 
     // Lucksack search
-    let players = search_players_lucksack(player_name)
-        .await
-        .map_err(|e| {
-            let msg = e.to_string();
-            Error::from(std::io::Error::other(if is_maintenance_error(&msg) {
-                LUCKSACK_MAINTENANCE_MSG.to_string()
-            } else {
-                format!("API error: {}", msg)
-            }))
-        })?;
+    let players = search_players_lucksack(player_name).await.map_err(|e| {
+        let msg = e.to_string();
+        Error::from(std::io::Error::other(if is_maintenance_error(&msg) {
+            LUCKSACK_MAINTENANCE_MSG.to_string()
+        } else {
+            format!("API error: {}", msg)
+        }))
+    })?;
 
     if players.is_empty() {
         ctx.say(format!("No players found for `{}`.", player_name))
