@@ -28,6 +28,11 @@ use crate::Data;
 
 const REPLAY_PAGE_SIZE: usize = 6;
 const PLAYER_STATS_LOADING_REPLAY_GIF_URL: &str = "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif";
+const LUCKSACK_MAINTENANCE_MSG: &str = "Lucksack is under maintenance, please come back later or join the [Lucksack Discord server](https://discord.gg/teuQCDzTSp) to check the status of the website.";
+
+fn is_maintenance_error(e: &str) -> bool {
+    e.contains("502")
+}
 
 struct ResolvedPlayer<'a> {
     player_id: i64,
@@ -100,7 +105,14 @@ async fn resolve_player_id<'a>(
     // Lucksack search
     let players = search_players_lucksack(player_name)
         .await
-        .map_err(|e| Error::from(std::io::Error::other(format!("API error: {}", e))))?;
+        .map_err(|e| {
+            let msg = e.to_string();
+            Error::from(std::io::Error::other(if is_maintenance_error(&msg) {
+                LUCKSACK_MAINTENANCE_MSG.to_string()
+            } else {
+                format!("API error: {}", msg)
+            }))
+        })?;
 
     if players.is_empty() {
         ctx.say(format!("No players found for `{}`.", player_name))
@@ -246,7 +258,12 @@ pub(crate) async fn show_player_stats<'a>(
     let seasons = match get_lucksack_season_numbers().await {
         Ok(s) => s,
         Err(e) => {
-            let msg = format!("❌ Failed to fetch seasons: {}", e);
+            let e_str = e.to_string();
+            let msg = if is_maintenance_error(&e_str) {
+                format!("❌ {}", LUCKSACK_MAINTENANCE_MSG)
+            } else {
+                format!("❌ Failed to fetch seasons: {}", e_str)
+            };
             let reply = ctx.send(create_embed_error(&msg)).await?;
             schedule_message_deletion(reply, *ctx).await?;
             return Ok(());
@@ -268,10 +285,12 @@ pub(crate) async fn show_player_stats<'a>(
     );
 
     let summary = summary_res.map_err(|e| {
-        Error::from(std::io::Error::other(format!(
-            "Error retrieving player summary: {}",
-            e
-        )))
+        let msg = e.to_string();
+        Error::from(std::io::Error::other(if is_maintenance_error(&msg) {
+            LUCKSACK_MAINTENANCE_MSG.to_string()
+        } else {
+            format!("Error retrieving player summary: {}", msg)
+        }))
     })?;
 
     let picks = picks_res.unwrap_or_default();
