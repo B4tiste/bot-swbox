@@ -4,7 +4,7 @@ use serde::Deserialize;
 use crate::commands::shared::clients::http_client;
 
 /// Global toggle for prediction gathering (set to false to disable)
-pub const ENABLE_PREDICTION: bool = true;
+pub const ENABLE_PREDICTION: bool = false;
 
 // ---------- Live thresholds (JSON API) ----------
 
