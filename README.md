@@ -103,16 +103,18 @@ Supported modes:
 - `Anonymized`
 - `NoSpeedDetailAndAnonymized`
 
-### `/get_rta_core <file> <rank> [monster] <mode>`
+### `/get_rta_core <file> <rank> [monster] [exclude] [sort] [min_games]`
 
-Computes top trios from your box and current meta data.
+Computes the best trios you can field from your account box, using live trio statistics from Lucksack for the selected rank and current patch. Only trios whose three monsters are all in your box are shown.
 
 Supported rank values:
-- `C1`, `C2`, `C3`, `P1`, `P2`, `P3`, `G1`, `G2`, `G3`
+- `P1`, `P2-P3`, `G1-G3`, `G3`
 
-Supported mode values:
-- `MetaSlayer`
-- `FunAndCasual`
+Optional parameters:
+- `monster`: focus on trios containing this monster (uses Lucksack's per-monster trios).
+- `exclude`: hide trios containing this monster.
+- `sort`: `Most Played` or `Best Winrate` (default: 5 of each).
+- `min_games`: minimum games per trio for reliability (default: 50).
 
 ### `/track_player_names <mode>`
 
