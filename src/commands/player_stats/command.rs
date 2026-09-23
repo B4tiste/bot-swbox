@@ -364,17 +364,17 @@ pub(crate) async fn show_player_stats<'a>(
         .and_then(|name| name.to_str())
         .map(|name| name.to_string());
 
-    let final_embed = build_season_embed(
-        &summary,
-        &seasons[season_index].season_name,
-        &rank_emojis,
-        &top_monsters,
-        &ld_monsters,
-        replay_attachment_name.as_deref(),
+    let final_embed = build_season_embed(SeasonEmbedArgs {
+        summary: &summary,
+        season_name: &seasons[season_index].season_name,
+        rank_emojis: &rank_emojis,
+        top_monsters: &top_monsters,
+        ld_monsters: &ld_monsters,
+        replay_attachment_name: replay_attachment_name.as_deref(),
         total_matches,
         replay_page,
         last_replay_page,
-    );
+    });
 
     let mut final_message = EditMessage::new()
         .content("")
@@ -518,17 +518,17 @@ pub(crate) async fn show_player_stats<'a>(
             .and_then(|name| name.to_str())
             .map(|name| name.to_string());
 
-        let updated_embed = build_season_embed(
-            &summary,
-            &seasons[season_index].season_name,
-            &rank_emojis,
-            &top_monsters,
-            &ld_monsters,
-            replay_attachment_name.as_deref(),
+        let updated_embed = build_season_embed(SeasonEmbedArgs {
+            summary: &summary,
+            season_name: &seasons[season_index].season_name,
+            rank_emojis: &rank_emojis,
+            top_monsters: &top_monsters,
+            ld_monsters: &ld_monsters,
+            replay_attachment_name: replay_attachment_name.as_deref(),
             total_matches,
             replay_page,
             last_replay_page,
-        );
+        });
 
         let mut response = EditInteractionResponse::new()
             .embeds(vec![updated_embed])
@@ -601,13 +601,13 @@ async fn fetch_season_stats(
         Err(e) => {
             let Some(user_info) = fallback_user_info else {
                 let msg = e.to_string();
-                return Err(Error::from(std::io::Error::other(if is_maintenance_error(
-                    &msg,
-                ) {
-                    LUCKSACK_MAINTENANCE_MSG.to_string()
-                } else {
-                    format!("Error retrieving player summary: {}", msg)
-                })));
+                return Err(Error::from(std::io::Error::other(
+                    if is_maintenance_error(&msg) {
+                        LUCKSACK_MAINTENANCE_MSG.to_string()
+                    } else {
+                        format!("Error retrieving player summary: {}", msg)
+                    },
+                )));
             };
             empty_lucksack_summary(user_info.clone())
         }
@@ -644,33 +644,35 @@ async fn fetch_matches_for_page(
     .unwrap_or_default()
 }
 
-fn build_season_embed(
-    summary: &LucksackPlayerSummary,
-    season_name: &str,
-    rank_emojis: &str,
-    top_monsters: &str,
-    ld_monsters: &str,
-    replay_attachment_name: Option<&str>,
+struct SeasonEmbedArgs<'a> {
+    summary: &'a LucksackPlayerSummary,
+    season_name: &'a str,
+    rank_emojis: &'a str,
+    top_monsters: &'a str,
+    ld_monsters: &'a str,
+    replay_attachment_name: Option<&'a str>,
     total_matches: usize,
     replay_page: i32,
     last_replay_page: i32,
-) -> serenity::CreateEmbed {
+}
+
+fn build_season_embed(args: SeasonEmbedArgs<'_>) -> serenity::CreateEmbed {
     let mut e = create_lucksack_player_embed(
-        summary,
-        season_name,
-        rank_emojis.to_string(),
-        top_monsters.to_string(),
-        ld_monsters.to_string(),
+        args.summary,
+        args.season_name,
+        args.rank_emojis.to_string(),
+        args.top_monsters.to_string(),
+        args.ld_monsters.to_string(),
     );
 
-    if let Some(attachment_name) = replay_attachment_name {
+    if let Some(attachment_name) = args.replay_attachment_name {
         e = e.image(format!("attachment://{}", attachment_name));
     }
 
-    let replays_text = if total_matches == 0 {
+    let replays_text = if args.total_matches == 0 {
         "No matches recorded this season.".to_string()
     } else {
-        format!("Page {}/{}", replay_page, last_replay_page)
+        format!("Page {}/{}", args.replay_page, args.last_replay_page)
     };
 
     e.field("Recent Replays", replays_text, false)

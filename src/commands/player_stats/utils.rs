@@ -671,7 +671,7 @@ pub async fn get_lucksack_seasons() -> Result<Vec<LucksackSeasonEntry>> {
         .map_err(|e| anyhow!("Failed to parse seasons JSON: {}", e))?;
 
     // Most recent season first, whether it's a regular season or a special league (SL).
-    seasons.sort_unstable_by(|a, b| b.partition_key.cmp(&a.partition_key));
+    seasons.sort_unstable_by_key(|a| std::cmp::Reverse(a.partition_key));
 
     if seasons.is_empty() {
         return Err(anyhow!("No valid season found"));
@@ -687,9 +687,7 @@ pub async fn get_lucksack_player_summary(
 ) -> Result<LucksackPlayerSummary> {
     let url = format!(
         "https://api.lucksack.gg/players/{}/summary?season={}&special_league={}",
-        player_id,
-        season,
-        special_league as u8
+        player_id, season, special_league as u8
     );
     let res = http_client()
         .get(&url)
@@ -751,9 +749,7 @@ pub async fn get_lucksack_player_picks(
 ) -> Result<Vec<LucksackPickEntry>> {
     let url = format!(
         "https://api.lucksack.gg/players/{}/picks?season={}&special_league={}&min_game_played=3",
-        player_id,
-        season,
-        special_league as u8
+        player_id, season, special_league as u8
     );
     let res = http_client()
         .get(&url)
@@ -1105,11 +1101,7 @@ pub async fn get_lucksack_player_matches(
 ) -> Result<Vec<LucksackMatch>> {
     let url = format!(
         "https://api.lucksack.gg/players/{}/matches?season={}&special_league={}&limit={}&offset={}",
-        player_id,
-        season,
-        special_league as u8,
-        limit,
-        offset
+        player_id, season, special_league as u8, limit, offset
     );
     let res = http_client()
         .get(&url)
