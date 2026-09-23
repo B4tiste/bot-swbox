@@ -7,7 +7,7 @@ use serenity::{
 
 use crate::commands::leaderboard::utils::{get_leaderboard_data, LeaderboardPlayer};
 use crate::commands::player_stats::command::show_player_stats;
-use crate::commands::player_stats::utils::get_lucksack_season_numbers;
+use crate::commands::player_stats::utils::get_lucksack_seasons;
 use crate::commands::shared::logs::get_server_name;
 use crate::commands::shared::logs::send_log;
 use crate::commands::shared::models::LoggerDocument;
@@ -26,7 +26,7 @@ pub async fn get_rta_leaderboard(
     let mut page = page.unwrap_or(1).max(1);
     const PAGE_SIZE: i32 = 10;
 
-    let seasons = get_lucksack_season_numbers().await.map_err(|e| {
+    let seasons = get_lucksack_seasons().await.map_err(|e| {
         Error::from(std::io::Error::other(format!(
             "Failed to fetch seasons: {}",
             e
@@ -34,7 +34,7 @@ pub async fn get_rta_leaderboard(
     })?;
     let season = seasons
         .first()
-        .copied()
+        .map(|entry| entry.query_season())
         .ok_or_else(|| Error::from(std::io::Error::other("No valid season found.")))?;
 
     let leaderboard = get_leaderboard_data(season, page, PAGE_SIZE)

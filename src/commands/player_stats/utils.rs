@@ -563,18 +563,33 @@ pub struct LucksackSearchPlayer {
     pub current_rank: Option<i64>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct LucksackSeasonEntry {
+    pub partition_key: i64,
     pub season_number: Option<i32>,
+    pub parent_season: Option<i32>,
+    pub season_name: String,
+    pub season_type: String,
 }
 
-#[derive(Debug, Deserialize)]
+impl LucksackSeasonEntry {
+    /// Season number to use as the `season` query param (regular or parent season for SLs).
+    pub fn query_season(&self) -> i32 {
+        self.season_number.or(self.parent_season).unwrap_or(0)
+    }
+
+    pub fn is_special_league(&self) -> bool {
+        self.season_type == "special"
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct LucksackPlayerSummary {
     pub user_info: LucksackUserInfo,
     pub summary: LucksackSummaryData,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct LucksackUserInfo {
     pub player_id: i64,
     pub server_id: i32,
@@ -583,7 +598,7 @@ pub struct LucksackUserInfo {
     pub image: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct LucksackSummaryData {
     pub total_matches: i32,
     pub overall_win_rate: f64,
@@ -593,6 +608,23 @@ pub struct LucksackSummaryData {
     pub current_rank_bracket: i32,
     pub score_last_3_days: i32,
     pub score_last_7_days: i32,
+}
+
+/// Builds a placeholder summary (all stats at zero) for seasons where the player has no data.
+pub fn empty_lucksack_summary(user_info: LucksackUserInfo) -> LucksackPlayerSummary {
+    LucksackPlayerSummary {
+        user_info,
+        summary: LucksackSummaryData {
+            total_matches: 0,
+            overall_win_rate: 0.0,
+            peak_score: 0,
+            current_score: 0,
+            current_rank: 0,
+            current_rank_bracket: 0,
+            score_last_3_days: 0,
+            score_last_7_days: 0,
+        },
+    }
 }
 
 /* ------------------ Lucksack API calls ------------------ */
@@ -619,7 +651,7 @@ pub async fn search_players_lucksack(username: &str) -> Result<Vec<LucksackSearc
         .map_err(|e| anyhow!("Failed to parse search JSON: {}", e))
 }
 
-pub async fn get_lucksack_season_numbers() -> Result<Vec<i32>> {
+pub async fn get_lucksack_seasons() -> Result<Vec<LucksackSeasonEntry>> {
     let url = "https://api.lucksack.gg/seasons";
     let res = http_client()
         .get(url)
@@ -633,32 +665,29 @@ pub async fn get_lucksack_season_numbers() -> Result<Vec<i32>> {
         return Err(anyhow!("HTTP {}", res.status()));
     }
 
-    let seasons = res
+    let mut seasons = res
         .json::<Vec<LucksackSeasonEntry>>()
         .await
         .map_err(|e| anyhow!("Failed to parse seasons JSON: {}", e))?;
 
-    let mut season_numbers: Vec<i32> = seasons
-        .into_iter()
-        .filter_map(|s| s.season_number)
-        .collect();
-    season_numbers.sort_unstable_by(|a, b| b.cmp(a));
-    season_numbers.dedup();
+    // Most recent season first, whether it's a regular season or a special league (SL).
+    seasons.sort_unstable_by_key(|a| std::cmp::Reverse(a.partition_key));
 
-    if season_numbers.is_empty() {
-        return Err(anyhow!("No valid season_number found"));
+    if seasons.is_empty() {
+        return Err(anyhow!("No valid season found"));
     }
 
-    Ok(season_numbers)
+    Ok(seasons)
 }
 
 pub async fn get_lucksack_player_summary(
     player_id: i64,
     season: i32,
+    special_league: bool,
 ) -> Result<LucksackPlayerSummary> {
     let url = format!(
-        "https://api.lucksack.gg/players/{}/summary?season={}",
-        player_id, season
+        "https://api.lucksack.gg/players/{}/summary?season={}&special_league={}",
+        player_id, season, special_league as u8
     );
     let res = http_client()
         .get(&url)
@@ -716,10 +745,11 @@ pub struct LucksackBoxEntry {
 pub async fn get_lucksack_player_picks(
     player_id: i64,
     season: i32,
+    special_league: bool,
 ) -> Result<Vec<LucksackPickEntry>> {
     let url = format!(
-        "https://api.lucksack.gg/players/{}/picks?season={}&min_game_played=3",
-        player_id, season
+        "https://api.lucksack.gg/players/{}/picks?season={}&special_league={}&min_game_played=3",
+        player_id, season, special_league as u8
     );
     let res = http_client()
         .get(&url)
@@ -883,6 +913,7 @@ pub async fn format_lucksack_ld_monsters_emojis(ld_box: &[LucksackBoxEntry]) -> 
 
 pub fn create_lucksack_player_embed(
     summary: &LucksackPlayerSummary,
+    season_name: &str,
     rank_emojis: String,
     top_monsters: String,
     ld_monsters: String,
@@ -1010,6 +1041,7 @@ pub fn create_lucksack_player_embed(
         .thumbnail(info.image.clone())
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .description(description)
+        .field("Season", season_name, false)
         .field(
             "Lucksack Profile",
             format!("[Open profile]({})", lucksack_profile_url),
@@ -1063,12 +1095,13 @@ pub struct LucksackMatch {
 pub async fn get_lucksack_player_matches(
     player_id: i64,
     season: i32,
+    special_league: bool,
     limit: usize,
     offset: usize,
 ) -> Result<Vec<LucksackMatch>> {
     let url = format!(
-        "https://api.lucksack.gg/players/{}/matches?season={}&limit={}&offset={}",
-        player_id, season, limit, offset
+        "https://api.lucksack.gg/players/{}/matches?season={}&special_league={}&limit={}&offset={}",
+        player_id, season, special_league as u8, limit, offset
     );
     let res = http_client()
         .get(&url)

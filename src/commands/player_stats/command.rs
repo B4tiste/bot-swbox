@@ -12,11 +12,12 @@ use crate::commands::shared::logs::send_log;
 use crate::commands::shared::player_alias::ALIAS_LOOKUP_MAP;
 use crate::commands::{
     player_stats::utils::{
-        create_lucksack_player_embed, create_lucksack_replay_image,
+        create_lucksack_player_embed, create_lucksack_replay_image, empty_lucksack_summary,
         format_lucksack_ld_monsters_emojis, format_lucksack_top_monsters,
         get_lucksack_player_ld5_box, get_lucksack_player_matches, get_lucksack_player_picks,
-        get_lucksack_player_summary, get_lucksack_season_numbers, get_rank_emojis_for_bracket,
-        parse_discord_mention_to_id, search_players_lucksack, LucksackSearchPlayer,
+        get_lucksack_player_summary, get_lucksack_seasons, get_rank_emojis_for_bracket,
+        parse_discord_mention_to_id, search_players_lucksack, LucksackPlayerSummary,
+        LucksackSearchPlayer, LucksackSeasonEntry,
     },
     shared::{
         embed_error_handling::{create_embed_error, schedule_message_deletion},
@@ -27,6 +28,7 @@ use crate::commands::{
 use crate::Data;
 
 const REPLAY_PAGE_SIZE: usize = 6;
+const SEASON_SELECT_CUSTOM_ID: &str = "player_stats_season_select";
 const PLAYER_STATS_LOADING_REPLAY_GIF_URL: &str = "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczN3N3YxcjAzc3g5bWpqY2VleXA2MHN0bm9rcDVvaG00MGZrbHoweSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2WjpfxAI5MvC9Nl8U7/giphy.gif";
 const LUCKSACK_MAINTENANCE_MSG: &str = "Lucksack is under maintenance, please come back later or join the [Lucksack Discord server](https://discord.gg/teuQCDzTSp) to check the status of the website.";
 
@@ -252,8 +254,8 @@ pub(crate) async fn show_player_stats<'a>(
     player_id: i64,
     existing_reply: Option<poise::ReplyHandle<'a>>,
 ) -> Result<(), Error> {
-    // Fetch season numbers from lucksack
-    let seasons = match get_lucksack_season_numbers().await {
+    // Fetch seasons (regular seasons and special leagues), most recent first.
+    let seasons = match get_lucksack_seasons().await {
         Ok(s) => s,
         Err(e) => {
             let e_str = e.to_string();
@@ -268,49 +270,48 @@ pub(crate) async fn show_player_stats<'a>(
         }
     };
 
-    let Some(&season) = seasons.first() else {
+    if seasons.is_empty() {
         let reply = ctx
-            .send(create_embed_error("❌ No valid season number found."))
+            .send(create_embed_error("❌ No valid season found."))
             .await?;
         schedule_message_deletion(reply, *ctx).await?;
         return Ok(());
-    };
+    }
 
-    // --- Step 1: fetch summary + picks, show initial embed with loading gif ---
-    let (summary_res, picks_res) = tokio::join!(
-        get_lucksack_player_summary(player_id, season),
-        get_lucksack_player_picks(player_id, season),
-    );
+    let mut season_index = 0usize;
 
-    let summary = summary_res.map_err(|e| {
-        let msg = e.to_string();
-        Error::from(std::io::Error::other(if is_maintenance_error(&msg) {
-            LUCKSACK_MAINTENANCE_MSG.to_string()
-        } else {
-            format!("Error retrieving player summary: {}", msg)
-        }))
-    })?;
+    // --- Step 1: fetch summary + picks for the most recent season (SL or regular), show initial embed with loading gif ---
+    let stats = fetch_season_stats(player_id, &seasons[season_index], None).await?;
+    let mut summary = stats.summary;
+    let mut top_monsters = stats.top_monsters;
+    let mut rank_emojis = stats.rank_emojis;
+    let mut total_matches = stats.total_matches;
+    let mut last_replay_page = stats.last_replay_page;
 
-    let picks = picks_res.unwrap_or_default();
+    // Kept as a fallback so seasons without any match still display the player's identity.
+    let reference_user_info = summary.user_info.clone();
+
+    // The LD box (career Light/Dark 5★ picks) is cumulative across all regular seasons,
+    // independent of the season currently selected in the dropdown.
+    let mut regular_season_numbers: Vec<i32> =
+        seasons.iter().filter_map(|s| s.season_number).collect();
+    regular_season_numbers.sort_unstable();
+    regular_season_numbers.dedup();
 
     let mut ld_box = Vec::new();
-    for season_number in &seasons {
+    for season_number in &regular_season_numbers {
         if let Ok(mut season_box) = get_lucksack_player_ld5_box(player_id, *season_number).await {
             ld_box.append(&mut season_box);
         }
     }
-
-    let top_monsters = format_lucksack_top_monsters(&picks).await;
     let ld_monsters = format_lucksack_ld_monsters_emojis(&ld_box).await;
-    let rank_emojis = get_rank_emojis_for_bracket(summary.summary.current_rank_bracket);
-    let total_matches = summary.summary.total_matches.max(0) as usize;
-    let last_replay_page = total_matches.div_ceil(REPLAY_PAGE_SIZE).max(1) as i32;
-    let mut replay_page = 1i32;
 
+    let mut replay_page = 1i32;
     let loading_gif_image_ref = PLAYER_STATS_LOADING_REPLAY_GIF_URL;
 
     let initial_embed = create_lucksack_player_embed(
         &summary,
+        &seasons[season_index].season_name,
         rank_emojis.clone(),
         top_monsters.clone(),
         ld_monsters.clone(),
@@ -336,6 +337,7 @@ pub(crate) async fn show_player_stats<'a>(
             ctx.send(CreateReply {
                 embeds: vec![create_lucksack_player_embed(
                     &summary,
+                    &seasons[season_index].season_name,
                     rank_emojis.clone(),
                     top_monsters.clone(),
                     ld_monsters.clone(),
@@ -348,17 +350,10 @@ pub(crate) async fn show_player_stats<'a>(
     };
 
     // --- Step 2: fetch matches, generate replay image, update embed ---
-    let matches = get_lucksack_player_matches(player_id, season, REPLAY_PAGE_SIZE, 0)
-        .await
-        .unwrap_or_default();
+    let matches = fetch_matches_for_page(player_id, &seasons[season_index], 0).await;
 
     let replay_image_path = if !matches.is_empty() {
-        // println!("Generating replay image for {} matches...", matches.len());
-        // let start = std::time::Instant::now();
-        let result = create_lucksack_replay_image(&matches).await.ok();
-        // let duration = start.elapsed();
-        // println!("Replay image generation took: {:?}", duration);
-        result
+        create_lucksack_replay_image(&matches).await.ok()
     } else {
         None
     };
@@ -369,36 +364,28 @@ pub(crate) async fn show_player_stats<'a>(
         .and_then(|name| name.to_str())
         .map(|name| name.to_string());
 
-    let final_embed = {
-        let mut e = create_lucksack_player_embed(
-            &summary,
-            rank_emojis.clone(),
-            top_monsters.clone(),
-            ld_monsters.clone(),
-        );
-        if let Some(attachment_name) = replay_attachment_name.as_deref() {
-            e = e.image(format!("attachment://{}", attachment_name));
-        }
-        e = e.field(
-            "Recent Replays",
-            format!("Page {}/{}", replay_page, last_replay_page),
-            false,
-        );
-        e
-    };
+    let final_embed = build_season_embed(SeasonEmbedArgs {
+        summary: &summary,
+        season_name: &seasons[season_index].season_name,
+        rank_emojis: &rank_emojis,
+        top_monsters: &top_monsters,
+        ld_monsters: &ld_monsters,
+        replay_attachment_name: replay_attachment_name.as_deref(),
+        total_matches,
+        replay_page,
+        last_replay_page,
+    });
 
     let mut final_message = EditMessage::new()
         .content("")
         .embeds(vec![final_embed])
-        .components(if last_replay_page > 1 {
-            vec![create_replay_pagination_buttons(
-                replay_page,
-                last_replay_page,
-                false,
-            )]
-        } else {
-            vec![]
-        })
+        .components(build_components(
+            &seasons,
+            season_index,
+            replay_page,
+            last_replay_page,
+            false,
+        ))
         .attachments(EditAttachments::new());
 
     if let Some(ref path) = replay_image_path {
@@ -412,10 +399,6 @@ pub(crate) async fn show_player_stats<'a>(
         .edit(&ctx.serenity_context.http, final_message)
         .await?;
 
-    if last_replay_page <= 1 {
-        return Ok(());
-    }
-
     let message_id = reply_handle.message().await?.id;
     let channel_id = ctx.channel_id();
     let user_id = ctx.author().id;
@@ -428,32 +411,59 @@ pub(crate) async fn show_player_stats<'a>(
             .timeout(std::time::Duration::from_secs(600))
             .await
     {
+        let mut season_changed = false;
+
         match interaction.data.custom_id.as_str() {
             "player_stats_replays_previous_page" if replay_page > 1 => replay_page -= 1,
             "player_stats_replays_next_page" if replay_page < last_replay_page => replay_page += 1,
+            SEASON_SELECT_CUSTOM_ID => {
+                let selected_str = match &interaction.data.kind {
+                    serenity::ComponentInteractionDataKind::StringSelect { values } => {
+                        values.first().cloned().unwrap_or_default()
+                    }
+                    _ => String::new(),
+                };
+
+                let Ok(new_index) = selected_str.parse::<usize>() else {
+                    continue;
+                };
+
+                if new_index >= seasons.len() {
+                    continue;
+                }
+
+                season_index = new_index;
+                replay_page = 1;
+                season_changed = true;
+            }
             _ => continue,
         }
 
-        let mut loading_embed = create_lucksack_player_embed(
+        let loading_text = if season_changed {
+            format!("Loading {}...", seasons[season_index].season_name)
+        } else {
+            format!("Loading page {}/{}...", replay_page, last_replay_page)
+        };
+
+        let loading_embed = create_lucksack_player_embed(
             &summary,
+            &seasons[season_index].season_name,
             rank_emojis.clone(),
             top_monsters.clone(),
             ld_monsters.clone(),
         )
-        .image(loading_gif_image_ref);
-        loading_embed = loading_embed.field(
-            "Recent Replays",
-            format!("Loading page {}/{}...", replay_page, last_replay_page),
-            false,
-        );
+        .image(loading_gif_image_ref)
+        .field("Recent Replays", loading_text, false);
 
         let loading_message = serenity::CreateInteractionResponseMessage::new()
             .add_embed(loading_embed)
-            .components(vec![create_replay_pagination_buttons(
+            .components(build_components(
+                &seasons,
+                season_index,
                 replay_page,
                 last_replay_page,
                 true,
-            )]);
+            ));
 
         interaction
             .create_response(
@@ -462,10 +472,39 @@ pub(crate) async fn show_player_stats<'a>(
             )
             .await?;
 
-        let offset = ((replay_page - 1) as usize) * REPLAY_PAGE_SIZE;
-        let matches = get_lucksack_player_matches(player_id, season, REPLAY_PAGE_SIZE, offset)
+        if season_changed {
+            match fetch_season_stats(
+                player_id,
+                &seasons[season_index],
+                Some(&reference_user_info),
+            )
             .await
-            .unwrap_or_default();
+            {
+                Ok(stats) => {
+                    summary = stats.summary;
+                    top_monsters = stats.top_monsters;
+                    rank_emojis = stats.rank_emojis;
+                    total_matches = stats.total_matches;
+                    last_replay_page = stats.last_replay_page;
+                }
+                Err(e) => {
+                    let error_embed = serenity::CreateEmbed::default()
+                        .title("Error")
+                        .description(format!("❌ {}", e))
+                        .color(serenity::Colour::RED);
+                    let response = EditInteractionResponse::new()
+                        .embeds(vec![error_embed])
+                        .components(vec![]);
+                    let _ = interaction
+                        .edit_response(&ctx.serenity_context.http, response)
+                        .await;
+                    continue;
+                }
+            }
+        }
+
+        let offset = ((replay_page - 1) as usize) * REPLAY_PAGE_SIZE;
+        let matches = fetch_matches_for_page(player_id, &seasons[season_index], offset).await;
 
         let replay_image_path = if !matches.is_empty() {
             create_lucksack_replay_image(&matches).await.ok()
@@ -479,30 +518,27 @@ pub(crate) async fn show_player_stats<'a>(
             .and_then(|name| name.to_str())
             .map(|name| name.to_string());
 
-        let updated_embed = {
-            let mut e = create_lucksack_player_embed(
-                &summary,
-                rank_emojis.clone(),
-                top_monsters.clone(),
-                ld_monsters.clone(),
-            );
-            if let Some(attachment_name) = replay_attachment_name.as_deref() {
-                e = e.image(format!("attachment://{}", attachment_name));
-            }
-            e.field(
-                "Recent Replays",
-                format!("Page {}/{}", replay_page, last_replay_page),
-                false,
-            )
-        };
+        let updated_embed = build_season_embed(SeasonEmbedArgs {
+            summary: &summary,
+            season_name: &seasons[season_index].season_name,
+            rank_emojis: &rank_emojis,
+            top_monsters: &top_monsters,
+            ld_monsters: &ld_monsters,
+            replay_attachment_name: replay_attachment_name.as_deref(),
+            total_matches,
+            replay_page,
+            last_replay_page,
+        });
 
         let mut response = EditInteractionResponse::new()
             .embeds(vec![updated_embed])
-            .components(vec![create_replay_pagination_buttons(
+            .components(build_components(
+                &seasons,
+                season_index,
                 replay_page,
                 last_replay_page,
                 false,
-            )])
+            ))
             .attachments(EditAttachments::new());
 
         if let Some(path) = replay_image_path {
@@ -516,23 +552,180 @@ pub(crate) async fn show_player_stats<'a>(
             .await?;
     }
 
-    // Disabling the buttons after timeout is cosmetic; ignore permission errors
+    // Disabling the components after timeout is cosmetic; ignore permission errors
     // (e.g. "Missing access" in servers where the bot cannot edit interaction
     // responses via the REST API after the interaction token window closes).
     if let Ok(mut message) = reply_handle.message().await.map(|m| m.into_owned()) {
         let _ = message
             .edit(
                 &ctx.serenity_context.http,
-                EditMessage::new().components(vec![create_replay_pagination_buttons(
+                EditMessage::new().components(build_components(
+                    &seasons,
+                    season_index,
                     replay_page,
                     last_replay_page,
                     true,
-                )]),
+                )),
             )
             .await;
     }
 
     Ok(())
+}
+
+struct SeasonStats {
+    summary: LucksackPlayerSummary,
+    top_monsters: String,
+    rank_emojis: String,
+    total_matches: usize,
+    last_replay_page: i32,
+}
+
+/// Fetches summary/picks for a season. If the request fails and a `fallback_user_info` is
+/// provided, falls back to an all-zero summary so a season with no matches can still render.
+async fn fetch_season_stats(
+    player_id: i64,
+    entry: &LucksackSeasonEntry,
+    fallback_user_info: Option<&crate::commands::player_stats::utils::LucksackUserInfo>,
+) -> Result<SeasonStats, Error> {
+    let season = entry.query_season();
+    let special_league = entry.is_special_league();
+
+    let (summary_res, picks_res) = tokio::join!(
+        get_lucksack_player_summary(player_id, season, special_league),
+        get_lucksack_player_picks(player_id, season, special_league),
+    );
+
+    let summary = match summary_res {
+        Ok(s) => s,
+        Err(e) => {
+            let Some(user_info) = fallback_user_info else {
+                let msg = e.to_string();
+                return Err(Error::from(std::io::Error::other(
+                    if is_maintenance_error(&msg) {
+                        LUCKSACK_MAINTENANCE_MSG.to_string()
+                    } else {
+                        format!("Error retrieving player summary: {}", msg)
+                    },
+                )));
+            };
+            empty_lucksack_summary(user_info.clone())
+        }
+    };
+
+    let picks = picks_res.unwrap_or_default();
+    let top_monsters = format_lucksack_top_monsters(&picks).await;
+    let rank_emojis = get_rank_emojis_for_bracket(summary.summary.current_rank_bracket);
+    let total_matches = summary.summary.total_matches.max(0) as usize;
+    let last_replay_page = total_matches.div_ceil(REPLAY_PAGE_SIZE).max(1) as i32;
+
+    Ok(SeasonStats {
+        summary,
+        top_monsters,
+        rank_emojis,
+        total_matches,
+        last_replay_page,
+    })
+}
+
+async fn fetch_matches_for_page(
+    player_id: i64,
+    entry: &LucksackSeasonEntry,
+    offset: usize,
+) -> Vec<crate::commands::player_stats::utils::LucksackMatch> {
+    get_lucksack_player_matches(
+        player_id,
+        entry.query_season(),
+        entry.is_special_league(),
+        REPLAY_PAGE_SIZE,
+        offset,
+    )
+    .await
+    .unwrap_or_default()
+}
+
+struct SeasonEmbedArgs<'a> {
+    summary: &'a LucksackPlayerSummary,
+    season_name: &'a str,
+    rank_emojis: &'a str,
+    top_monsters: &'a str,
+    ld_monsters: &'a str,
+    replay_attachment_name: Option<&'a str>,
+    total_matches: usize,
+    replay_page: i32,
+    last_replay_page: i32,
+}
+
+fn build_season_embed(args: SeasonEmbedArgs<'_>) -> serenity::CreateEmbed {
+    let mut e = create_lucksack_player_embed(
+        args.summary,
+        args.season_name,
+        args.rank_emojis.to_string(),
+        args.top_monsters.to_string(),
+        args.ld_monsters.to_string(),
+    );
+
+    if let Some(attachment_name) = args.replay_attachment_name {
+        e = e.image(format!("attachment://{}", attachment_name));
+    }
+
+    let replays_text = if args.total_matches == 0 {
+        "No matches recorded this season.".to_string()
+    } else {
+        format!("Page {}/{}", args.replay_page, args.last_replay_page)
+    };
+
+    e.field("Recent Replays", replays_text, false)
+}
+
+fn build_components(
+    seasons: &[LucksackSeasonEntry],
+    season_index: usize,
+    replay_page: i32,
+    last_replay_page: i32,
+    disabled: bool,
+) -> Vec<CreateActionRow> {
+    let mut rows = vec![build_season_select_menu(seasons, season_index, disabled)];
+    if last_replay_page > 1 {
+        rows.push(create_replay_pagination_buttons(
+            replay_page,
+            last_replay_page,
+            disabled,
+        ));
+    }
+    rows
+}
+
+fn build_season_select_menu(
+    seasons: &[LucksackSeasonEntry],
+    selected_index: usize,
+    disabled: bool,
+) -> CreateActionRow {
+    let options: Vec<CreateSelectMenuOption> = seasons
+        .iter()
+        .enumerate()
+        .take(25)
+        .map(|(idx, entry)| {
+            let emoji = if entry.is_special_league() {
+                serenity::ReactionType::Unicode("⚔️".to_string())
+            } else {
+                serenity::ReactionType::Unicode("🏆".to_string())
+            };
+
+            CreateSelectMenuOption::new(&entry.season_name, idx.to_string())
+                .emoji(emoji)
+                .default_selection(idx == selected_index)
+        })
+        .collect();
+
+    let select_menu = CreateSelectMenu::new(
+        SEASON_SELECT_CUSTOM_ID,
+        CreateSelectMenuKind::String { options },
+    )
+    .placeholder("Select a season")
+    .disabled(disabled);
+
+    CreateActionRow::SelectMenu(select_menu)
 }
 
 fn create_replay_pagination_buttons(
