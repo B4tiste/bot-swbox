@@ -139,6 +139,11 @@ lazy_static! {
                 "og_names": "?",
                 "en_names": ["Compte Raigeki"],
                 "lucksack_id": 213111,
+            },
+            {
+                "og_names": "?",
+                "en_names": ["Compte Hayabhusa"],
+                "lucksack_id": 159759,
             }
         ]
     });
