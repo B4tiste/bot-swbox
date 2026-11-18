@@ -595,7 +595,7 @@ pub struct LucksackUserInfo {
     pub server_id: i32,
     pub username: String,
     pub country: String,
-    pub image: String,
+    pub image: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -1038,7 +1038,6 @@ pub fn create_lucksack_player_embed(
             display_name,
             info.player_id,
         ))
-        .thumbnail(info.image.clone())
         .color(serenity::Colour::from_rgb(0, 180, 255))
         .description(description)
         .field("Season", season_name, false)
@@ -1053,6 +1052,10 @@ pub fn create_lucksack_player_embed(
         .field("Rank Bracket", rank_emojis, true)
         .field("Elo (3 days)", score_3d, true)
         .field("Elo (7 days)", score_7d, true);
+
+    if let Some(image) = &info.image {
+        embed = embed.thumbnail(image);
+    }
 
     for (idx, chunk) in ld_chunks.into_iter().enumerate() {
         let name = if idx == 0 {
