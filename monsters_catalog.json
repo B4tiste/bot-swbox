@@ -610,6 +610,16 @@
         "com2us_id": "26914"
     },
     {
+        "label": "Auraris (Wind Cosmic Worm)",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Wind",
+        "image": "unit_icon_0228_1_3.png",
+        "slabel": "Auraris",
+        "slug": "auraris",
+        "com2us_id": "36713"
+    },
+    {
         "label": "Aurelia (Light Gladiatrix) - Kassandra",
         "natural_stars": 4,
         "searchable": true,
@@ -2056,6 +2066,16 @@
         "slabel": "Dark Choco Knight",
         "slug": "dark-choco-knight",
         "com2us_id": "27105"
+    },
+    {
+        "label": "Dark Cosmic Worm",
+        "natural_stars": 5,
+        "searchable": false,
+        "element": "Dark",
+        "image": "unit_icon_0228_0_5.png",
+        "slabel": "Dark Cosmic Worm",
+        "slug": "dark-cosmic-worm",
+        "com2us_id": "36705"
     },
     {
         "label": "Dark Cow Girl",
@@ -4776,6 +4796,16 @@
         "slabel": "Fire Choco Knight",
         "slug": "fire-choco-knight",
         "com2us_id": "27102"
+    },
+    {
+        "label": "Fire Cosmic Worm",
+        "natural_stars": 5,
+        "searchable": false,
+        "element": "Fire",
+        "image": "unit_icon_0228_0_2.png",
+        "slabel": "Fire Cosmic Worm",
+        "slug": "fire-cosmic-worm",
+        "com2us_id": "36702"
     },
     {
         "label": "Fire Cow Girl",
@@ -8754,6 +8784,16 @@
         "com2us_id": "27104"
     },
     {
+        "label": "Light Cosmic Worm",
+        "natural_stars": 5,
+        "searchable": false,
+        "element": "Light",
+        "image": "unit_icon_0228_0_4.png",
+        "slabel": "Light Cosmic Worm",
+        "slug": "light-cosmic-worm",
+        "com2us_id": "36704"
+    },
+    {
         "label": "Light Cow Girl",
         "natural_stars": 3,
         "searchable": false,
@@ -10568,6 +10608,16 @@
         "com2us_id": "29911"
     },
     {
+        "label": "Luminaris (Light Cosmic Worm)",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Light",
+        "image": "unit_icon_0228_1_4.png",
+        "slabel": "Luminaris",
+        "slug": "luminaris",
+        "com2us_id": "36714"
+    },
+    {
         "label": "Lumirecia (Water Sylphid)",
         "natural_stars": 4,
         "searchable": true,
@@ -10780,6 +10830,16 @@
         "slabel": "Marble",
         "slug": "marble",
         "com2us_id": "19014"
+    },
+    {
+        "label": "Maris (Water Cosmic Worm)",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Water",
+        "image": "unit_icon_0228_1_1.png",
+        "slabel": "Maris",
+        "slug": "maris",
+        "com2us_id": "36711"
     },
     {
         "label": "Martina (Dark Boomerang Warrior)",
@@ -11424,6 +11484,16 @@
         "slabel": "Nobella",
         "slug": "nobella",
         "com2us_id": "29913"
+    },
+    {
+        "label": "Noctaris (Dark Cosmic Worm)",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Dark",
+        "image": "unit_icon_0228_1_5.png",
+        "slabel": "Noctaris",
+        "slug": "noctaris",
+        "com2us_id": "36715"
     },
     {
         "label": "Nora (Fire Totemist)",
@@ -13968,6 +14038,16 @@
         "com2us_id": "21415"
     },
     {
+        "label": "Volcaris (Fire Cosmic Worm)",
+        "natural_stars": 5,
+        "searchable": true,
+        "element": "Fire",
+        "image": "unit_icon_0228_1_2.png",
+        "slabel": "Volcaris",
+        "slug": "volcaris",
+        "com2us_id": "36712"
+    },
+    {
         "label": "Volg (Dark Tomb Warden)",
         "natural_stars": 4,
         "searchable": true,
@@ -14300,6 +14380,16 @@
         "slabel": "Water Choco Knight",
         "slug": "water-choco-knight",
         "com2us_id": "27101"
+    },
+    {
+        "label": "Water Cosmic Worm",
+        "natural_stars": 5,
+        "searchable": false,
+        "element": "Water",
+        "image": "unit_icon_0228_0_1.png",
+        "slabel": "Water Cosmic Worm",
+        "slug": "water-cosmic-worm",
+        "com2us_id": "36701"
     },
     {
         "label": "Water Cow Girl",
@@ -16276,6 +16366,16 @@
         "slabel": "Wind Choco Knight",
         "slug": "wind-choco-knight",
         "com2us_id": "27103"
+    },
+    {
+        "label": "Wind Cosmic Worm",
+        "natural_stars": 5,
+        "searchable": false,
+        "element": "Wind",
+        "image": "unit_icon_0228_0_3.png",
+        "slabel": "Wind Cosmic Worm",
+        "slug": "wind-cosmic-worm",
+        "com2us_id": "36703"
     },
     {
         "label": "Wind Cow Girl",
